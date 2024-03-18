@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="viewport" content="user-scalable=0, width=device-width, height=device-height, initial-scale=1.0" />
+
+	<!--<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">-->
+	<!--<meta name="viewport" content="user-scalable=no" />-->
+	<meta charset="UTF-8">
+	<title>S U N Y A</title>
+	<!--<script src="/socket.io/socket.io.js"></script>-->
+
+</head>
+<body id="everything" style="background-color:black">
+<!--I could just create the input element with js , work with the value and dont even append it to body? -->
+	<input id="chatext" type="text" >
+<!--input to load png images -->
+	<input id="input_img" type="file" accept="image/png">
+<!--input to load sound files -->
+	<input id="input_audio" type="file" accept="audio/*">
+
+	<div id="messages" style="color:azure"></div>
+<!--misght want to use "defer" just before src on this line bellow . .-->
+	<!--call eruda script to run debugger on phone-->
+	<!--c<script src="https://cdn.jsdelivr.net/npm/eruda"></script>-->
+	<script>
+//what a blessing	
+window.onerror = (a, b, c, d, e) => {
+  console.log(`message: ${a}`);
+  console.log(`source: ${b}`);
+  console.log(`lineno: ${c}`);
+  console.log(`colno: ${d}`);
+  console.log(`error: ${e}`);
+  return true;
+};
+//window.onerror = () => true;
+//document.onerror = () => false;
+//init eruda to run debugger on phone
+//eruda.init();
+	</script>
+
+	<script src="sunya.js"></script>
+
+	<style>
+body{
+	/*justify-content: center;*/
+	/*align-items: center;*/
+}
+#chatext{
+	/*display:none;*/
+	border:none;
+	-webkit-appearance:none;
+	-ms-appearance:none;
+	-moz-appearance:none;
+	appearance:none;
+	/*outline:none;
+	position:relative;
+	left:100px;*/
+	/*transform : translateY(-50%);*/
+	/*transform : translateX(50%);*/
+}
+#input_img{
+	display:none;
+	border:none;
+	-webkit-appearance:none;
+	-ms-appearance:none;
+	-moz-appearance:none;
+	appearance:none;
+/*
+	position:relative;
+	left:100px;
+	top:100px;
+	z-index:10;
+*/
+}
+#input_audio{
+	display:none;
+	border:none;
+	-webkit-appearance:none;
+	-ms-appearance:none;
+	-moz-appearance:none;
+	appearance:none;
+/*
+	position:relative;
+	left:100px;
+	top:200px;
+	z-index:10;
+*/
+}
+/*
+  html, body {
+  overflow-x: hidden;
+}
+body {
+  position: relative;
+}
+
+*/
+/*
+html, body {
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+*//*this works too*/
+body
+{
+/*overflow:hidden;*/ /*!!!!!!!!!!!!!this fucking 89ertg556Y&%H%·*/
+width:100%;
+}/*this works*/
+
+	</style> 
+
+</body>
+</html>
+
