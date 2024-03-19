@@ -4982,7 +4982,8 @@ Keys are persistant always by default.
 						anim.push({});
 					}
 					if(sr.loop==false){
-						anim.pop(); var ff = anim[0];
+						anim.pop(); 
+						var ff = anim[0];
 						sret = all.getetv(anim); 
 						sr.u_d.push(
 							'anim',anim,'et',sret,'rt',0,'loop',true,'nfreq',0,
@@ -6434,30 +6435,31 @@ all.c_com = function(){ //(check commands)
 					if(mc_a[2]=='circle'){
 						all.stream_a.push(
 					'_______________________________________________________',
+					'Type in  .circle  to print information about all circle edits.',
 					'.circle:[circle edit name]',
 					'Modifies or creates a circle edit. Starts circle editor.',
 					'.circle.[circle edit name].delete',
 					'Deletes specified circle edit.',
+					'.circle.[circle edit name].run',
+					'Run the edit on loop while user is on inner mode.',
 					'.circle.purge',
 					'Deletes all previously stored circle edits on this orb.',
-					'.circle.list',
-					'Prints out a list of current circle edits on this orb.',
 					'________________________________________________________'
 						);
 					}
 					if(mc_a[2]=='rect'){
 						all.stream_a.push(
 					'_______________________________________________________',
+					'Type in  .rect  to print information about all rect edits.',
 					'.rect:[rect edit name]',
 					'Modifies or creates a rect edit. Starts rect editor.',
 					'.rect.[rect edit name].delete',
 					'Deletes specified rect edit.',
+					'.rect.[rect edit name].run',
+					'Run the edit on loop while user is on inner mode.',
 					'.rect.purge',
 					'Deletes all previously stored rect edits on this orb.',
-					'.rect.list',
-					'Prints out a list of current rect edits on this orb.',
 					'________________________________________________________'
-
 						);
 					}
 					if(mc_a[2]=='osc'){
@@ -7048,7 +7050,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 			if(c_orb.inner_mode){
 				
 //a command to upload an image and a command to upload an audio into the current
-//inhabited Orb. currently only img and audio formats are available
+//inhabited Orb. currently only png and mp3 formats are available
 //Orbs can only have 1 image and 1 audio loaded at any time... for now
 //COMMANDS
 				if(mc_a[1]=="upload"){ //upload should be a macro for later upload other things besides images as well
@@ -7070,24 +7072,19 @@ all.stream_a.push("but yes, you can try again if you want..");
 //.txt:[name] ... .osc:[name] ...  .circle:[name] ...  .rect:[name]..  
 //.audio:[name]	Uses an audio file to extract a specific part and add independent
 //logic to it
-//.img.list , .txt.list, .circle.list , .rect.list ,  .vox.list , .osc.list,
-//.act.list	Lists acordignly
 
-
-//its more elegant to use list as a second command to all other commands.
-//so now i dont need to make a super macro .list, which
-//wouldnt make sense because users should not always have access to some lists
 			
-//AUDIO
+//AUDIO , EDIT
 //.audio:[audio name]
 //.audio.[audio name].delete
 //.audio.purge
-//.audio.list
+//.audio.list //deprecat
 
 				if(mc_a[1]=="audio"){
+					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
+						//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
 						var l = c_orb.audio.length;
 						while(l--){
 							var a = c_orb.audio[l];
@@ -7167,19 +7164,21 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}
 				}//audio
 
-//IMG
+//IMG, EDIT
 //.img:[img name]
 //.img.[img name].delete
 //.img.purge
-//.img.list
+//.img.list //deprecat
 				if(mc_a[1]=="img"){
+					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						//.img.purge
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
 
 						//.img.list	
 						//List needs to print more data and different colors
-						if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
+						//if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
+						//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
 						
 						//search for name match..
 						var l = c_orb.img.length;
@@ -7237,7 +7236,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 							if(a){if(a[0]){var ok = true;}}
 							if(ok){
 								all.stream_a.push(
-					`edit name:${a[0].name}, img file name:${a[0].img_file_name}`
+					`edit name:${a[0].name}, img file name:${a[0].img_file_name}, running:...`
 								);
 								all.screen_log();
 							}
@@ -7289,7 +7288,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}//proceed
 				}//img
 
-//TXT
+//TXT , EDIT
 //.txt:[txt name]
 //.txt.[txt name].delete
 //.txt.purge
@@ -7298,7 +7297,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 //about txt edits in this orb.. same with img , circle etc...
 				if(mc_a[1]=="txt"){
 					if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-					if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
+					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
+					//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
 					if(mcp_a[1]!=undefined){var proceed = true;}
 					if(purge){c_orb.txt = [];}
@@ -7359,17 +7359,18 @@ all.stream_a.push("but yes, you can try again if you want..");
 	
 				}//txt
 
-//CIRCLE
+//CIRCLE , EDIT
+//.circle
 //.circle:[circle name]
 //.circle.[circle name].delete
+//.circle.[circle name].run
 //.circle.purge
-//.circle.list
 				if(mc_a[1]=="circle"){
-					//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
-				///*
+					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}//else{
+
+						//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}//else{
 							//its an orb name, find it
 							var l = c_orb.circle.length;
 							while(l--){
@@ -7388,7 +7389,33 @@ all.stream_a.push("but yes, you can try again if you want..");
 				all.stream_a.push(a[0]+" has been deleted"); all.screen_log();
 	
 									}
-								}
+			 //a command to run the edit on loop while on inner mode :)
+									if(mc_a[3]=='run'){
+ 				var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+				if(sr){
+					if(sr.loop){
+						sr.u_d.push('is','rm');
+						sr.is='c_circle'; sr.t=1; sr.et = -1;
+					}
+				}else{
+					var sr = all.circle_s_new(a[0].name+"__r");
+					sr.anim=a; sr.ctx=ctx1;
+					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
+
+					var ff = a[0];
+					sret = all.getetv(a); 
+					sr.u_d.push(
+						'et',sret,'rt',0,'loop',true,'nfreq',0,
+						't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
+						'radius',ff.radius,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
+					);
+					sr.is='c_circle'; sr.t=1; sr.run=1;
+					all.anim_a.push(sr);
+			
+				}
+
+									}//run
+								}//named edit
 							}
 						//}//not list
 						
@@ -7398,18 +7425,20 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(mcp_a[1]!=undefined){var proceed = true;}
 					if(purge){c_orb.circle= [];}
 					if(list){
-						//list circle anims and a brief description, which event is tied to etc
 						var l = c_orb.circle.length;
-						all.stream_a.push("CIRCLE EDITS_________________");
+						all.stream_a.push("---------------------------");
 						while(l--){
-							var anim = c_orb.circle[l];
-							all.stream_a.push(anim[0].name+" .. and some other data... ");
+							var a = c_orb.circle[l];
+ 							var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+							if(sr){var runin = 'TRUE';}else{var runin = 'FALSE';}
+							all.stream_a.push(
+								"name: "+a[0].name+" running: "+runin
+							);
 							all.screen_log();
 						}
-						all.stream_a.push("_____________________________");
+						all.stream_a.push("---------------------------");
 						all.screen_log();
 					}
-	
 					if(noname){
 						all.stream_a.push("Please asign a name for this circle animation."); 
 						all.screen_log();
@@ -7451,15 +7480,15 @@ all.stream_a.push("but yes, you can try again if you want..");
 					
 				}//circle
 
-//RECT
+//RECT, EDIT
 //.rect:[rect name]
+//.rect.[rect name].run
 //.rect.[rect name].delete
 //.rect.purge
-//.rect.list
 				if(mc_a[1]=="rect"){
+					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}//else{
 						var l = c_orb.rect.length;
 						while(l--){
 							var a = c_orb.rect[l];
@@ -7475,7 +7504,39 @@ all.stream_a.push("but yes, you can try again if you want..");
 									c_orb.rect.splice(index,1);
 					all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
 								}
-							}
+			 //a command to run the edit on loop while on inner mode :)
+								if(mc_a[3]=='run'){
+
+ 				var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+				if(sr){
+					if(sr.loop){
+						//sr.u_d.push('loop',false,'run',0,'rt',sr.et,'is','rm');
+						sr.u_d.push('is','rm');
+						sr.is='c_rect'; sr.t=1; sr.et = -1;
+					}
+				}else{
+					var sr = all.rect_s_new(a[0].name+"__r");
+					sr.anim=a; sr.ctx=ctx1;
+					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
+					//sr.is="f"; 
+					//all.anim_a.push(rect_sr);
+
+					var ff = a[0];
+					sret = all.getetv(a); 
+					sr.u_d.push(
+						'et',sret,'rt',0,'loop',true,'nfreq',0,
+						't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
+						'w',ff.w,'h',ff.h,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
+					);
+					sr.is='c_rect'; sr.t=1; sr.run=1;
+					all.anim_a.push(sr);
+			
+				}
+
+
+								}//run							
+
+							}//named orb
 						}
 					}
 	
@@ -7484,13 +7545,17 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(purge){c_orb.rect= [];}
 					if(list){
 						var l = c_orb.rect.length;
-						all.stream_a.push("RECT EDITS_________________");
+						all.stream_a.push("---------------------------");
 						while(l--){
-							var anim = c_orb.rect[l];
-							all.stream_a.push(anim[0].name+" .. and some other data... ");
+							var a = c_orb.rect[l];
+ 							var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+							if(sr){var runin = 'TRUE';}else{var runin = 'FALSE';}
+							all.stream_a.push(
+								"name: "+a[0].name+" running: "+runin
+							);
 							all.screen_log();
 						}
-						all.stream_a.push("___________________________");
+						all.stream_a.push("---------------------------");
 						all.screen_log();
 					}
 	
@@ -7532,15 +7597,15 @@ all.stream_a.push("but yes, you can try again if you want..");
 					
 				}//rect
 
-//OSC
+//OSC , EDIT
 //.osc:[osc name]
 //.osc.[osc name].delete
 //.osc.purge
-//.osc.list
+//.osc.list //deprecat
 				if(mc_a[1]=="osc"){
+					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
 						var l = c_orb.osc.length;
 						while(l--){
 							var a = c_orb.osc[l];
