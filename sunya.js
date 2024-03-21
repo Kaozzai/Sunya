@@ -9,33 +9,14 @@ I really need a serious index here..
 
 INDEX
 
-UPDATE
-GLOBAL
-ORB
-INNER
-RADIANCE
-VOID
-USER
-STATES
-FUNCTION
-KEYS
-INTERFACE
-STREAM
-COMMANDS
-EDIT
-IMG
-AUDIO
-CIRCLE
-RECT
-TXT
-OSC
-ACT
-PHONE
-ONLINE
+UPDATE, GLOBAL, HTML, ORB, INNER, RADIANCE
+VOID, USER, STATES, FUNCTION, KEYS
+INTERFACE, STREAM, COMMANDS, FILE, UPLOAD, EVENT
+EDIT, IMG, AUDIO, CIRCLE, RECT, TXT, OSC
+ACT, PHONE, ONLINE
 ____
 
 */
-
 
 
 //ALL
@@ -58,6 +39,8 @@ const all = {};//will contain everything for now
 //const unl = []; // unique names list.. kinda deprecated. not very smart system
 
 //orb escence. a different color on each beat
+//.. i could run random range once, then substract 60 to create a second value, and add 60 to create third value, always between
+//0 - 220 . this way it would be more efficient and the result would be more contrasting ?
 var o_r=220; var o_g=220; var o_b=220; 
 var a_v =0;
 
@@ -76,7 +59,6 @@ all.sstr_y=window.innerHeight/2+window.scrollY-100;//update this to center
 all.sstr_r=220; all.sstr_g=220; all.sstr_b=220; all.sstr_a=0.8;
 
 all.orb_track_l = undefined; //for prims wheel updates on new orb arrival
-
 
 //to start a timer just set timer_base to Date.now()  ? we should be able to call
 //many timers
@@ -98,8 +80,8 @@ all.user = {
 //users should be able to influence orbs streams trough other
 //orbs using scripts from act language but not straight from void using only commands
 
-//there is mainstream, and a stream for each editor mode, estream.
-	//mainstream
+//there is mainstream, and estream for editor modes.
+	//mainstream , scrollable
 	mainstream:	{
 		name:"__default",
 		r:220, g:220, b:220, a:0.6, x:6, y:window.innerHeight-12, on_screen:0, limit:30, 
@@ -107,13 +89,13 @@ all.user = {
 		freeze: false, up:false, down:false, left:false,right:false, c_last:0,
 		history: []
 	},
-	//edit stream
+	//edit stream, doesnt scroll
 	estream: {
 		name:"__feed", 
 		r:220, g:200, b:140, a:1, x:window.innerWidth, y:window.innerHeight-3,
 		on_screen:0, limit:6, align:'right', 
 		font:'px Courier New', size:11, spacer:-15, freeze: false, c_last:0,
-		history : []
+		history : [] //we dont keep history here but we need it for the print system
 	},
 
 	init_void : true, //init void tag
@@ -123,7 +105,7 @@ all.user = {
 	wait_com_key: false, //key mem system flag
 	//txt_mem_req: false,//txt memory string request
 //so key_s will now become void_k. we will now have all modes keys stored in here as well... mmm not so sure now
-//... ok so orbs will have all their animations stored and they will have a particular set of shortcuts to manipulate thier own
+//... ok so orbs will have all their animations stored and they will have a particular set of shortcuts to manipulate their own
 //assets so yeah.. maybe we do need buttons stored on orbs and not on user..
 	//void_k?
 	key_s: [
@@ -149,13 +131,14 @@ all.com_a = [];//commands container
 all.res_acts = [];//stores act resources
 all.perform = [];//stores temporary acces to act resources
 
+//TOUCH
 //all.touches_a = []; //holds touches
 all.ges_seq = []; //gesture sequence ? am i using thiis
 all.bt_alr = false; //for touch button system
 
 all.stream_a = [];//contains txt lines as items to be streamed
 
-
+///////////////////////////////////////////////////////////////////////////////HTML
 //CANVAS
 //one big thing is, i should keep texts draw on a different canvas.
 //like ctx3. just use position absolute value and create a canvas the same
@@ -164,7 +147,8 @@ all.stream_a = [];//contains txt lines as items to be streamed
 //Maybe all.canvaser should create a custom canvas on the run
 //I dont want to add much logic to determine which image goes on top when
 //there are multiple Orbs goofing around
-//.. well . .  i can use zIndex for that!
+//.. well . .  i can use zIndex for that!... if we just print at every beat on a single context then animations should not erase
+//each other.
 
 all.canvaser = function(id, zIndex){
 	var j_b = document.createElement('canvas');
@@ -190,7 +174,7 @@ all.canvaser('canvas0', 1);
 all.canvaser('canvas1', 2);
 all.canvaser('canvas2', 3);
 all.canvaser('canvas3', 4);
-//fifth layer for phone commands buttons..
+//fifth layer for phone commands buttons.. anf keys feedback
 //keyboard users probly dont need this one.. or maybe keys feedback could use this layer actually
 all.canvaser('canvas4', 5);
 
@@ -240,14 +224,14 @@ const img_in = document.getElementById('input_img');
 const audio_in = document.getElementById('input_audio');
 
 
-//____________________________________________________________I_________________________________________________________________
+///////////////////////////////////////////////////////////////HTML
 
 
-//INTERFACE //COMMAND INPUT //KEYBOARD //EVENT LISTENERS
+//INTERFACE,  COMMAND INPUT, KEYBOARD, EVENT, LISTENERS
 
-//KEYS interface
+//KEYS feedback interface
 
-//prints keys from all.sstr on ctx3
+//prints keys from all.sstr on ctx4
 all.keys_feed = function(){
 	all.sstr_t++;	//timer count should run before clearing and before logic updates
 	if(all.user.wait_com_key==true){all.sstr_t--;}//wait for command to save on key_s a lock
@@ -344,7 +328,7 @@ const kdown = function(ev){
 
 //BACKSPACE
 //clean command feedback with backspace on ctx4
-//.. would be nice to be able to clear the stream from the screen 
+//.. would be nice to be able to clear the stream from the screen as well
 	if (e == 8 && all.chat_on == false){ //backspace
 		all.clear_rect(ctx4,
 			all.sstr_x-10*all.s_s_t_r.length, //x
@@ -425,7 +409,7 @@ const kdown = function(ev){
 						}
 				//keyboard users
 			//look for an element on ks that already has the command on com1 so it adds data into
-			//the object instead of creating a new one
+			//the button object instead of creating a new one
 						var lm = mbox.length;
 						while(lm--){
 							var ksalr = mbox[lm];
@@ -487,17 +471,15 @@ const kdown = function(ev){
 ///
 	}// e = 13 enter
 
-//ESC
-//use esc at any moment when chat is not on to check for available commands
+//ESC , HELP
+//use esc at any moment when chat is not on to call for .help command
 	if(e == 27 & all.chat_on == false){
-		//if(all.com_interface == true){all.com_interface = false;}
-		//else{
-			var command = {is_a:"c", str:".help"}; all.com_a.push(command);
-		//}
+		var command = {is_a:"c", str:".help"}; all.com_a.push(command);
 	}//esc
 
 
 //ARROW keys control STREAM SCROLLing HISTORY
+//... still needs to handle orb streams on radiant mode update this
 //all arrow keys except for right arrow should freeze stream
 	if(e == 37 & all.chat_on == false){
 		//console.log('left?');
@@ -580,10 +562,10 @@ const kdown = function(ev){
 
 //restrict value of e, only make 13(Enter) available
 if(all.chat_on==true){//chat condition
-	//use esc to blur and clear chat box 
+	//use ESC to blur and clear chat box for a quick out of chat input box
 	if(e == 27){ chat_in.value = ""; all.chat_on=false; chat_in.blur(); chat_in.style.display="none";}
 }else{
-//SYMBOL input
+//SYMBOL input KEY MAP IMPROVE
 //The idea here is to map keys to symbols, if somebody can make this more efficient that would be awesome :)	
 	if( 
 //e to A-Z
@@ -729,8 +711,10 @@ const kup = function(ev){
 //window.addEventListener('keyup', kup);
 
 
+//HTML IMG FILE UPLOAD EVENT
 //input_img html element can deal with images to upload from client side. img_in
 //input_audio html element can deal with sound to upload from client side. audio_in
+//.. i forgot what to do when i want to request files from server lol
 //
 //listen for change events on img_in and audio_in
 //When user enters the upload command, simulate a click on the input and let user 
@@ -766,6 +750,7 @@ all.handleImgFile = () => {
 }
 img_in.addEventListener("change", all.handleImgFile);
 
+//AUDIO EVENT
 //return a buffer into controled orb.audio_access using a file uploaded by user
 //it needs to be located on a BufferSource
 all.handleAudioFile = () => {
@@ -814,80 +799,44 @@ audio_in.addEventListener("change", all.handleAudioFile);
 //user screen, on a chat like fashion, with messages appearing on the same place,
 //and previous messages automatically scrolling upwards and fading away as new 
 //messages arrive.
-//user should be able to call for a command to show history of messages
+//user should be able to call for a command to print history of messages on a text on input box . .history.out
+//we can also use arrows to manipulate streams behavior
 //default stream behavior is streaming local chat, mainstream
 //messages coming from other users when on broadcast and the user when typing normally
 //on chat_in
-//the default stream ctx should always be on top of everything, should only update
+//the default stream ctx should always be on top of everything ctx3 for now, should only update
 //when new messages arrive..
-//.. so it makes sense to listen to a text stream array and use the objects pushed
-//into the array to paint the messages on the screen
 //
 //I like how this works now, all.screen log can be called at any moment,
 //it will take all the strings on all.stream_a and print
-//them in order, using stream params stored on all.user.stream or in orbs
-//Also needs a mechanism to automatically print another line if the message is
-//too long
+//them in order, using stream params stored on all.user.maistream, estream or in orbs radiant stream
+//IMPROVE
+//needs a mechanism to automatically print another line if the message is
+//too long...
 //
-//if another line with the same customized name
-//exists then clear first and draw the new one
-//... better yet.. such parameter is the name of a stream.. so now users can have
-//different streams simultaneously...
-// ok so maybe i need stream sources. so users asign the source of stream to a
-//specific stream
-// a ctx3 default stream should be able to accept all streams or only
-//specific sources
-// a ctx2 customized stream could accept one specific source or more, could
-//be useful for interface text interactive or not
-//user should be able to customize all streams using commands?
-//so if its default, use ctx3, if custom use ctx2 ?
-//..screen log should use the source to select what stream is listenning to that
-//source and also determine if such stream is "on" or "off"..?
-//the only way to configure and have more than 1 default stream is by using orbs
-//orb feed can also be fully customized. 
-//
-//... ok so when no parameter , call default user stream. otherwise, parameter
+//... ok so when no parameter , call maistream. otherwise, parameter
 //is the stream item itself passed from on from the orb calling the function
 //on logic phase
 
-//.. orb stream as parameter is not ideal. parameter should be source. let
-//screen_log determine what stream to use. logic phase
-//should just provide the text the source and the orb itself for optimizing
-//operations. check for the orb streams, which one is on and listening to
-//that source and use that stream?
-//possible sources could be, none(default stream), interface, radiant stream
-//(seen by other orbs while on radiant mode),
-//from outside(uses parameters of the orb thats streaming)?
-//user can decide to turn on and off any stream?
-//
 //Now i can wrap up this stream system into another function to be called by user.
 //these could be single lines with specific colours
-// ..
-//streams.... am thinking edit instances use specific streams to give pertinent
-//feedback to users when they execute operations.. edit modes have unique streams
 //
 //.... review
-//so .....Its mainstream and orb stream. we control mainstream trough commands on void and inner mode. orb stream is reserved for radiant mode.
-//we control orb streams using act scripts. .. but we need special streams for edit modes. where to store their properties?
-//maybe embed properties? no, we need to move round and change properties of the edit feedback stream as well
-//.. ok so lets place all edit streams and mainstream on user settings. We need to add a .user.out command to print out all user
+//so .....Its mainstream , estream and orb stream. we control mainstream trough commands on void and inner mode.
+//estream from all modes except for radiant mode, and orb stream is reserved for radiant mode, controled exclusively by act language
+//we control orb streams using act scripts. 
+
+//.. ok so lets place estream and mainstream on user settings. We need to add a .user.out command to print out all user
 //settings on a json text. this can be useful later for online things too.
 
 //we only need one parameter here.. maybe 2, but for now , stream, which is any stream object. gg. 
-//if user is on radiant mode, we use the orb stream
-//act system
+//if user is on radiant mode, we use the orb stream we use ACT stream system
+//
 all.screen_log = function(stream){ //stream, ctx?
 
-	if(stream===undefined){
-		var stream = all.user.mainstream;
-//maybe stream_a loop goes here.. we only need to fill up history
-	}
+	if(stream===undefined){var stream = all.user.mainstream;}
 
-	if(stream=='estream'){
-		var stream = all.user.estream;
-		//we dont need to keep history on estream..
-		var clear_history = true;
-	}
+	if(stream=='estream'){var stream = all.user.estream; var clear_history = true;}
 
 //all STREAMs use HISTORY..
 	var sal = all.stream_a.length; //2
@@ -945,79 +894,11 @@ all.screen_log = function(stream){ //stream, ctx?
 		stream.history = [];
 	}
 
-	//all.logger(stream,ctx3); //ctx...? //deprecat?
 
 }//screen_log
 
-/*
-//an internal use function for screen_log flexibility.... maybe this function is unnecesarily complex.. we could use history
-//to build a less convoluted function
-all.logger = function(stream,ctx){//should take a limit param ? 
-	var l1=all.stream_a.length; //2
-	while(l1--){
-		if(stream.on_screen==1){
-			//if limit is 1, then just remove the previous line and clear stream on screen param
-			if(stream.limit == 1){ //case for limit 1 stream
-				var s = all.find_ting(all.anim_a, "name", stream.name+stream.limit);
-				s.is = "rm"; all.clear_txt(s);
-				stream.on_screen--;
-			}else{
-				var s = all.find_ting(all.anim_a, "name", stream.name+stream.limit);//use the stream name to locate
-				all.clear_txt(s);
-				s.y = s.y+(stream.spacer); s.is="txt"; s.t=-1; 
-				s.name = stream.name+(stream.limit-1);
-			}
-		}//1 stream on screen conditions
-		
-		if(stream.on_screen>1){ //loop to acces sc_log+id and substract all sc_log s 10 y  //3
-			var i2 = (stream.limit-stream.on_screen)+1; //2
-			var l2 = stream.on_screen;//the number of previous messages already on local chat  //3
-			while(l2--){
-				var s = all.find_ting(all.anim_a, "name", stream.name+i2);
-				if(s){//
-					all.clear_txt(s);
-					s.y = s.y+(stream.spacer);
-					s.is="txt"; s.t=-1; 
-					s.name = stream.name+(i2-1); //1
-					if(s.name==stream.name+"0"){s.is="rm"; stream.on_screen--;}
-				}//
-			i2++;}//on_screen loop
-		}//more than 1 on screen conditions
-		
-//probly should be stream.name+'__l'+stream.limit..
-		var n_name = stream.name+stream.limit; //should be limit 20- stream.on_screen ?
-		//last message is always name0
-		var msg_s = all.txt_s_new(n_name);
-//context should also be customizable needs a condition to use orbs streams
-		//ctx3
-		msg_s.ctx=ctx;
-	//asign se mainstream when ctx3 .. why am i doing this?
-		if(ctx==ctx3){msg_s.se='__ms';}
-		
-		msg_s.txt = all.stream_a.shift();
-		//add to history if mainstream. what about orb stream history?
-		if(stream.name=='__default'){stream.history.push(msg_s.txt);}
 
-//when i shift, stream_a is emptied so the next loop will find it empty. .
-//if more than one stream listenning to same source, make sure shift puts messages
-//somewhere . . i could simply loop stream_a, no need to shift. just clear it when
-//all streams have used it?
-		//stream_bu.push(msg_s.txt);
-		msg_s.x= stream.x; msg_s.y= stream.y;
-		msg_s.r = stream.r; msg_s.g = stream.g; msg_s.b = stream.b;
-		msg_s.a = stream.a;
-		//var f_n_str = s.font.substr(0,2); var f_num = parseFloat(f_n_str);
-		var Font = stream.size+stream.font; msg_s.font = Font; 
-		//if default stream, then use ctx3, if customized then use ctx2?
-		msg_s.is="txt"; msg_s.t=-1; 
-		msg_s.align=stream.align;
-		stream.on_screen++;
-		all.anim_a.push(msg_s);
-	}//stream_a loop
-}//logger
-*/
-
-//a function to clear a specific stream
+//a function to clear a specific stream. it removes states that start with a specific string of words
 //maybe i should also ask for '__line'...
 //ok so this clear is great because it simply clears by name match no matter the number of the line at the end
 all.clear_stream = function(stream){
@@ -1033,7 +914,6 @@ all.clear_stream = function(stream){
 			//s.is="rm";
 		}
 	}
-	//stream.on_screen=0; //deprecat?
 }
 
 
@@ -1064,7 +944,8 @@ all.clear_rect = function(ctx,x,y,w,h){
 }
 
 //this clear still needs some work
-//a function to clear a txt state
+//a function to clear a rect the size and in the location of a txt state...
+//... maybe there is a way to clear the exact path of the text instead? that would IMPROVE this operation so much
 all.clear_txt = function(txt_s){
 	var s = txt_s;
 	var f_n_str = s.font.substr(0,2); var f_num = parseFloat(f_n_str);
@@ -1609,9 +1490,15 @@ all.u_state = function(s){
 //on the same ctx. one of them has long frame times than the other. the fast
 //frames one will be out of synch and clear unproperly, same with other.
 //we could avoid this by asigning proper context to traslaping animations..
-//yes thats the point of having layers anyway
-//From act language, we should be able to manage layer 0, 1 and 2.
-//layer 3 should be reserved for streams and layer 4 for interface
+//yes thats the point of having layers anyway... and yet this might be unscalable because we want to have many animations on top
+//of each other. ..
+//From act language, we should be able to manage layer 0, 1 and 2.... ?
+//layer 3 should be reserved for streams and layer 4 for interface..
+//... ok so what if we simply use one context and we just clear and draw at every beat. animations clears would not overlap anymore..
+//it might be a bit forced but it does look like the most simple solution.
+//time would simply affect how many times the same frame its going to be drawn before drawing the next one.
+//ok lets do rect, cricle and the img for a start... text animations should also implement this new system because we want to
+//run these text as animations, changing colors and displacing trough the screen.
 all.anim_func = function(){
 
 	var l = all.anim_a.length;
@@ -1744,6 +1631,7 @@ all.anim_func = function(){
 //will automatically reinit when rt value
 //reaches et value. et will be stored on frame0 for visuals.
 //acts will now be able to control very precisely how animations will run.
+		//FUNC
 		if(s.is=="c_img"){
 			if(s.t <= 0){s.is="f";}else{// ==0
 				s.t--; //s.rt++;//
@@ -2965,49 +2853,23 @@ all.ml_up = function(o){
 
 
 
-
-
-
-
-//this view is kinda deprecated.... we need to be in radiant mode to interact with orbs now
-//hmmm
-//Orb feedback should be the independent inner voice of the orb. it should take every event concerning itself and give it a voice.
-//Every effect on the Orb should produce a record to be stated, users should be able to program responses to these effects using those
-//records
-//Once an Orb is owned, it will produce a data stream the user should be able to place anywhere to see or display as desired?
-//a property to store events feedback stream. this.stream
-//commands should always produce a feedback as well
-// when feed.display is on, the orb should push and update states
-//When ml_up loop comes here what really is doing is to check what events are true from the Orb. if there is any logic listening
-//to user input, if there are any particular jobs the orb might be doing etc..
-
-//if user is on void stance, then orbs found will display its primordial form.
-//Events call animations, animations frames call subevents, subevents change data and call animations..
-//mhhhh
-
 //INNER mode
 
 //Users need to access inner mode in order to create , modify , and have full control
 //of orbs capabilities. Users may now run commands to access orb information and
 //create animations , sounds and programable behavior
 //show orb status(animations stored, image stored, jobs being executed, defense
-//systems etc ) using com_interface states with all this information should be push?
-//once at init, but also available to push again on stream_a using esc?
-//!!
-//User should be able to run a list on loop of any animation on the background of inner mode, along with any sound as well.
-//could be a music list or sounds list on loop?.. no this looks like a job for act language
+//systems etc )
+//User should be able to run on loop any animation on the background of inner mode, along with any sound as well.
+		
 		if(o.inner_mode){
 
 			if(o.init){
-//Orb circunference envelopes the screen. Events required to be animated in order to
-//open radiant eye mode are shown in white, if they still havent animations asigned to them,
-//but they turn yellow? when they do. a command to show animations currently hold by the
-//orb should do this . These states should dissapear when user goes into any edit mode. 
+//Orb circunference envelopes the screen. 
 //Run init animation and lock user interface until finished
 				all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; all.com_a=[];
 
 //clear all prim states because we probly come from void were we see prims . . 
-
 //ok so now i ask for states and their subevents so we do proper transitions now
 //void needs to push obg 
 				//close up to orb effect state
@@ -3016,7 +2878,9 @@ all.ml_up = function(o){
 					if(obg.se=='expand'){ 
 						if(obg.radius>=900){
 							obg.se='expand_fadeout';
-							//now create a rect for bg
+//once the radial expansion covers all screen,
+//we now create a rect for bg. we only want the border of the screen to wear orb escence, letting user
+//know we are inside this orb and not on void anymore
 							var obgr = all.rect_s_new('__obgr');
 							obgr.t=2;
 							obgr.r=o_r; obgr.g=o_g; obgr.b=o_b; obgr.a=1;
@@ -3025,6 +2889,86 @@ all.ml_up = function(o){
 							obgr.se='rand_color';
 							obgr.ctx=ctx0;
 							all.anim_a.push(obgr);
+
+//at this point we also need to push init states of all animations with the running tag on 'TRUE'. except for scripts. scripts dont 'run',
+//scripts 'play', they work differently from 'edits'.
+//so we run a loop to find all running edits and push their init states
+		 					//circle
+							var el = o.circle.length;
+							while(el--){
+								var a = o.circle[el];
+								if(a[0].running=='TRUE'){
+									var sr = all.circle_s_new(a[0].name+"__r");
+									sr.anim=a; sr.ctx=ctx1;
+									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
+
+									var ff = a[0];
+									sret = all.getetv(a); 
+									sr.u_d.push(
+										'et',sret,'rt',0,'loop',true,'nfreq',0,
+										't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
+										'radius',ff.radius,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
+									);
+									sr.is='c_circle'; sr.t=1; sr.run=1;
+									all.anim_a.push(sr);
+								}
+							}//circle
+
+		 					//rect
+							var el = o.rect.length;
+							while(el--){
+								var a = o.rect[el];
+								if(a[0].running=='TRUE'){
+									var sr = all.rect_s_new(a[0].name+"__r");
+									sr.anim=a; sr.ctx=ctx1;
+									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
+
+									var ff = a[0];
+									sret = all.getetv(a); 
+									sr.u_d.push(
+										'et',sret,'rt',0,'loop',true,'nfreq',0,
+										't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
+										'w',ff.w,'h',ff.h,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
+									);
+									sr.is='c_rect'; sr.t=1; sr.run=1;
+									all.anim_a.push(sr);
+								}
+							}//rect
+
+		 					//img
+							var el = o.img.length;
+							while(el--){
+								var a = o.img[el];
+								if(a[0].running=='TRUE'){
+					//we cant push and run this state if the corresponding img file is not loaded..
+								if(o.current_img_file.name==a[0].img_file_name){
+									var sr = all.ims_s_new(a[0].name+"__r", o.img_access);
+									sr.anim=a; sr.ctx=ctx1;
+									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
+
+									var ff = a[0];
+									sret = all.getetv(a); 
+									sr.u_d.push(
+										'et',sret,'rt',0,'loop',true,'nfreq',0,
+										't',ff.t,'is','img',
+										'x',ff.x,'y',ff.y,'w',ff.w,'h',ff.h,
+										'px',ff.px,'py',ff.py,'pw',ff.pw,'ph',ff.ph,
+										'tx',window.innerWidth/2,'ty',window.innerHeight/2,
+										'a',ff.a
+									);
+									sr.is='c_img'; sr.t=1; sr.run=1;
+									all.anim_a.push(sr);
+								}//no img file safe
+								}
+							}//img
+
+	/* //not finished
+							//txt
+							//osc
+							//audio
+							
+	*/
+
 						}
 						all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
 						obg.radius=obg.radius+85; obg.is="circle";
@@ -3040,7 +2984,9 @@ all.ml_up = function(o){
 						obg.a=obg.a-0.2;
 					//inmediately keep the orb escence on screen perifery after radial expansion
 						var obgr = all.find_ting(all.anim_a, 'name', '__obgr');
-						obgr.is='rect';
+						obgr.r=o_r; obgr.g=o_g; obgr.b=o_b; 
+						obgr.t=1; obgr.is="rect"; //obgr.se='idle_fadein';
+						//obgr.is='rect';
 
 					}
 					if(obg.se=='fastcolors'){
@@ -3191,6 +3137,17 @@ all.ml_up = function(o){
 				//.. so now i also need to remove obgr...
 					obgr.is='rm';
 
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+					var l = all.anim_a.length; 
+					while(l--){
+						var s = all.anim_a[l];
+						var namend = s.name.substr(-3, 3);
+						if(namend == '__r'){
+							all.anim_a.splice(l,1);
+						}
+					}
+					all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
+					
 					all.stream_a.push("User left .." + o.name); all.screen_log();
 				}
 				
@@ -3606,11 +3563,22 @@ Keys are persistant always by default.
 		if(o.edit_audio_mode==true){
 			if(o.init){
 				//all modes init should do this
-				var o_bg = all.find_ting(all.anim_a, 'name', '__obg');
-				if(o_bg){o_bg.is='rm';}
-				
+				var obg = all.find_ting(all.anim_a, "name", '__obg');
+				if(obg){obg.is='rm';}	
+				var obgr = all.find_ting(all.anim_a, "name", '__obgr');
+				if(obgr){obgr.is='rm';}			
 				if(all.au){}else{all.au=all.audioser();} //safenet?
 				//var a = o.anim[o.op1];
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+				var l = all.anim_a.length; 
+				while(l--){
+					var s = all.anim_a[l];
+					var namend = s.name.substr(-3, 3);
+					if(namend == '__r'){
+						all.anim_a.splice(l,1);
+					}
+				}
+				all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 				o.init = false;
 				all.stream_a.push('Edit audio mode On'); all.screen_log();
 				return
@@ -3632,8 +3600,10 @@ Keys are persistant always by default.
 					obg.x=Math.floor(window.innerWidth/2);
 					obg.y=Math.floor(window.innerHeight/2);
 					obg.ctx=ctx0;
-					if(o.inner_mode){obg.se='idle_pick';}
+					//if(o.inner_mode){obg.se='idle_pick';}
 					//if(o.radiant_mode){obg.se='expand_colors';}
+				//we need this now.. for now
+					if(o.inner_mode){obg.se='expand';}
 					all.anim_a.push(obg);
 
 	//cant end and splice inmediately after, must disconnect now and then splice
@@ -3809,11 +3779,23 @@ Keys are persistant always by default.
 		if(o.edit_osc_mode==true){
 			if(o.init){
 				//all modes init should do this
-				var o_bg = all.find_ting(all.anim_a, "name", "__obg");
-				if(o_bg){o_bg.is='rm';}	
+				var obg = all.find_ting(all.anim_a, "name", '__obg');
+				if(obg){obg.is='rm';}	
+				var obgr = all.find_ting(all.anim_a, "name", '__obgr');
+				if(obgr){obgr.is='rm';}
 				//if(all.au){}else{all.au=all.audioser();} //safenet?
 				//Maybe i should push some states to animate graphics to acompany audio. audio graph
 				//later, some buttons could be used to build a waveform using cursor or phone touch
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+				var l = all.anim_a.length; 
+				while(l--){
+					var s = all.anim_a[l];
+					var namend = s.name.substr(-3, 3);
+					if(namend == '__r'){
+						all.anim_a.splice(l,1);
+					}
+				}
+				all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 				o.init=false;
 				all.stream_a.push('Edit oscilator mode On'); all.screen_log();
 				return
@@ -3836,8 +3818,11 @@ Keys are persistant always by default.
 					obg.x=Math.floor(window.innerWidth/2);
 					obg.y=Math.floor(window.innerHeight/2);
 					obg.ctx=ctx0;
-					if(o.inner_mode){obg.se='idle_pick';}
+					//if(o.inner_mode){obg.se='idle_pick';}
 					//if(o.radiant_mode){obg.se='expand_colors';}
+				//we need this now.. for now
+					if(o.inner_mode){obg.se='expand';}
+
 					all.anim_a.push(obg);
 					//cant end and splice inmediately after, must disconnect now and then splice
 					if(a_s){
@@ -3994,12 +3979,24 @@ Keys are persistant always by default.
 		if(o.edit_txt_mode==true){
 			if(o.init){ //text editor initialization
 				//all modes init should do this
-				var o_bg = all.find_ting(all.anim_a, "name", "__obg");
-				if(o_bg){o_bg.is='rm';}	
+				var obg = all.find_ting(all.anim_a, "name", '__obg');
+				if(obg){obg.is='rm';}	
+				var obgr = all.find_ting(all.anim_a, "name", '__obgr');
+				if(obgr){obgr.is='rm';}
 			//not neccesary yet but probly later
 				all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; all.com_a=[];
 				var print = true;
 				o.op2 = 1; //always set selected line to 1
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+				var l = all.anim_a.length; 
+				while(l--){
+					var s = all.anim_a[l];
+					var namend = s.name.substr(-3, 3);
+					if(namend == '__r'){
+						all.anim_a.splice(l,1);
+					}
+				}
+				//all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 				o.init=false;
 				//return
 			}//init
@@ -4031,8 +4028,11 @@ Keys are persistant always by default.
 					obg.x=Math.floor(window.innerWidth/2);
 					obg.y=Math.floor(window.innerHeight/2);
 					obg.ctx=ctx0;
-					if(o.inner_mode){obg.se='idle_pick';}
+					//if(o.inner_mode){obg.se='idle_pick';}
 					//if(o.radiant_mode){obg.se='expand_colors';}
+				//we need this now.. for now
+					if(o.inner_mode){obg.se='expand';}
+
 					all.anim_a.push(obg);
 					
 //remove all lines from all opened txt anims.
@@ -4318,8 +4318,10 @@ Keys are persistant always by default.
 		if(o.edit_circle_mode==true){
 			if(o.init){
 				//all modes init should do this
-				var o_bg = all.find_ting(all.anim_a, "name", '__obg');
-				if(o_bg){o_bg.is='rm';}	
+				var obg = all.find_ting(all.anim_a, "name", '__obg');
+				if(obg){obg.is='rm';}	
+				var obgr = all.find_ting(all.anim_a, "name", '__obgr');
+				if(obgr){obgr.is='rm';}
 //all inits should have this line.. kinda aggressive tho.. may present some issues later . . .
 				all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; all.com_a=[];
 				
@@ -4335,7 +4337,7 @@ Keys are persistant always by default.
 				circle_s.se='cursor'; //?
 				all.anim_a.push(circle_s);
 				//a circle to run on ctx0
-				var circle_sr = all.circle_s_new("__circle__r");
+				var circle_sr = all.circle_s_new("__circle_r");// ex '__r'
 				circle_sr.anim=anim; 
 				circle_sr.ctx=ctx0;
 				circle_sr.tx=window.innerWidth/2; circle_sr.ty=window.innerHeight/2; 
@@ -4355,6 +4357,18 @@ Keys are persistant always by default.
 				all.anim_a.unshift(csy);
 
 				o.init=false;
+
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+				var l = all.anim_a.length; 
+				while(l--){
+					var s = all.anim_a[l];
+					var namend = s.name.substr(-3, 3);
+					if(namend == '__r'){
+						all.anim_a.splice(l,1);
+					}
+				}
+				//all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
+
 				return
 			}
 
@@ -4365,7 +4379,7 @@ Keys are persistant always by default.
 //refference for cursor state
 			var s = all.find_ting(all.anim_a, "name", "__circle");
 //refference to run test animation
-			var sr = all.find_ting(all.anim_a, "name", "__circle__r");
+			var sr = all.find_ting(all.anim_a, "name", "__circle_r");//changed from '__r' to '_r'
 //refference to horizontal cross line
 			var csx = all.find_ting(all.anim_a, "name", "x__c");
 //refference to vertical cross line
@@ -4380,7 +4394,8 @@ Keys are persistant always by default.
 				//delta.signal , delta.value , delta.operation
 				
 				if(delta.signal=='exit'){
-					o.inner_mode=true; o.edit_circle_mode = false;
+				//so maybe i could init inner mode here...
+					o.inner_mode=true; o.edit_circle_mode = false; o.init=true;
 					var obg = all.circle_s_new('__obg');
 					obg.radius=900; obg.t=5;
 					obg.r=0; obg.g=0; obg.b=0; obg.a=0;
@@ -4388,8 +4403,12 @@ Keys are persistant always by default.
 					obg.x=Math.floor(window.innerWidth/2);
 					obg.y=Math.floor(window.innerHeight/2);
 					obg.ctx=ctx0;
-					if(o.inner_mode){obg.se='idle_pick';}
+					//..hm... this is old
+					//if(o.inner_mode){obg.se='idle_pick';}
 					//if(o.radiant_mode){obg.se='expand_colors';}
+				//we need this now.. for now
+					if(o.inner_mode){obg.se='expand';}
+
 					all.anim_a.push(obg);
 					
 					//clear states
@@ -4399,7 +4418,7 @@ Keys are persistant always by default.
 					all.clear_stream(all.user.estream);//just use all.user.estream
 
 					o.op1= 0; o.op2= 0; o.op5=0;
-					//remove last ghost frame
+					//remove last ghost frame... this still needs revision
 					if(sr.loop==false){anim.pop();}
 					//remove empty array if user didnt even frame once
 					if(anim.length==0){var rmf = o.circle.indexOf(anim); o.circle.splice(rmf,1);}
@@ -4685,8 +4704,10 @@ Keys are persistant always by default.
 		if(o.edit_rect_mode==true){
 			if(o.init){
 				//all modes init should do this
-				var o_bg = all.find_ting(all.anim_a, "name", "__obg");
-				if(o_bg){o_bg.is='rm';}	
+				var obg = all.find_ting(all.anim_a, "name", '__obg');
+				if(obg){obg.is='rm';}	
+				var obgr = all.find_ting(all.anim_a, "name", '__obgr');
+				if(obgr){obgr.is='rm';}
 				//all inits should have this line
 				all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; all.com_a=[];
 				var anim = o.rect[o.op1]; //not sure if this one is necesary ?
@@ -4700,7 +4721,7 @@ Keys are persistant always by default.
 				rect_s.se='cursor';//'' ?
 				all.anim_a.push(rect_s);
 				//a rect to run on ctx0
-				var rect_sr = all.rect_s_new("__rect__r");
+				var rect_sr = all.rect_s_new("__rect_r");
 				rect_sr.anim=anim; rect_sr.ctx=ctx0;
 				rect_sr.tx=window.innerWidth/2; rect_sr.ty=window.innerHeight/2; 
 				rect_sr.is="f"; 
@@ -4718,8 +4739,16 @@ Keys are persistant always by default.
 				csy.x=(window.innerWidth/2)-1; csy.y=0;
 				all.anim_a.unshift(csy);
 
-				//initial clear
-
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+				var l = all.anim_a.length; 
+				while(l--){
+					var s = all.anim_a[l];
+					var namend = s.name.substr(-3, 3);
+					if(namend == '__r'){
+						all.anim_a.splice(l,1);
+					}
+				}
+				//all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 				o.init=false;
 				//return
 			}
@@ -4731,7 +4760,7 @@ Keys are persistant always by default.
 //refference for cursor state
 			var s = all.find_ting(all.anim_a, "name", "__rect");
 //refference to run test animation
-			var sr = all.find_ting(all.anim_a, "name", "__rect__r");
+			var sr = all.find_ting(all.anim_a, "name", "__rect_r");
 //refference to horizontal cross line
 			var csx = all.find_ting(all.anim_a, "name", "x__c");
 //refference to vertical cross line
@@ -4741,7 +4770,7 @@ Keys are persistant always by default.
 			if(o.op3!=0){var delta = all.signify(o.op3);}
 			if(delta){
 				if(delta.signal=='exit'){
-					o.inner_mode=true; o.edit_rect_mode = false;
+					o.inner_mode=true; o.edit_rect_mode = false; o.init = true;
 					var obg = all.circle_s_new('__obg');
 					obg.radius=900; obg.t=5;
 					obg.r=0; obg.g=0; obg.b=0; obg.a=0;
@@ -4749,8 +4778,11 @@ Keys are persistant always by default.
 					obg.x=Math.floor(window.innerWidth/2);
 					obg.y=Math.floor(window.innerHeight/2);
 					obg.ctx=ctx0;
-					if(o.inner_mode){obg.se='idle_pick';}
+					//if(o.inner_mode){obg.se='idle_pick';}
 					//if(o.radiant_mode){obg.se='expand_colors';}
+				//we need this now.. for now
+					if(o.inner_mode){obg.se='expand';}
+
 					all.anim_a.push(obg);
 					
 					//clear states
@@ -5090,12 +5122,10 @@ t from each frame, when we reach 21, thats the frame we looking for
 			if(o.init){
 				//inner bg state self clearing ctx0 was messing up img bg..
 				//all modes init should do this
-				var o_bg = all.find_ting(all.anim_a, "name", "__obg");
-				if(o_bg){
-					o_bg.is='rm';
-				}	
-				//all.clear_rect(ctx3,0,0,o.img_access.width,o.img_access.height);
-
+				var obg = all.find_ting(all.anim_a, "name", '__obg');
+				if(obg){obg.is='rm';}	
+				var obgr = all.find_ting(all.anim_a, "name", '__obgr');
+				if(obgr){obgr.is='rm';}
 				var anim = o.img[o.op1];
 				//leaving this line just in case
 				all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; all.com_a=[];
@@ -5127,7 +5157,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 				all.anim_a.unshift(ims);
 
 				//push a state to illustrate animation frames sequentially
-				var imr = all.ims_s_new("img__r",o.img_access);//img__r
+				var imr = all.ims_s_new("img_r",o.img_access);//img__r
 				imr.anim = anim; imr.ctx = ctx0;
 				all.anim_a.unshift(imr);
 				
@@ -5143,7 +5173,16 @@ t from each frame, when we reach 21, thats the frame we looking for
 				csy.w=2; csy.h=window.innerHeight;
 				csy.x=(window.innerWidth/2)-1; csy.y=0;
 				all.anim_a.unshift(csy);
-
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+				var l = all.anim_a.length; 
+				while(l--){
+					var s = all.anim_a[l];
+					var namend = s.name.substr(-3, 3);
+					if(namend == '__r'){
+						all.anim_a.splice(l,1);
+					}
+				}
+				//all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 
 				o.init = false;
 				return
@@ -5154,7 +5193,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 			//a refference to select rect state .  s
 			var s = all.find_ting(all.anim_a, "name", "rect__sel");
 			//a reff to test run ims
-			var imr = all.find_ting(all.anim_a, "name", "img__r");
+			var imr = all.find_ting(all.anim_a, "name", "img_r");
 			//ref img selection
 			var ims = all.find_ting(all.anim_a, "name", "img__sel");
 			//bg
@@ -5175,7 +5214,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 //... se error on exit ?
 				if(delta.signal=='exit'){
 //op1 tracks animation index, op2 tracks animation frame index
-					o.inner_mode=true; o.edit_img_mode = false; 
+					o.inner_mode=true; o.edit_img_mode = false; o.init = true;
 
 					s.is='rm'; ims.is='rm'; imr.is='rm'; bg.is='rm';
 					csx.is='rm'; csy.is='rm';
@@ -5185,6 +5224,10 @@ t from each frame, when we reach 21, thats the frame we looking for
 
 					//clear operation values
 					o.op1=0; o.op2=0; o.op3=0; o.op4=0; o.op5=0; o.op6=0; 
+
+					//i need to remove the ghost frame here too..
+					//remove the ghost frame...but why its not doing it?
+					if(imr.loop==false){anim.pop();} //?
 
 					//remove empty array if user didnt even frame once
 					if(anim.length==0){var rmf = o.img.indexOf(anim); o.img.splice(rmf,1);}
@@ -5196,8 +5239,10 @@ t from each frame, when we reach 21, thats the frame we looking for
 					obg.x=Math.floor(window.innerWidth/2);
 					obg.y=Math.floor(window.innerHeight/2);
 					obg.ctx=ctx0;
-					if(o.inner_mode){obg.se='idle_pick';}
+					//if(o.inner_mode){obg.se='idle_pick';}
 					//if(o.radiant_mode){obg.se='expand_colors';}
+				//we need this now.. for now
+					if(o.inner_mode){obg.se='expand';}
 					all.anim_a.push(obg);
 
 	
@@ -5211,22 +5256,6 @@ t from each frame, when we reach 21, thats the frame we looking for
 					//o.op3=0;
 					return
 				}
-
-//sel drag deprecat
-	//selected drag lock
-				//selected_drag could simply be  op4..
-				//if(o.op4==1){
-				//if(o.selected_drag==true){
-				//not clearing here has some pretty funky effect worth checking out
-//am clearing here because i need to clear before changing position so it clears
-//previous ims drawing.. 
-//no need to do this with new s.u_d system because its designed to clear before updating
-//if sel drag simply update ims along with s
-					//var c_x = s.x+s.tx; var c_y = s.y+s.ty;
-					//all.clear_rect(ctx1, c_x-5, c_y-5, s.w+10, s.h+15);//ims.ctx
-					
-				//}
-
 
 //scroll img cursor. needs to be a command for keyboard users. untested
 				if(delta.signal=='sleft'||delta.signal=='sright'||delta.signal=='sup'||delta.signal=='sdown'){
@@ -5584,7 +5613,8 @@ t from each frame, when we reach 21, thats the frame we looking for
 					
 					if(imr.loop==false){
 
-						anim.pop(); var ff = anim[0];
+						anim.pop(); //poping ghost frame
+						var ff = anim[0];
 						imret = all.getetv(anim); 
 						imr.u_d.push(
 							'anim',anim,'et',imret,'rt',0,'loop',true,'nfreq',0,
@@ -6651,10 +6681,16 @@ all.c_com = function(){ //(check commands)
 			
 //needs revamp, things willl be quite different now  !!!!!!!!!!!!!!!!!!!!!!!!!
 
+//USER
 //while in void, all.user properties directly affect the void stance experience.
 //We need a command to manage user properties, print user information on screen etc
 //user needs to be able to modify;
 //mainstream properties, user displacement speed trough void, name..
+//.. for consistency  s sake, maybe we just need .user to print all user related data and use usbcommands to change
+//properties. just like we do with mainstream and estream
+//.user.name:[new name]
+//.user.speed:[new speed]
+//
 
 //.name:[new name]	Change name at will. Void only. Offline only.
 //.name			print name ?
@@ -6673,7 +6709,7 @@ all.c_com = function(){ //(check commands)
 //an orb primordial form will depend on its experience , its animations stored, its data, its jobs etc
 //On void, user now will be able to see a basic structure of all orbs inhabiting a node, however, information about orbs will be limited
 //to orb nature. 
-//... maybe we should not be able to see orbs we dont own..?
+//................ or maybe we should not be able to see orbs we dont own..?
 //REDEFINING RADIANCE
 	//Orbs can only interact with other orbs trough acts.
 //orbs visual configuration will change depending on their relations.
@@ -6682,7 +6718,7 @@ all.c_com = function(){ //(check commands)
 //void navigation speed from void stance is limited. a new condition
 //to be able to navigate trough void, there must be no orbs on the node
 //displacement is a different experience now.. . . .
-//maybe at the beggining orbs spook out void entities whilest later orbs atract hungry void entities...
+//maybe at the beggining orbs spook out void entities whilest later orbs atract hungry void entities... LORE
 //The displace command can also be accessed swiping in the direction user whishes to move
 
 //a command to create an empty Orb vessel. Orbs need to have at least a name to be
@@ -6754,14 +6790,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}
 					
 					switch(mc_a[3]){
-//deprecat
-//..maybe orbs need a single customizable stream after all. 
-//configuration options should be available always even from void ?
-//so user should run 
-//.orb.[orb name].stream Will return stream stats into mainstream.
-//we access and change specific parameters like this
-//.orb.[name].stream.x:[new value]  and so on
-//..
+
 //accessing orb info from void needs to be different. since now we wont be able to listen to orbs strreams from void either,
 //orb data requests from void must be limited.
 //now we need , orb owner, orb name should not always be accesible, orb current stance, 
@@ -6769,7 +6798,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 //access to scripts read only, 
 						//deprecat
 						//case 'stream'
-
+//needs IMPROVE and more clarity. maybe status doesnt even need to exist. we should be able to get a glimpse of what is going
+//on with orbs visually while on void. ...
 						case 'status'://.orb.[name].status
 						//"status" should be called on prim touched.
 							var o_in_u = all.find_ting(all.user.orbs, 'name', mc_a[2]);
@@ -6824,14 +6854,15 @@ all.stream_a.push("but yes, you can try again if you want..");
 							break
 							
 						case 'control':
+//CONTROL
 //a command to take control of an orb. right now there wont be more conditions but later
-//there should be a way to prevent users from taking control of orbs they dont own? 
-//so users have contracts as well which can prevent them from taking control of certain
-//orbs. sometimes users may participate on a mod
+//there should be a way to prevent users from taking control of orbs they are not suposed to have control of
+//so users have contracts as well which can prevent them from taking control of certaiin orbs? ?
+//sometimes users may participate on a mod
 //that involves trying to type in a specific orb name to take control
 //but its hard because name keeps changing or remains hiden. try to
 //write an act to reveal an target orb name
-//sometimes an specific event triggers orb holding into a name. and thats
+//sometimes a specific event triggers orb holding into a name. and thats
 //an oportunity for other users to take control
 //condition to control is all.user.orbs having specific orb data inside
 //and typing in thetarget orb .. if you can type it its yours
@@ -6842,7 +6873,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 //consider all silences an oportunity to restart audio ctx. we dont want unnecesary
 //huge timetamps to be dragged around. all precise time operations need to manage their
 //values independently, this is, in refference to their own states or edits. user taking control of an orb is a good instance to restart
-					//audio values
+					//AUDIO values
 					//leaving this here for now....
 								if(all.au){}else{all.au=all.audioser();} //safenet?
 
@@ -6898,6 +6929,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 //to call acts from other orbs when conditions
 //are met
 //... to make orb run an  act from void, orb needs to be in radiant mode!!!!
+//Even tho a user wont see the effects from act scripts to a full extent while on void, there might be some visual changes
+//on primordials. users might just want to leave scripts running for other users on broadcasting.
 //.orb.[name of orb].play.[name of act]
 						//case 'play':
 				//check if orb name correspond to controlable orb
@@ -7014,7 +7047,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 			}
 
 			
-
+//SIGNAL
 //calls diferent operations acording to orb mode
 //op1, op2, op3 op4 and op5. Option, operation. signal should always just use op3
 //.signal:[value]
@@ -7052,7 +7085,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 //a command to upload an image and a command to upload an audio into the current
 //inhabited Orb. currently only png and mp3 formats are available
 //Orbs can only have 1 image and 1 audio loaded at any time... for now
-//COMMANDS
+//COMMANDS UPLOAD IMG AUDIO EVENT
 				if(mc_a[1]=="upload"){ //upload should be a macro for later upload other things besides images as well
 					//needs a mechanism to let user know if file didnt load correctly
 					if(mc_a[2]=="img"){
@@ -7064,21 +7097,16 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}
 	
 				}
-//maybe i can use .void to go to void from inner mode
+//maybe we could use .void to go to void from inner mode..
 
 //EDIT animations using forms, texts  or files.
-//.img:[name] ... Might be called from inner mode and from editor itself to change
-//the currently edited img
-//.txt:[name] ... .osc:[name] ...  .circle:[name] ...  .rect:[name]..  
-//.audio:[name]	Uses an audio file to extract a specific part and add independent
-//logic to it
-
 			
 //AUDIO , EDIT
+//.audio 
 //.audio:[audio name]
 //.audio.[audio name].delete
+//.audio.[audio name].run //not ready..
 //.audio.purge
-//.audio.list //deprecat
 
 				if(mc_a[1]=="audio"){
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
@@ -7165,21 +7193,17 @@ all.stream_a.push("but yes, you can try again if you want..");
 				}//audio
 
 //IMG, EDIT
+//.img
 //.img:[img name]
 //.img.[img name].delete
+//.img.[img name].run
 //.img.purge
-//.img.list //deprecat
 				if(mc_a[1]=="img"){
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						//.img.purge
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
 
-						//.img.list	
-						//List needs to print more data and different colors
-						//if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
-						//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
-						
 						//search for name match..
 						var l = c_orb.img.length;
 						while(l--){
@@ -7197,6 +7221,40 @@ all.stream_a.push("but yes, you can try again if you want..");
 										c_orb.img.splice(index,1);
 						all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
 									}
+//here goes img run on inner mode RUN
+									if(mc_a[3]=='run'){
+ 				var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+				if(sr){
+					if(sr.loop){
+						sr.u_d.push('is','rm');
+						sr.is='c_img'; sr.t=1; sr.et = -1;
+						a[0].running='FALSE';
+					}
+				}else{
+				//ask if img file is loaded here...
+					if(c_orb.current_img_file.name==a[0].img_file_name){
+					var sr = all.ims_s_new(a[0].name+"__r", c_o.img_access);
+					sr.anim=a; sr.ctx=ctx1;
+					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
+
+					var ff = a[0];
+					sret = all.getetv(a); 
+					sr.u_d.push(
+						'et',sret,'rt',0,'loop',true,'nfreq',0,
+						't',ff.t,'is','img',
+						'x',ff.x,'y',ff.y,'w',ff.w,'h',ff.h,
+						'px',ff.px,'py',ff.py,'pw',ff.pw,'ph',ff.ph,
+						'tx',window.innerWidth/2,'ty',window.innerHeight/2,
+						'a',ff.a
+					);
+					sr.is='c_img'; sr.t=1; sr.run=1;
+					a[0].running='TRUE';
+					all.anim_a.push(sr);
+					}
+			
+				}
+
+									}//run
 								}//anim access
 							}//if a
 						}//while
@@ -7230,13 +7288,14 @@ all.stream_a.push("but yes, you can try again if you want..");
 						);
 
 						while(l--){
-	//try adding one c0ndition instead of so many
 							//if(l<0){break}
 							var a = c_orb.img[l];
 							if(a){if(a[0]){var ok = true;}}
 							if(ok){
+ 							var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+							if(sr){var runin = 'TRUE';}else{var runin = 'FALSE';}
 								all.stream_a.push(
-					`edit name:${a[0].name}, img file name:${a[0].img_file_name}, running:...`
+					`edit name:${a[0].name}, img file name:${a[0].img_file_name}, running: ${runin}`
 								);
 								all.screen_log();
 							}
@@ -7279,6 +7338,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 							f.t=15; f.a=1;
 							f.name=mcp_a[1];
 							f.img_file_name=c_orb.current_img_file.name;
+							f.running='FALSE';
 							na.push(f);
 							c_orb.img.push(na);
 							
@@ -7289,10 +7349,11 @@ all.stream_a.push("but yes, you can try again if you want..");
 				}//img
 
 //TXT , EDIT
+//.txt
 //.txt:[txt name]
-//.txt.[txt name].delete
+//.txt.[txt name].delete //not ready..
+//.txt.[txt name].run //not ready..
 //.txt.purge
-//.txt.list
 //.. so all these list commands are redundant. make it so when we type in .txt , all edits are printed along with useful information
 //about txt edits in this orb.. same with img , circle etc...
 				if(mc_a[1]=="txt"){
@@ -7369,33 +7430,34 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-
-						//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}//else{
-							//its an orb name, find it
-							var l = c_orb.circle.length;
-							while(l--){
-								var a = c_orb.circle[l];
-								if(a[0].name==mc_a[2]){
-									if(mc_a[3]=='out'){
-								//whats the problem with this circle structure?
-										var txt = JSON.stringify(a);
-										all.chat_on = true; chat_in.focus();
-										chat_in.style.display="inLine";
-										chat_in.value = txt;
-									}
-									if(mc_a[3]=='delete'){
-										var index = c_orb.circle.indexOf(a);
-										c_orb.circle.splice(index,1);
-				all.stream_a.push(a[0]+" has been deleted"); all.screen_log();
+						//its an orb name, find it
+						var l = c_orb.circle.length;
+						while(l--){
+							var a = c_orb.circle[l];
+							if(a[0].name==mc_a[2]){
+								if(mc_a[3]=='out'){
+							//whats the problem with this circle structure?
+									var txt = JSON.stringify(a);
+									all.chat_on = true; chat_in.focus();
+									chat_in.style.display="inLine";
+									chat_in.value = txt;
+								}
+								if(mc_a[3]=='delete'){
+									var index = c_orb.circle.indexOf(a);
+									c_orb.circle.splice(index,1);
+			all.stream_a.push(a[0]+" has been deleted"); all.screen_log();
 	
-									}
-			 //a command to run the edit on loop while on inner mode :)
-									if(mc_a[3]=='run'){
+								}
+	//.circle.[edit name].run
+	//a command to run the edit on loop while on inner mode :) . Use command again to stop the animation.
+	//we need to tag the animation to let us know it should be ON while user is on inner mode in control of this orb.
+								if(mc_a[3]=='run'){
  				var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
 				if(sr){
 					if(sr.loop){
 						sr.u_d.push('is','rm');
 						sr.is='c_circle'; sr.t=1; sr.et = -1;
+						a[0].running = 'FALSE';
 					}
 				}else{
 					var sr = all.circle_s_new(a[0].name+"__r");
@@ -7410,16 +7472,17 @@ all.stream_a.push("but yes, you can try again if you want..");
 						'radius',ff.radius,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
 					);
 					sr.is='c_circle'; sr.t=1; sr.run=1;
+					a[0].running = 'TRUE';
 					all.anim_a.push(sr);
+					
 			
-				}
+				} //
 
-									}//run
-								}//named edit
-							}
-						//}//not list
+								}//run
+							}//named edit
+						}
 						
-					}
+					}//mc_a[2] not undefined
 	
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
 					if(mcp_a[1]!=undefined){var proceed = true;}
@@ -7466,7 +7529,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 							
 							var an = {};
 							an.x=100; an.y=50; an.radius=40; an.r=220; an.g=220; an.b=220;
-							an.a=1; an.t=20; an.st=0; an.f=0; an.inside='empty';
+							an.a=1; an.t=20; an.st=0; an.f=0; an.inside='empty'; an.running='FALSE';
 							//an.rand = [];
 							an.name=mcp_a[1];
 							
@@ -7481,6 +7544,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 				}//circle
 
 //RECT, EDIT
+//.rect
 //.rect:[rect name]
 //.rect.[rect name].run
 //.rect.[rect name].delete
@@ -7513,6 +7577,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 						//sr.u_d.push('loop',false,'run',0,'rt',sr.et,'is','rm');
 						sr.u_d.push('is','rm');
 						sr.is='c_rect'; sr.t=1; sr.et = -1;
+						a[0].running = 'FALSE';
 					}
 				}else{
 					var sr = all.rect_s_new(a[0].name+"__r");
@@ -7529,10 +7594,10 @@ all.stream_a.push("but yes, you can try again if you want..");
 						'w',ff.w,'h',ff.h,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
 					);
 					sr.is='c_rect'; sr.t=1; sr.run=1;
+					a[0].running = 'TRUE';
 					all.anim_a.push(sr);
 			
 				}
-
 
 								}//run							
 
@@ -7584,7 +7649,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 							var an = {};
 							an.x=100; an.y=50; an.w=50; an.h=50;
 							an.r=220; an.g=220; an.b=220; an.a=1;
-							an.t=20; an.st=0; an.f=0; an.inside='empty';
+							an.t=20; an.st=0; an.f=0; an.inside='empty'; an.running='FALSE';
 							an.name=mcp_a[1];
 							
 							//new_anim.push(an);
@@ -7598,10 +7663,11 @@ all.stream_a.push("but yes, you can try again if you want..");
 				}//rect
 
 //OSC , EDIT
+//.osc
 //.osc:[osc name]
 //.osc.[osc name].delete
+//.osc.[osc name].run
 //.osc.purge
-//.osc.list //deprecat
 				if(mc_a[1]=="osc"){
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
@@ -7664,6 +7730,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 
 //PERFORM . ACT
 //open outer eye animation. orb is now ready to perform
+//this means user will be able to see all effects created by currently playing scripts
 //.perform
 				if(mc_a[1]=='perform'){
 					c_orb.inner_mode=false; c_orb.radiant_mode=true; c_orb.init=true;
@@ -7728,11 +7795,11 @@ all.stream_a.push("but yes, you can try again if you want..");
 
 //PLAY . ACT		
 //a command to run an act
-//i really think we should be able to run acts from void
 //only radiant orbs can perform. yes we can run acts from orbs not in control
 //as long as such orbs are on orb.out stance?, on radiant mode
 //... so update this ... hmmm should not have a second parameter here.. while on radiant mode, users can only play acts from currently
 //controled orb
+//.play Should offer some kind of information..
 //.play:[name of act]
 				if(mc_a[1]=="play"){
 					//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
@@ -8058,11 +8125,7 @@ all.c_audio_compressor = function(){
 
 
 ///////////////////////////////////
-//
 
-//kyle style
-	
-//ok how was it. fucking computers failing randomly i hate them with all my fucking heart
 //Ok so user can touch 3 things
 //buttons, edits active point and background
 //edits active points do specific things and background call buttons
@@ -8109,7 +8172,7 @@ all.create_bt = function(ctx, name, com1, com2, X, Y, text, persist){
 }//create_bt
 
 
-//touch HANDLERS
+//touch HANDLERS EVENT
 const tstart = function(e){
 //so far so good.
 	//this avoids creating insane amounts of touches? noup
@@ -9157,8 +9220,9 @@ all.sunya_init = function(device, tutorial){
 		document.addEventListener("touchend", tend,{passive:false});
 		document.addEventListener("touchcancel", tcancel,{passive:false});
 		
-		window.addEventListener('keydown', kdown);
-		window.addEventListener('keyup', kup);
+		//eh..... this works?
+		//window.addEventListener('keydown', kdown);
+		//window.addEventListener('keyup', kup);
 
 ////////////////////////////////////////////////////
 		all.stream_a.push("Enabling touch screen interface.."); all.screen_log();
