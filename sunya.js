@@ -1499,6 +1499,7 @@ all.u_state = function(s){
 //time would simply affect how many times the same frame its going to be drawn before drawing the next one.
 //ok lets do rect, cricle and the img for a start... text animations should also implement this new system because we want to
 //run these text as animations, changing colors and displacing trough the screen.
+//ANIMF
 all.anim_func = function(){
 
 	var l = all.anim_a.length;
@@ -1558,6 +1559,7 @@ all.anim_func = function(){
 //moment and work on it as is using pixels
 //so far,the state is the img data buffer itself.. maybe this is not rly
 //convenient.it needs to be wraped in a state i think. needs rework
+//.. i can imagine this being a very powerful tool to create very interesting effects. . . we l come back here later for sure.
 /*
 		if(s.is=="imda"){
 			//timers
@@ -1621,25 +1623,6 @@ all.anim_func = function(){
 	*/
 		}//txt animations
 
-//c_img
-//maybe i can clean this up a bit. we could implement the run parameter here so it
-//fits act language mechanics
-//ok so we are adding a rt(run time) counter which adds up 1 on every update. its
-//reference will be nfreq. we can synch all using nfreq, rt and ft. t will
-//change name to ft(frame time). we are also adding et(end time) , by defaul
-//its value is going to be the sum of all animation ft. animation state
-//will automatically reinit when rt value
-//reaches et value. et will be stored on frame0 for visuals.
-//acts will now be able to control very precisely how animations will run.
-		//FUNC
-		if(s.is=="c_img"){
-			if(s.t <= 0){s.is="f";}else{// ==0
-				s.t--; //s.rt++;//
-				if(s.t == 0){
-					var c_x = s.px+s.tx; var c_y = s.py+s.ty;
-					all.clear_rect(s.ctx, c_x, c_y, s.pw, s.ph);
-					all.u_state(s);
-					
 //..we could simply update states here. this is what act scoms do;
 //if run = 0, we s.t=1, rt = et, loop = false
 //if run = 1, we s.is = s, s.loop = true.. loop could be default
@@ -1652,37 +1635,7 @@ all.anim_func = function(){
 //if we want to clear and self remove in one beat, t=1, nfreq= undefined using u_d
 //if we want to clear and draw and freeze ignoring nfreq ; t=1, et=-1, will freeze
 //on next beat because t will be 0, and use u_d to set is = s
-					if(s.et==-1){ //no frames request
-						//
-					}else{
-						if(s.rt<s.et){
-							if(s.anim[s.nfreq]){
-								var nf = s.anim[s.nfreq];
-								
-								s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-								s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
-								s.a=nf.a; s.t=nf.t;
-								s.is="img";
-								
-								s.nfreq++;
-							}else{s.is = "f";}
-						}
-						
-						if(s.rt>=s.et){ //...re init. init will now set rt to 0
-							var nf = s.anim[0];
-							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-							s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph; s.a=nf.a; 
-							s.t=nf.t; s.rt=0;
-							//s.et= ...
-							
-							s.nfreq=1; s.is="f";
-							
-							if(s.loop==true){s.is="img";}
-						}
-						
-						//rt adds up regarless. 
-						s.rt++;
-					}//et not -1
+
 /*
 //run time rt could manage nfreq to run the animation from a specific point.
 //run time param retrieving sums all ft from every frame and stops at requested number
@@ -1715,7 +1668,55 @@ all.anim_func = function(){
 //and keep stopping and reinit as long as run parameter is 1. to restore duration
 //to its original value, we need to store it previously on a logic container.
 */
-				}else{s.rt++;}
+
+//c_img
+//maybe i can clean this up a bit. we could implement the run parameter here so it
+//fits act language mechanics
+//ok so we are adding a rt(run time) counter which adds up 1 on every update. its
+//reference will be nfreq. we can synch all using nfreq, rt and ft. t will
+//change name to ft(frame time). we are also adding et(end time) , by defaul
+//its value is going to be the sum of all animation ft. animation state
+//will automatically reinit when rt value
+//reaches et value. et will be stored on frame0 for visuals.
+//acts will now be able to control very precisely how animations will run.
+		//FUNC
+		if(s.is=="c_img"){
+			if(s.t <= 0){s.is="f";}else{// ==0
+				s.t--; //s.rt++;//
+				var c_x = s.px+s.tx; var c_y = s.py+s.ty;
+				all.clear_rect(s.ctx, c_x, c_y, s.pw, s.ph);
+				all.u_state(s);
+				if(s.t == 0){
+					if(s.et==-1){ //no frames request
+						//
+					}else{
+						if(s.rt<s.et){
+							if(s.anim[s.nfreq]){
+								var nf = s.anim[s.nfreq];
+								
+								s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
+								s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
+								s.a=nf.a; s.t=nf.t;
+								s.is="img";
+								s.nfreq++; s.rt++;
+							}else{s.is = "f";}
+						}
+						
+						if(s.rt>=s.et){ //...re init. init will now set rt to 0
+							var nf = s.anim[0];
+							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
+							s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph; s.a=nf.a; 
+							s.t=nf.t; s.rt=0;
+							s.nfreq=0; s.is="f";
+							
+							if(s.loop==true){
+								s.is="img"; s.rt++; s.nfreq=1;
+							}
+						}
+						
+					}//et not -1
+
+				}else{s.rt++; s.is='img';}
 			}
 		}//c_img
 
@@ -1729,32 +1730,30 @@ all.anim_func = function(){
 //..so instead of inmediately draw , we cue state data to be used to draw
 //later
 			all.anim_cue.push(s);
-	/*
-			var c = s.ctx;
-			c.save();
-			c.translate(s.tx, s.ty);
-			//rotate.. flip... goes here. state params should control these
-			c.globalAlpha = s.a;
-
-			c.drawImage(
-				s.img_access, 
-				s.x, s.y, s.w, s.h, 
-				s.px, s.py, s.pw, s.ph
-			);
-			//c.drawImage(this,cropsX,cropsY,cropW,cropH,drawX,drawY,drawW,drawH);
-			c.restore();
-			s.is = "c_img";//sends to animation check by default
-	*/
 		}//img animation
 
+
 //c_rect
+//testing new system here. ok so now t all is going to do, is decide if the frame is going to print again or if its going to move on to the
+//next one. so..
+//c_rect always clears first, then substract 1 t, then update state, if t is equal or less than 0, we move to the next frame, if not,
+//then we print the same frame again.
+//hmmp.. so all i really did was move up  the clearing and make s.is = s.s if t is anything but 0 or -1 ...
+
+//.. ok so we initialize an animation by pushing anim into state, calling c_something, time 1, nfreq 0 and rt 0. loop is optional
+//we stop and reinit the animation by calling c something, time 1, rt = et, and loop false
+///*
 		if(s.is=="c_rect"){
+//so we can use t = -1 to paint once and basically ignore all logic after.
 			if(s.t <= 0){s.is="f";}else{
-				s.t--;
+				s.t--; //s.rt++; //here goes rt add i think....no
+	//if we use  t = 1 we can print once, clear, and have a chance to change whatever we want to the state from here.
+				var c_x = s.x+s.tx; var c_y = s.y+s.ty;
+				all.clear_rect(s.ctx, c_x-2, c_y-2, s.w+4, s.h+4);
+				all.u_state(s);
+			//if we didnt change t or et then it will proceed normally. we will usually update into et=-1 to work with new changes
+			//and ignore nfreq. editors support figures dont use nfreq.
 				if(s.t == 0){
-					var c_x = s.x+s.tx; var c_y = s.y+s.ty;
-					all.clear_rect(s.ctx, c_x-2, c_y-2, s.w+4, s.h+4);
-					all.u_state(s);
 //to ignore anim pre edited logic just set et to -1
 					if(s.et==-1){ 
 						//
@@ -1762,13 +1761,11 @@ all.anim_func = function(){
 						if(s.rt<s.et){
 							if(s.anim[s.nfreq]){
 								var nf = s.anim[s.nfreq];
-								
 								s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
 								s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
 								s.inside=nf.inside; s.t=nf.t; 
 								s.is="rect";
-								
-								s.nfreq++; //s.rt++;//
+								s.nfreq++; s.rt++;//
 							}else{s.is = "f";}
 						}
 						
@@ -1777,50 +1774,38 @@ all.anim_func = function(){
 							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
 							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
 							s.inside=nf.inside;
-							s.t=nf.t; s.rt=0;
-							
-							s.nfreq=1; s.is="f"; 
+							s.t=nf.t; //s.t=1;
+							s.rt=0;
+							s.nfreq=0; s.is="f"; 
 
-							if(s.loop==true){s.is="rect";}
+							if(s.loop==true){
+								s.is="rect"; s.rt++; s.nfreq=1;
+							}
 						}
-						
-						//rt adds up regarless. 
-						s.rt++;
 
 					}//et not -1
-				}else{s.rt++;}
-			}
+				}else{s.rt++; s.is='rect';} //s.rt++; .. not here now
+			}//not t -1
 		}
 
 //rect
 		if(s.is=="rect"){
 			all.anim_cue.push(s);
-	/*
-			var c = s.ctx;
-			c.save();
-			c.translate(s.tx, s.ty);
-			if(s.inside=="empty"){
-				c.strokeStyle=`rgba(${s.r},${s.g},${s.b},${s.a})`;
-				all.d_empty_rect(s.ctx, s.x, s.y, s.w, s.h);
-			}
-			if(s.inside=="filled"){
-				c.fillStyle=`rgba(${s.r},${s.g},${s.b},${s.a})`;
-				all.d_rect(s.ctx, s.x, s.y, s.w, s.h);
-			}
-			c.restore();
-			s.is = "c_rect";
-	*/
+
 		}//rect animation
 	
+//*/
+
 //c_circle
+//new system . i could even go further and just check if it really is more efficient to just clear all screen on a specific context
+//once instead of making all these little clears for each state.
 		if(s.is=="c_circle"){
 			if(s.t <= 0){s.is="f";}else{
 				s.t--;
+				var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
+				all.clear_circle(s.ctx, c_x, c_y, s.radius+2);
+				all.u_state(s);
 				if(s.t == 0){
-					var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
-					all.clear_circle(s.ctx, c_x, c_y, s.radius+2);
-					all.u_state(s);
-
 					if(s.et==-1){
 //et = -1 should allow full control using u_d so dont send to draw by default
 						//s.is='circle';
@@ -1832,8 +1817,7 @@ all.anim_func = function(){
 								s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
 								s.inside=nf.inside; s.t=nf.t;
 								s.is="circle";
-								
-								s.nfreq++; //s.rt++;//
+								s.nfreq++; s.rt++;//
 							}else{s.is = "f";}
 						}
 						
@@ -1843,44 +1827,26 @@ all.anim_func = function(){
 							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
 							s.inside=nf.inside;
 							s.t=nf.t; s.rt=0;
+							s.nfreq=0; s.is="f";
 							
-							s.nfreq=1; s.is="f";
-							
-							if(s.loop==true){s.is="circle";}
+							if(s.loop==true){
+								s.is="circle"; s.rt++; s.nfreq=1;
+							}
 						}
 						//rt adds up regarless. 
-						s.rt++;
+						//s.rt++;
 					}//et not -1
-				}else{s.rt++;}
+				}else{s.rt++; s.is='circle';}
 			}
 		}
 
 //using circle for circle draw
 		if(s.is=="circle"){
 			all.anim_cue.push(s);
-			
 		//redraw ctx3 tag. buttons use this
 			//if(s.ctx==ctx3){var ctx3r = true;}
-		//
-	/*
-			var c = s.ctx;
-			c.save();
-			c.translate(s.tx, s.ty);
-			c.beginPath();
-			if(s.inside=="empty"){
-				c.strokeStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
-				all.d_empty_circle(s.ctx,s.x,s.y,s.radius);
-				c.stroke();
-			}
-			if(s.inside=="filled"){
-				c.fillStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
-				all.d_circle(s.ctx,s.x,s.y,s.radius);
-				c.fill();
-			}
-			c.restore();
-			s.is = "c_circle";
-	*/
 		}//circle animation
+
 
 
 //if state is f means is frozen, will just be ignored but kept on anim_a
@@ -2901,16 +2867,12 @@ all.ml_up = function(o){
 									var sr = all.circle_s_new(a[0].name+"__r");
 									sr.anim=a; sr.ctx=ctx1;
 									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-
-									var ff = a[0];
-									sret = all.getetv(a); 
-									sr.u_d.push(
-										'et',sret,'rt',0,'loop',true,'nfreq',0,
-										't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
-										'radius',ff.radius,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
-									);
-									sr.is='c_circle'; sr.t=1; sr.run=1;
+									//new
+							 		var sret = all.getetv(a);
+							 		sr.is='c_circle'; sr.t=1; sr.nfreq=0; sr.loop = true;
+									sr.run=1; sr.rt=0; sr.et=sret;
 									all.anim_a.push(sr);
+							
 								}
 							}//circle
 
@@ -2921,16 +2883,11 @@ all.ml_up = function(o){
 								if(a[0].running=='TRUE'){
 									var sr = all.rect_s_new(a[0].name+"__r");
 									sr.anim=a; sr.ctx=ctx1;
-									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-
-									var ff = a[0];
-									sret = all.getetv(a); 
-									sr.u_d.push(
-										'et',sret,'rt',0,'loop',true,'nfreq',0,
-										't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
-										'w',ff.w,'h',ff.h,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
-									);
-									sr.is='c_rect'; sr.t=1; sr.run=1;
+									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2;
+									//new
+							 		var sret = all.getetv(a);
+							 		sr.is='c_rect'; sr.t=1; sr.nfreq=0; sr.loop = true;
+									sr.run=1; sr.rt=0; sr.et=sret;
 									all.anim_a.push(sr);
 								}
 							}//rect
@@ -2945,18 +2902,10 @@ all.ml_up = function(o){
 									var sr = all.ims_s_new(a[0].name+"__r", o.img_access);
 									sr.anim=a; sr.ctx=ctx1;
 									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-
-									var ff = a[0];
-									sret = all.getetv(a); 
-									sr.u_d.push(
-										'et',sret,'rt',0,'loop',true,'nfreq',0,
-										't',ff.t,'is','img',
-										'x',ff.x,'y',ff.y,'w',ff.w,'h',ff.h,
-										'px',ff.px,'py',ff.py,'pw',ff.pw,'ph',ff.ph,
-										'tx',window.innerWidth/2,'ty',window.innerHeight/2,
-										'a',ff.a
-									);
-									sr.is='c_img'; sr.t=1; sr.run=1;
+									//new
+							 		var sret = all.getetv(a);
+							 		sr.is='c_img'; sr.t=1; sr.nfreq=0; sr.loop = true;
+									sr.run=1; sr.rt=0; sr.et=sret;
 									all.anim_a.push(sr);
 								}//no img file safe
 								}
@@ -4558,14 +4507,12 @@ Keys are persistant always by default.
 						//when we out of loop we push ghost frame again
 						anim.push({});
 					}else{
-						anim.pop(); var ff = anim[0];
-						sret = all.getetv(anim); 
-						sr.u_d.push(
-							'anim',anim,'et',sret,'rt',0,'loop',true,'nfreq',0,
-							't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
-							'radius',ff.radius,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
-						);
-						sr.is='c_circle'; sr.t=1; sr.run=1;
+						anim.pop(); 
+						//new
+						var sret = all.getetv(anim); 
+						sr.anim=anim; sr.is='c_circle'; sr.t=1; sr.nfreq=0; sr.run=1;
+						sr.loop=true; sr.rt=0; sr.et=sret;
+
 					}
 					
 					all.clear_rect(ctx0, 0, 0, window.innerWidth, window.innerHeight);
@@ -4748,7 +4695,6 @@ Keys are persistant always by default.
 						all.anim_a.splice(l,1);
 					}
 				}
-				//all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 				o.init=false;
 				//return
 			}
@@ -4999,30 +4945,40 @@ Keys are persistant always by default.
 
 //run simulation
 				if(delta.signal=='run'){
+	//so i think i dont even need to push properties directly from here on run sim because all i really need to push is
+	//anim and nfreq to handle that. .
 					if(sr.loop){
+				//how to stop safely..
+				//we stop and reinit the animation by calling c something, time 1, rt = et, and loop false
+						//sr.is='c_rect'; sr.t=1; sr.rt=sr.et; sr.loop=false; se.run=0; //.. but loop false condition..
+					
 						sr.u_d.push('loop',false,'run',0,'rt',sr.et);
 						sr.is='c_rect'; sr.t=1;
-						
+							
 						var f = anim[o.op2];
 						s.u_d.push(
 							'r',f.r,'g',f.g,'b',f.b,'a',f.a,'x',f.x,'y',f.y,
 							'w',f.w,'h',f.h,'inside',f.inside,'is','rect'
 						);
 						s.is='c_rect'; s.t=1;
-						
 						//when we out of loop we push ghost frame again
 						anim.push({});
 					}
 					if(sr.loop==false){
-						anim.pop(); 
+						anim.pop();
+						var sret = all.getetv(anim); 
+						sr.anim=anim; sr.is='c_rect'; sr.t=1; sr.nfreq=0; sr.run=1;
+						sr.loop=true;
+
+				/*//old
 						var ff = anim[0];
-						sret = all.getetv(anim); 
 						sr.u_d.push(
 							'anim',anim,'et',sret,'rt',0,'loop',true,'nfreq',0,
 							't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
 							'w',ff.w,'h',ff.h,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
 						);
 						sr.is='c_rect'; sr.t=1; sr.run=1;
+				*/
 					}
 					
 					all.clear_rect(ctx0, 0, 0, window.innerWidth, window.innerHeight);
@@ -5614,22 +5570,14 @@ t from each frame, when we reach 21, thats the frame we looking for
 					if(imr.loop==false){
 
 						anim.pop(); //poping ghost frame
-						var ff = anim[0];
-						imret = all.getetv(anim); 
-						imr.u_d.push(
-							'anim',anim,'et',imret,'rt',0,'loop',true,'nfreq',0,
-							't',ff.t,'is','img',
-							'x',ff.x,'y',ff.y,'w',ff.w,'h',ff.h,
-							'px',ff.px,'py',ff.py,'pw',ff.pw,'ph',ff.ph,
-							'tx',window.innerWidth/2,'ty',window.innerHeight/2,
-							'a',ff.a
-						);
-						imr.is='c_img'; imr.t=1; imr.run=1;
+						//new
+						var imret = all.getetv(anim); 
+						imr.tx=window.innerWidth/2; imr.ty=window.innerHeight/2;//neccesary?
+						imr.anim=anim; imr.is='c_img'; imr.t=1; imr.nfreq=0; imr.run=1;
+						imr.loop=true; imr.et=imret; imr.rt=0;
 /*
 						imr.loop = true;
 						var ff = anim[0]; 
-						all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
-						all.clear_rect(ctx1,0,0,window.innerWidth, window.innerHeight);
 
 						imr.t=ff.t; imr.nfreq=0; imr.a=ff.a; //imr.ctx=ctx0;
 						imr.x=ff.x; imr.y=ff.y; imr.w=ff.w; imr.h=ff.h;
@@ -7234,20 +7182,10 @@ all.stream_a.push("but yes, you can try again if you want..");
 				//ask if img file is loaded here...
 					if(c_orb.current_img_file.name==a[0].img_file_name){
 					var sr = all.ims_s_new(a[0].name+"__r", c_o.img_access);
+					var sret = all.getetv(a);
 					sr.anim=a; sr.ctx=ctx1;
 					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-
-					var ff = a[0];
-					sret = all.getetv(a); 
-					sr.u_d.push(
-						'et',sret,'rt',0,'loop',true,'nfreq',0,
-						't',ff.t,'is','img',
-						'x',ff.x,'y',ff.y,'w',ff.w,'h',ff.h,
-						'px',ff.px,'py',ff.py,'pw',ff.pw,'ph',ff.ph,
-						'tx',window.innerWidth/2,'ty',window.innerHeight/2,
-						'a',ff.a
-					);
-					sr.is='c_img'; sr.t=1; sr.run=1;
+					sr.is='c_img'; sr.t=1; sr.run=1; sr.rt=0; sr.et=sret; sr.nfreq=0; sr.loop=true;
 					a[0].running='TRUE';
 					all.anim_a.push(sr);
 					}
@@ -7461,22 +7399,13 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}
 				}else{
 					var sr = all.circle_s_new(a[0].name+"__r");
+					var sret = all.getetv(a);
 					sr.anim=a; sr.ctx=ctx1;
 					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-
-					var ff = a[0];
-					sret = all.getetv(a); 
-					sr.u_d.push(
-						'et',sret,'rt',0,'loop',true,'nfreq',0,
-						't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
-						'radius',ff.radius,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
-					);
-					sr.is='c_circle'; sr.t=1; sr.run=1;
+					sr.is='c_circle'; sr.t=1; sr.run=1; sr.rt=0; sr.et=sret; sr.nfreq=0; sr.loop=true;
 					a[0].running = 'TRUE';
 					all.anim_a.push(sr);
-					
-			
-				} //
+				} 
 
 								}//run
 							}//named edit
@@ -7574,26 +7503,16 @@ all.stream_a.push("but yes, you can try again if you want..");
  				var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
 				if(sr){
 					if(sr.loop){
-						//sr.u_d.push('loop',false,'run',0,'rt',sr.et,'is','rm');
 						sr.u_d.push('is','rm');
 						sr.is='c_rect'; sr.t=1; sr.et = -1;
 						a[0].running = 'FALSE';
 					}
 				}else{
 					var sr = all.rect_s_new(a[0].name+"__r");
+					var sret = all.getetv(a);
 					sr.anim=a; sr.ctx=ctx1;
 					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-					//sr.is="f"; 
-					//all.anim_a.push(rect_sr);
-
-					var ff = a[0];
-					sret = all.getetv(a); 
-					sr.u_d.push(
-						'et',sret,'rt',0,'loop',true,'nfreq',0,
-						't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
-						'w',ff.w,'h',ff.h,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
-					);
-					sr.is='c_rect'; sr.t=1; sr.run=1;
+					sr.is='c_rect'; sr.t=1; sr.run=1; sr.rt=0; sr.et=sret; sr.nfreq=0; sr.loop=true;
 					a[0].running = 'TRUE';
 					all.anim_a.push(sr);
 			
@@ -7626,10 +7545,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 	
 					if(noname){all.stream_a.push("Please asign a name for this rect animation."); all.screen_log();}
 					if(proceed){
-						//var name_ok = all.c_unl(mcp_a[1],'rect');
-						//if(name_ok){}else{}
-						c_orb.inner_mode=false; c_orb.edit_rect_mode = true;
-						c_orb.init = true;
+						c_orb.inner_mode=false; c_orb.edit_rect_mode = true; c_orb.init = true;
 						var l = c_orb.rect.length;
 						while(l--){
 							var a = c_orb.rect[l];
