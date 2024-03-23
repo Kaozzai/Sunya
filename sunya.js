@@ -832,11 +832,13 @@ audio_in.addEventListener("change", all.handleAudioFile);
 //we only need one parameter here.. maybe 2, but for now , stream, which is any stream object. gg. 
 //if user is on radiant mode, we use the orb stream we use ACT stream system
 //
-all.screen_log = function(stream){ //stream, ctx?
+all.screen_log = function(stream){ //stream, ctx? orb? the stream itself we could pass here?
 
 	if(stream===undefined){var stream = all.user.mainstream;}
 
 	if(stream=='estream'){var stream = all.user.estream; var clear_history = true;}
+
+	//if(stream=='ostream'){}
 
 //all STREAMs use HISTORY..
 	var sal = all.stream_a.length; //2
@@ -1592,36 +1594,64 @@ all.anim_func = function(){
 //!!!!!A mechanism to improve visibility, draw a rect area behind text thats
 //colored in a way that it makes txt always be visible by contrast. maybe
 //on clear phase,a tag
+//animf should be able to create effects on txt states using tags. . blinking, fading in and out, random colors etc..
+//ok lets say so we dont check t on txt, we directly check for an effect.
+//s.display = 'normal'	Print at every beat to keep up with other animations running over it.
+/*
+//ok so now am thinking, we need time. we select a number of beats to loop the txt animation. we say 10 beats, animation will print
+//10 times the same. but now we need a command to modify each beat properties. so the first 5 beats will have all the same properties
+//but 20 red, and the last 5 beats is the same, but now we l have 200 red... so its basically a framing system.. yeah 
+//ok so choose a number of beats, and add one change at a time for each beat. . so animf asks what beat number are we, then checks
+//for a change on said beat, and then prints and loop
+//.signal:beats_number	Asigns a number of beats to the txt anim.
+//.signal:beat_number	Selects a beat. Now we add changes to that beat. So only changes and beat number are stored.
+//o.op6 keep track of beat. all changes in color, position, transparency are registered with currently selected beat and pushed into
+//a[0].beats=[] . Now animf keeps an eye on this array. beats[{},{},{}] has as many items as txt frames¿ 0:0 means no changes,
+//0:'r_10' means we modify r, ... idk lets just print as is on inner mode. maybe i l come back later here
+
+//ok .. another idea.. what if
+//s.display = 'custom'.. custom has an array with objects. each object represents changes from then to the end of the loop. a loop
+//has as many beats as this array. so we use a counter to change what item to use to affect the line property... thats a lot of counters.
+//.. we probly need to store data in line1.. do all txt lines need to be an independant state..?.. ok so when we create the line,
+//we just pass instructions just like when we pass a refference to anim with all other edits.
+*/
 		if(s.is=="c_txt"){
-			//check timer
-			if(s.t <= 0){s.is="f";}else{
+			if(s.display=='normal'){all.clear_txt(s); s.is='txt';}
+			if(s.display=='ignore'){s.is='f';}
+//custom
+			if(s.display=='custom'){
+				all.clear_txt(s);
+				if(s.t<0){
+					s.t=s.custom_a.length-1;
+	//and also we need to restore properties to initial.. so just keep initial properties on
+	//s.custom_a.length last item :) yeah nice one
+				}
+				var delta = s.custom_a[s.t];
+//the custom_a items are simple strings with instructions
+//to change the state properties. these changes remain until s.t reaches 0
+//so delta could be; ['r',20,'a',0.4]...or better yet let it be [20,'r',0.4,'a'] so it fits while loop better
+/*
+.signal:custom_number	Asigns a number of beats to the txt anim custom_a property. Last item holds current properties, all other items
+			are initially empty.
+.signal:beat_number	Selects a beat item on custom_a by number. Now we add changes to that beat. we use op6 to track current beat. 
+			So all changes in properties will now use op6 to push changes into custom_a correct item.
+*/
+				var lc = delta.length;
+				while(lc--){
+					var p = delta[lc]; var v = delta[lc-1]; s[p] = v;
+				lc--;}
 				s.t--;
-				if(s.t == 0){
-	//aaand am barely using text timers?.. wait.. acts will definitely use timers
-	//txt clear needs to be modified to work properly with align.... center unfinished
-					all.clear_txt(s);
-					all.u_state(s);
-				}//else{s.rt++;}
-				//if(s.)
-			}
-		}
+				s.is='txt';
+			}//custom system
+
+		}//c_txt
 		
 //if s is "txt" means is text state not printed. so it will print
 		if(s.is=="txt"){
 			all.anim_cue.push(s);
-	/*
-			var c = s.ctx;
-			c.save();
-			c.fillStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
-			c.font = s.font;
-			c.textAlign=s.align;
-			var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
-			//all.d_text(s.ctx, s.txt, c_x, c_y);
-			c.fillText(s.txt,c_x,c_y);
-			c.restore();
-			s.is = "c_txt";
-	*/
 		}//txt animations
+
+
 
 //..we could simply update states here. this is what act scoms do;
 //if run = 0, we s.t=1, rt = et, loop = false
@@ -1877,13 +1907,6 @@ all.anim_func = function(){
 			//rotate.. flip... goes here. state params should control these
 			c.globalAlpha = s.a;
 			
-			//old
-			//all.d_image.call(
-			//	s.img_access,  s.ctx, 
-			//	s.x, s.y, s.w, s.h, 
-			//	s.px, s.py, s.pw, s.ph//, s.a
-			//);
-			
 			c.drawImage(
 				s.img_access, 
 				s.x, s.y, s.w, s.h, 
@@ -1985,7 +2008,7 @@ all.actuator = function(txt, orb){
 	}
 		//links: [], logics:[], listeners: [], statements: [],
 	
-//Check act/txt every line
+//Check act/txt every line loop
 	var i = 0; var l1 = txt.length; //var expose = [];
 	while(l1--){
 		var line = txt[i]; //line
@@ -2911,14 +2934,35 @@ all.ml_up = function(o){
 								}
 							}//img
 
-	/* //not finished
 							//txt
+							var el = o.txt.length;
+							while(el--){
+								var a = o.txt[el];
+								if(a[0].running=='TRUE'){
+					//print lines of anim from top to bottom
+						var i = 1; var l = a.length; var spacer = 0; var l0=a[0];
+						while(l--){
+							var l_txt = a[(i-1)].txt;
+							var print = all.txt_s_new(l0.name+"_line"+i+'__r');
+							print.ctx=ctx1; 
+							print.x=l0.Gx; print.y=l0.Gy;
+							print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
+							print.font=l0.font;
+							print.tx=window.innerWidth/2; print.ty=window.innerHeight/2;
+							print.is="txt"; print.txt=l_txt;
+							print.y=print.y+spacer; //next line y position difference
+							print.display=l0.display;
+							print.custom_a=l0.custom_a;
+							print.t=-1;
+							all.anim_a.push(print);
+						spacer = spacer+l0.spacer;
+						i++;}
+								}
+							}//txt
+
 							//osc
 							//audio
-							
-	*/
-
-						}
+						}//at radius 900
 						all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
 						obg.radius=obg.radius+85; obg.is="circle";
 					}
@@ -3095,6 +3139,26 @@ all.ml_up = function(o){
 							all.anim_a.splice(l,1);
 						}
 					}
+			//we also need to clear txt, txt doesnt end in '__r'
+	/*
+				if(erase){
+					var l0=a[0];
+					var al = all.anim_a.length; var cl_pl = (l0.name.length+5);
+					while(al--){
+						var s = all.anim_a[al];
+						if(s.name){
+							var name = s.name.substr(0, cl_pl);
+							if(name == l0.name+'_line'){ //so it removes all lines
+								//s.is="rm"; 
+								all.clear_txt(s);
+								var index = all.anim_a.indexOf(s); 
+								all.anim_a.splice(index,1);
+							}
+						}
+					}//clears
+					a[0].running='FALSE';				
+				}
+	*/
 					all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 					
 					all.stream_a.push("User left .." + o.name); all.screen_log();
@@ -3898,32 +3962,26 @@ Keys are persistant always by default.
 
 
 //TXT editor
-//Txt editor should allow user to create a specific text to be displayed in a specific way, when a specific event arises as well
-//Write a line, position it, select color, select starting time, select timer, add
+//Txt editor should allow user to create a specific text to be displayed in a specific way.
+//Write a line, position it, select color..
 //The same txt animation can now take another line, and as many lines as user wants
-//When txt animation is run , it will animate every line . All lines have their own timers so they can be edited to appear simultaneusly
-//or sequentially. And thats it.
-//a set of instructions containing data pertinent to each string and how and when it is shown. this is a text animation ?
+//When txt animation is run , it will print at every beat, just like any other animation .
 
 //would be interesting to have a .txt:[name of text] command to select a different text to edit while on the editor..
-//Esc key .commands should print on default
-//name of currently selected text
-//currently selected line
-
-//I need a method to print "fix" text for only reading and maybe interacting . Just print static text on a window.
-//txt stream and txt window. streams are read only, windows are interactive. We create txt window on txt editor and we can customize
-//orbs streams on inner mode.
 
 //so now can asign logic into lines directly to make text on screen responsive to touch or typing
 //i need a tag to let know when to check touch . a single function to detect touch so i can use act logic to create different effects
 
-//.. still neeeds some work to customize each individual line... but this is going well		
-//it would be nice to see colourful roots holding the selected line and changing acordingly
-//... i would like to see other acts scripts next to each other simultaneously
+//.. still neeeds some work to customize each individual line... now am thinking maybe we are good with first line holding data
+//for all lines	. If we want text lines with diferent colours then we might as well just create one txt animation for each line and
+//run in parallel
+//it would be nice to see colourful roots holding the selected line and changing acordingly?.. maybe an idea for act script
+//... i would like to see other acts scripts next to each other simultaneously.. this is done , we have .signal:_+/-e
 //text probly needs a timer or an end condition.. editor should be able to provide
-//that . . ..or maybe not neccesary
-//timer can be implemented on act. when text is part of an act, its ending might be
-//directly tied to user actions
+//that . . ..or maybe not neccesary.. we do want txt to be able to vibe , change colours , position and transparency periodically..
+//timer can be implemented on act. when text is part of an act, its ending might be directly tied to user actions
+//.. but we should be able to create loop motion with the editor only.. it might be a little different than rect, circle, and img edits.
+//.. so txt will need frames after all..
 //EDIT
 		if(o.edit_txt_mode==true){
 			if(o.init){ //text editor initialization
@@ -3934,8 +3992,6 @@ Keys are persistant always by default.
 				if(obgr){obgr.is='rm';}
 			//not neccesary yet but probly later
 				all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; all.com_a=[];
-				var print = true;
-				o.op2 = 1; //always set selected line to 1
 //we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
 				var l = all.anim_a.length; 
 				while(l--){
@@ -3945,7 +4001,10 @@ Keys are persistant always by default.
 						all.anim_a.splice(l,1);
 					}
 				}
-				//all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
+
+				var print = true;
+				o.op2 = 1; //always set selected line to 1
+				all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 				o.init=false;
 				//return
 			}//init
@@ -3968,7 +4027,7 @@ Keys are persistant always by default.
 			if(delta){
 				
 				if(delta.signal=='exit'){
-					o.inner_mode=true; o.edit_txt_mode = false;
+					o.inner_mode=true; o.edit_txt_mode = false; o.init=true;
 					
 					var obg = all.circle_s_new('__obg');
 					obg.radius=900; obg.t=5;
@@ -3981,7 +4040,6 @@ Keys are persistant always by default.
 					//if(o.radiant_mode){obg.se='expand_colors';}
 				//we need this now.. for now
 					if(o.inner_mode){obg.se='expand';}
-
 					all.anim_a.push(obg);
 					
 //remove all lines from all opened txt anims.
@@ -4010,7 +4068,7 @@ Keys are persistant always by default.
 					}//txt anim loop
 
 					//clear selected values
-					o.op1= 0; o.op2= 0; o.op3= 0; o.op4= 0; o.op5= 0;
+					o.op1= 0; o.op2= 0; o.op3= 0; o.op4= 0; o.op5= 0; o.op6= 0;
 					//all.anim_a.splice(0); all.user.stream.on_screen=0;
 					//these clears...
 					all.clear_rect(ctx0, 0,0,window.innerWidth, window.innerHeight);
@@ -4032,13 +4090,14 @@ Keys are persistant always by default.
 					if(o.txt[ni]){
 						o.op1=ni;
 						o.txt[o.op1][0].open=true;
-						o.init = true;
+						o.init = true; //maybe i can just print...?
+						//var print = true;
+						//o.op2 = 1; //always set selected line to 1
 						all.stream_a.push("Editing ..."+o.txt[o.op1][0].name); all.screen_log();
 					}else{
 						all.stream_a.push("No txt found"); all.screen_log();
 					}
 				}
-				
 				
 				//select line
 				if(delta.signal=='next'){
@@ -4071,7 +4130,7 @@ Keys are persistant always by default.
 
 					var print = true;
 				}//size
-
+//old ideas..
 //time , rgb, and alpha channel lines values
 //should be able to colour line  by line and all at the same time. 
 //also change color by reacting to events
@@ -4083,7 +4142,18 @@ Keys are persistant always by default.
 					if(delta.value>220){
 						all.stream_a.push("Maximum value input is 220.");
 					}else{
-						l0.Gr=delta.value; var print = true;
+						if(l0.display=='custom'){
+							var l0c = l0.custom_a[o.op6];
+							var clo = l0c.length; 
+							while(clo--){
+								var alr = l0c[clo];
+								if(alr=='r'){l0c[clo-1] = delta.value; var dont_p = true; break;}
+							}
+							if(dont_p){}else{l0c.push(delta.value,'r');}
+						}else{
+							l0.Gr=delta.value;// 
+						}
+						var print = true;
 						all.stream_a.push("Numbers are red.");
 					}
 					all.screen_log();
@@ -4093,7 +4163,18 @@ Keys are persistant always by default.
 					if(delta.value>220){
 						all.stream_a.push("Maximum value input is 220.");
 					}else{
-						l0.Gg=delta.value; var print = true;
+						if(l0.display=='custom'){
+							var l0c = l0.custom_a[o.op6];
+							var clo = l0c.length; 
+							while(clo--){
+								var alr = l0c[clo];
+								if(alr=='g'){l0c[clo-1] = delta.value; var dont_p = true; break;}
+							}
+							if(dont_p){}else{l0c.push(delta.value,'g');}
+						}else{
+							l0.Gg=delta.value;// 
+						}
+						var print = true;
 						all.stream_a.push("Grass is green.");
 					}
 					all.screen_log();
@@ -4103,12 +4184,45 @@ Keys are persistant always by default.
 					if(delta.value>220){
 						all.stream_a.push("Maximum value input is 220.");
 					}else{
-						l0.Gb=delta.value; var print = true;
+						if(l0.display=='custom'){
+							var l0c = l0.custom_a[o.op6];
+							var clo = l0c.length; 
+							while(clo--){
+								var alr = l0c[clo];
+								if(alr=='b'){l0c[clo-1] = delta.value; var dont_p = true; break;}
+							}
+							if(dont_p){}else{l0c.push(delta.value,'b');}
+						}else{
+							l0.Gb=delta.value;// 
+						}
+						var print = true;
 						all.stream_a.push("Value is blue.");
 					}
 					all.screen_log();
 				}
-					
+//.. should i just turn alpha into transparency and use a synthax similar to rgb? this whol + - messes up custom system..	
+//just asign from 1-10 a so 1 translates to 0.1 , 2 to 0.2 and so on. 10 is 1. So bassically divide a_number by 10.
+				if(delta.signal=='a'){
+					if(delta.value>10){
+						all.stream_a.push("Maximum value input is 10.");
+					}else{
+						if(l0.display=='custom'){
+							var l0c = l0.custom_a[o.op6];
+							var clo = l0c.length; 
+							while(clo--){
+								var alr = l0c[clo];
+								if(alr=='a'){l0c[clo-1] = delta.value/10; var dont_p = true; break;}
+							}
+							if(dont_p){}else{l0c.push(delta.value/10,'a');}
+						}else{
+							l0.Ga=delta.value/10;// 
+						}
+						var print = true;
+						all.stream_a.push("Transparency changed.");
+					}
+					all.screen_log();
+				}
+			/*//old alpha system
 				if(delta.signal=='a'){
 					if(delta.operation=='+'){
 						l0.Ga = l0.Ga+0.1;
@@ -4120,16 +4234,8 @@ Keys are persistant always by default.
 					}
 					var print = true;
 				}
-					
-/*
-					//what about time?
-					var T = all.num_in("T");
-					if(T!==undefined){
-						a_line.t=T; var print = true;
-						all.stream_a.push("Numbers are time line."); all.screen_log();
-					}
+			*/		
 
-*/
 				
 //use C to Change the currently selected line from whats already on there
 //C and X needs to have a line selected in order to work..
@@ -4151,7 +4257,6 @@ Keys are persistant always by default.
 					
 				//cursor
 				if(delta.signal=='left'||delta.signal=='right'||delta.signal=='up'||delta.signal=='down'){
-				///*//wait.. whatabout clear
 						if(delta.signal=='left'){
 							anim[0].Gx=anim[0].Gx-delta.value;
 						}            
@@ -4167,13 +4272,39 @@ Keys are persistant always by default.
 						var print = true;
 						
 					}//cursor
-				
+
+//.signal:custom_number	Asigns a number of beats to the txt anim custom_a property. Last item holds current properties, all other items
+//			are initially empty.
+//only rgba properties values work on custom but we should be able to work with x y size spacer as well add these later..
+				if(delta.signal=='custom'){
+					var lc = delta.value; o.op6=delta.value-1; //right?
+					while(lc--){
+						l0.custom_a.push([]);
+					}
+					l0.display='custom'; l0.t=-1;
+					var ori = l0.custom_a[l0.custom_a.length-1];
+					//lets stick to rgba for now
+					ori.push(l0.Gr,'r',l0.Gg,'g',l0.Gb,'b',l0.Ga,'a');
+			
+				}
+
+//.signal:beat_number	Selects a beat item on custom_a by number. Now we add changes to that beat. we use op6 to track current beat. 
+//			So all changes in properties will now use op6 to push changes into custom_a correct item.
+//needs proper feedback to let user know which beat are we pushing changes at any moment
+				if(delta.signal=='beat'){
+					if(delta.value>=l0.custom_a.length){
+						o.op6=l0.custom_a.length-1;
+					}else{
+						o.op6=delta.value;
+					}
+				}
+
 				o.op3 = 0;
 				
 			}//delta
 
 //use X and C to manipulate existing lines.
-//C will jehallow user to change the selected line by puting the line txt on input
+//C will allow user to change the selected line by puting the line txt on input
 //so we can modify it from there
 //X will completely remove the selected line. probly could ask to confirm
 		//use op4 to let editor know when user want to enter input into a line 
@@ -4184,7 +4315,10 @@ Keys are persistant always by default.
 						var new_line = {
 							Gx:a_line.Gx, Gy:a_line.Gy,
 							Gr:a_line.Gr, Gg:a_line.Gg, Gb:a_line.Gb, Ga:a_line.Ga,
-							name:a_line.name, Gt:a_line.Gt,
+							name:a_line.name, //Gt:a_line.Gt,
+							display:a_line.display,
+							custom_a:a_line.custom_a,
+							t:-1,
 							spacer:a_line.spacer,
 							font:a_line.font,
 							open:true, s:'txt',
@@ -4226,7 +4360,7 @@ Keys are persistant always by default.
 					var s = all.anim_a[l];
 					if(s.name){
 						var name = s.name.substr(0, cl_pl);
-						if(name == l0.name+'_line'){
+						if(name == l0.name+'_line'){ //so it removes all lines
 							//s.is="rm"; 
 							all.clear_txt(s);
 							var index = all.anim_a.indexOf(s); 
@@ -4242,14 +4376,19 @@ Keys are persistant always by default.
 					print.ctx=ctx1; 
 					print.x=l0.Gx; print.y=l0.Gy;
 					print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
-					print.t=l0.Gt; print.font=l0.font;
+					print.font=l0.font;
 				//use [] for selected line
 					if(o.op2==i){
 						print.txt='['+i+']'+' '+l_txt;
 					}else{print.txt=' '+i+'  '+l_txt;}
 
 					print.tx=window.innerWidth/2; print.ty=window.innerHeight/2;
-					print.is="txt"; 
+					print.is="txt";
+				//so we could pass on a refference to l0.custom_a.. if display is normal, this property is just empty
+				//regardles, we just pass a refference to each line, and display value.
+					print.display=l0.display;
+					print.custom_a=l0.custom_a;
+					print.t=-1;
 					print.y=print.y+spacer; //next line y position difference
 					all.anim_a.push(print);
 				spacer = spacer+l0.spacer;
@@ -5138,7 +5277,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 						all.anim_a.splice(l,1);
 					}
 				}
-				//all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
+				all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 
 				o.init = false;
 				return
@@ -5735,10 +5874,8 @@ all.void_up = function(){
 					if(obg.se=='compress'){
 						//obg.a=1; obg.t=2;
 						if(obg.radius<=60){
-							obg.radius=22; 
-							obg.is="rm";
-							c_orb.u_in_contrl=false;
-							u.init_void=false;
+							obg.radius=22; obg.is="rm";
+							c_orb.u_in_contrl=false; u.init_void=false;
 							all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
 							return
 						}
@@ -5746,19 +5883,16 @@ all.void_up = function(){
 						obg.radius=obg.radius-51; obg.t=3; obg.is='circle';
 	
 					}
-	
+					//same as compress??	
 					if(obg.se=='fastcolors_compress'){
 						if(obg.radius<=60){
-							obg.radius=22; 
-							obg.is="rm";
-							c_orb.u_in_contrl=false;
-							u.init_void=false;
+							obg.radius=22; obg.is="rm";
+							c_orb.u_in_contrl=false; u.init_void=false;
 							all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
 							return
 						}
+						all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
 						obg.radius=obg.radius-51;
-						//obg.r=all.get_r_num(0,220); obg.g=all.get_r_num(0,220);
-						//obg.b=all.get_r_num(0,220);
 						obg.r=o_r; obg.g=o_g; obg.b=o_b;
 						obg.t=3;
 						obg.is='circle';
@@ -5785,7 +5919,8 @@ all.void_up = function(){
 			//this run checks for prim00 which is the rad line vessel of prims
 			var s = all.find_ting(all.anim_a, "name", "prim00_"+all.up_objs[l].name);//orb.name
 			//we could check for prim01 which is a first detail ? maybe the orb name...
-			var s_n = all.find_ting(all.anim_a, "name", "prim01_"+all.up_objs[l].name);
+		//this effect needs revamp because now txt states will not deal with t
+			//var s_n = all.find_ting(all.anim_a, "name", "prim01_"+all.up_objs[l].name);
 
 			//now i can just ask for states updates
 			//should also update all kinds of animations in and outside prims
@@ -5794,8 +5929,8 @@ all.void_up = function(){
 				if(s.se=="white_noise_in"){
 					if(s.t==3){//ending condition
 						s.se='idle';
-						s_n.se='a_in';
-						s_n.t=6;
+						//s_n.se='a_in';
+						//s_n.t=6;
 						//all.d_rect(ctx1,320,0,600,600,0,0,0,1);
 						//all.d_rect(ctx0,300,0,600,600,0,0,0,1); //
 						//normalize values here
@@ -5810,6 +5945,7 @@ all.void_up = function(){
 				if(s.se=="idle"){
 					//randomize colours on idle
 					s.r=o_r; s.g=o_g; s.b=o_b;
+				/*
 				 	if(s_n.se=='a_out'){
 						if(s_n.t==3){
 							//all.clear_
@@ -5827,6 +5963,7 @@ all.void_up = function(){
 							if(s_n.a>=1){s_n.se='a_out';}
 						}
 					}
+				*/
 					s.is="circle"; s.t=2;
 				}
 
@@ -5911,7 +6048,9 @@ all.void_up = function(){
 				all.anim_a.push(s);
 			//prim01
 			//create a txt state to illustrate orb name on the center.. a bit
-			//bellow.. of the prim
+			//bellow.. of the prim 
+		//needs revamp
+				/*
 				var s_n = all.txt_s_new("prim01_"+all.up_objs[0].name);
 				s_n.ctx=ctx1; // hmmm ctx1 ok?
 				s_n.tx=window.innerWidth/2; s_n.ty=(window.innerHeight/2+4);
@@ -5921,7 +6060,7 @@ all.void_up = function(){
 				s_n.is='c_txt'; s_n.t=9;
 				//s_n.align='left';
 				all.anim_a.push(s_n);
-
+				*/
 
 			}
 //if only 2, prims get drawn one on the left and the other on the right
@@ -5958,7 +6097,8 @@ all.void_up = function(){
 					//empty circle for w noise
 					all.clear_circle(ctx1,s.tx,s.ty,s.radius);
 					all.anim_a.push(s);
-				//prim01
+				//prim01 .. needs revamp
+				/*
 					var s_n = all.txt_s_new("prim01_"+all.up_objs[l].name);
 					s_n.ctx=ctx1; // hmmm ctx1 ok?
 					s_n.tx=x; s_n.ty=y+4;
@@ -5968,7 +6108,7 @@ all.void_up = function(){
 					s_n.is='c_txt'; s_n.t=9;
 					//s_n.align='left';
 					all.anim_a.push(s_n);
-
+				*/
 				angle_n = angle_n+angle;
 				}
 			}
@@ -6018,7 +6158,8 @@ all.void_up = function(){
 					all.clear_circle(ctx1,s.tx,s.ty,s.radius);
 					all.anim_a.push(s);
 
-				//prim01
+				//prim01 .. needs revamp
+			/*
 					var s_n = all.txt_s_new("prim01_"+all.up_objs[l].name);
 					s_n.ctx=ctx1; // hmmm ctx1 ok?
 					s_n.tx=x; s_n.ty=y+4;
@@ -6027,6 +6168,7 @@ all.void_up = function(){
 					s_n.is='c_txt'; s_n.t=9;
 					s_n.font='18px Courier New';
 					all.anim_a.push(s_n);
+			*/
 
 				angle_n = angle_n+angle;
 				}
@@ -6639,7 +6781,7 @@ all.c_com = function(){ //(check commands)
 //.user.name:[new name]
 //.user.speed:[new speed]
 //
-
+/* deprecat
 //.name:[new name]	Change name at will. Void only. Offline only.
 //.name			print name ?
  			if(mc_a[1]=="name"){ 
@@ -6651,7 +6793,7 @@ all.c_com = function(){ //(check commands)
  			if(mc_a[1]=="speed"){ 
 
 			}
-
+*/
 
 //ORB
 //an orb primordial form will depend on its experience , its animations stored, its data, its jobs etc
@@ -7118,8 +7260,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(proceed){
 						//var name_ok = all.c_unl(mcp_a[1],'audio');
 						//if(name_ok){}else{}
-						c_orb.inner_mode=false; c_orb.edit_audio_mode = true; 
-						c_orb.init = true;
+						c_orb.inner_mode=false; c_orb.edit_audio_mode = true;  c_orb.init = true;
 		//this works because audio anim is just an object not an array
 						var named_aud = all.find_ting(c_orb.audio, "name", mcp_a[1]);
 						if(named_aud){
@@ -7151,7 +7292,6 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(mc_a[2]!=undefined){
 						//.img.purge
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-
 						//search for name match..
 						var l = c_orb.img.length;
 						while(l--){
@@ -7295,9 +7435,75 @@ all.stream_a.push("but yes, you can try again if you want..");
 //.. so all these list commands are redundant. make it so when we type in .txt , all edits are printed along with useful information
 //about txt edits in this orb.. same with img , circle etc...
 				if(mc_a[1]=="txt"){
-					if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
-					//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
+					if(mc_a[2]!=undefined){
+						//.txt.purge
+						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
+						//search for name match..
+						var l = c_orb.txt.length;
+						while(l--){
+							var a = c_orb.txt[l];
+							if(a){
+								if(a[0].name==mc_a[2]){
+									if(mc_a[3]=='out'){
+										var txt = JSON.stringify(a);
+										all.chat_on = true; chat_in.focus();
+										chat_in.style.display="inLine";
+										chat_in.value = txt;
+									}
+									if(mc_a[3]=='delete'){
+										var index = c_orb.txt.indexOf(a);
+										c_orb.txt.splice(index,1);
+						all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
+									}
+//here goes txt run on inner mode RUN unfinished.... where in hell is the problem
+									if(mc_a[3]=='run'){
+	//ok so if a[0].running='FALSE' then make it 'TRUE' and print the thing. if true then make it false and clear the thing
+				if(a[0].running=='FALSE'){var print = true;}
+				if(a[0].running=='TRUE'){var erase = true;}
+				if(print){
+					//print lines of anim from top to bottom
+					var i = 1; var al = a.length; var spacer = 0; var l0=a[0];
+					while(al--){
+						var l_txt = a[(i-1)].txt;
+						var print = all.txt_s_new(l0.name+"_line"+i+'__r');
+						print.ctx=ctx1; 
+						print.x=l0.Gx; print.y=l0.Gy;
+						print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
+						print.font=l0.font;
+						print.tx=window.innerWidth/2; print.ty=window.innerHeight/2;
+						print.is="txt"; print.txt=l_txt;
+						print.y=print.y+spacer; //next line y position difference
+						print.display=l0.display;
+						print.custom_a=l0.custom_a;
+						print.t=-1;
+						all.anim_a.push(print);
+					spacer = spacer+l0.spacer;
+					i++;}
+					a[0].running='TRUE';
+				}									
+				if(erase){
+					var l0=a[0];
+					var al = all.anim_a.length; var cl_pl = (l0.name.length+5);
+					while(al--){
+						var s = all.anim_a[al];
+						if(s.name){
+							var name = s.name.substr(0, cl_pl);
+							if(name == l0.name+'_line'){ //so it removes all lines
+								//s.is="rm"; 
+								all.clear_txt(s);
+								var index = all.anim_a.indexOf(s); 
+								all.anim_a.splice(index,1);
+							}
+						}
+					}//clears
+					a[0].running='FALSE';				
+				}
+									}//run
+								}//anim access
+							}//if a
+						}//while
+					}//
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
 					if(mcp_a[1]!=undefined){var proceed = true;}
 					if(purge){c_orb.txt = [];}
@@ -7317,8 +7523,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(proceed){
 						//var name_ok = all.c_unl(mcp_a[1],'txt');
 						//if(name_ok){}else{}
-						c_orb.inner_mode = false; c_orb.edit_txt_mode = true;
-						c_orb.init = true;
+						c_orb.inner_mode = false; c_orb.edit_txt_mode = true; c_orb.init = true;
 						var l = c_orb.txt.length;
 						while(l--){
 							var a = c_orb.txt[l];
@@ -7338,13 +7543,15 @@ all.stream_a.push("but yes, you can try again if you want..");
 							var an = {};
 					//line1 , anim[0]will hold global coordinates of anim now,
 					//along with other escential data..
+				//we now want to add txt effects. these are picked up by animf. default effect is 'normal'.
+				//effects are controled by the parameter 'display', also stored on line1
 							an.Gx=0; an.Gy=0;
 							an.Gr=200; an.Gg=200; an.Gb=200; an.Ga=1; an.Gt=-1;
 							an.name=mcp_a[1];
 							an.spacer=15; an.font='10px Courier New';
 							an.open=true;
-					//
-							//an.x = 0; an.y = 0; 
+							an.running='FALSE';
+							an.display='normal'; an.custom_a=[]; an.t=-1;
 							an.s='txt'; an.txt='First line.';
 							//an.r= 220; an.g= 220; an.b=220; an.a=1; an.t=-1;
 	
@@ -7438,8 +7645,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(proceed){
 						//var name_ok = all.c_unl(mcp_a[1],'circle');
 						//if(name_ok){}else{}
-						c_orb.inner_mode=false; c_orb.edit_circle_mode = true;
-						c_orb.init = true;
+						c_orb.inner_mode=false; c_orb.edit_circle_mode = true; c_orb.init = true;
 						var l = c_orb.circle.length;
 						while(l--){
 							var a = c_orb.circle[l];
@@ -7681,7 +7887,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 //performing acts do. checkmate brain ;)
 			if(c_orb.radiant_mode){
 //REFORM .ACT
-//a command to go back to inner mode
+//a command to go back to inner mode from radiant mode
 //.reform
 				if(mc_a[1]=="reform"){
 					c_orb.inner_mode=true; c_orb.radiant_mode=false; c_orb.init=true;
