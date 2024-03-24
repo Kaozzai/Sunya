@@ -113,7 +113,8 @@ all.user = {
 		{name:"in", key:"IN", com1:".type:.orb.in:", com2:".type:", X:100, Y:100, persist:"desist"},
 		{name:"help", key:"H", com1:".type:.help."},
 		{name:"button", key:"BTN", com1:".button"},
-		{name:"control", key:"C", com1:".orb.Tools.control"}
+		{name:"control", key:"C", com1:".orb.Tools.control"},
+		{name:"out", key:"OUT", com1:".orb.Tools.out", com2:".type:", X:170, Y:100, persist:"desist"}
 	], //key shorts
 	
 	orbs: [], //currently owned orbs- stores data object concerning orb
@@ -1980,7 +1981,7 @@ all.anim_func = function(){
 //a function to compile all exposed acts so logic can listen to a single array . all.act_d
 //this function should take an /act/txt anim and transform it into an act object to be
 //looped by c_act_d
-//we feed an act and an orb into this function on the run command
+//we feed an act and an orb into this function on the .play command
 
 //if user want to edit an act from editor mode, it must first stop running.
 //we shouldnt be able to edit acts while running.
@@ -2648,6 +2649,7 @@ all.playa = function(aa){
 	}//phase2 stmts loop l1
 
 }//playa
+
 
 
 
@@ -4017,6 +4019,7 @@ Keys are persistant always by default.
 //line data on changes ..
 			var a_line =  anim[o.op2-1];//animation line. data to keep
 
+			//op6 for tracking beats on custom display
 			//op5 for insert modes
 			//op4 for input signaling
 			//op3 for delta
@@ -4069,13 +4072,15 @@ Keys are persistant always by default.
 
 					//clear selected values
 					o.op1= 0; o.op2= 0; o.op3= 0; o.op4= 0; o.op5= 0; o.op6= 0;
-					//all.anim_a.splice(0); all.user.stream.on_screen=0;
+					//clear feed
+					all.clear_stream(all.user.estream);
 					//these clears...
 					all.clear_rect(ctx0, 0,0,window.innerWidth, window.innerHeight);
 					all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 					//all.clear_rect(ctx3, 0,0,window.innerWidth, window.innerHeight);
 					all.stream_a.push("Out of txt edit mode"); all.screen_log();
 					//console.log("Out of edit mode");
+					return
 				}
 				
 //a command to open a different txt to be edit3d simultaneously. open parameter
@@ -4114,6 +4119,7 @@ Keys are persistant always by default.
 					var print = true;
 				}
 
+//i could modify they we pass on size and font to work with custom display as well.
 				if(delta.signal=='size'){
 					if(delta.operation=='+'){
 						var font = l0.font.substr(5);
@@ -4150,11 +4156,12 @@ Keys are persistant always by default.
 								if(alr=='r'){l0c[clo-1] = delta.value; var dont_p = true; break;}
 							}
 							if(dont_p){}else{l0c.push(delta.value,'r');}
+							all.stream_a.push('New red value on beat '+o.op6);
 						}else{
 							l0.Gr=delta.value;// 
+							all.stream_a.push("Numbers are red.");
 						}
 						var print = true;
-						all.stream_a.push("Numbers are red.");
 					}
 					all.screen_log();
 				}
@@ -4240,63 +4247,123 @@ Keys are persistant always by default.
 //use C to Change the currently selected line from whats already on there
 //C and X needs to have a line selected in order to work..
 				if(delta.signal=='change'){
-						all.chat_on = true;
-						chat_in.style.display="inLine";
-						chat_in.focus();
-						chat_in.value = a_line.txt;
-						o.op5=1;
-						all.stream_a.push("Change the current line"); all.screen_log();
+					all.chat_on = true;
+					chat_in.style.display="inLine";
+					chat_in.focus();
+					chat_in.value = a_line.txt;
+					o.op5=1;
+					all.stream_a.push("Change the current line"); all.screen_log();
 
-					}
+				}
 					
 				if(delta.signal=='remove'){
-						anim.splice((o.op2-1), 1);
-						all.stream_a.push("Line removed"); all.screen_log();
-						var print = true;
-					}
+					anim.splice((o.op2-1), 1);
+					all.stream_a.push("Line removed"); all.screen_log();
+					var print = true;
+				}
 					
 				//cursor
 				if(delta.signal=='left'||delta.signal=='right'||delta.signal=='up'||delta.signal=='down'){
-						if(delta.signal=='left'){
-							anim[0].Gx=anim[0].Gx-delta.value;
-						}            
-						if(delta.signal=='right'){
-							anim[0].Gx=anim[0].Gx+delta.value;
+		//wait so to work with custom here, just check for x or y or create item on custom_a, and calculate new
+		//x value on selected beat? sounds convoluted. we want cursor to let us move txt fast and easy to work with
+		//multiple txt at once. Lets reserve the use of .signal:x with custom and beats to create movement effects instead
+					if(delta.signal=='left'){
+						l0.Gx=l0.Gx-delta.value;
+					}            
+					if(delta.signal=='right'){
+						l0.Gx=l0.Gx+delta.value;
+					}
+					if(delta.signal=='up'){
+						l0.Gy=l0.Gy-delta.value;
+					}
+					if(delta.signal=='down'){
+						l0.Gy=l0.Gy+delta.value;
+					}
+					var print = true;
+					//all.screen_log();
+				}//cursor
+/*
+//on development..
+//expressed like this , and and y properties are stored on beats to create movement on txt
+//its an interesting idea but for now, i wont implement
+				if(delta.signal=='x'){
+					if(l0.display=='custom'){
+						var l0c = l0.custom_a[o.op6];
+						var clo = l0c.length; 
+						while(clo--){
+							var alr = l0c[clo];
+							if(alr=='x'){l0c[clo-1] = delta.value; var dont_p = true; break;}
 						}
-						if(delta.signal=='up'){
-							anim[0].Gy=anim[0].Gy-delta.value;
+						if(dont_p){}else{l0c.push(delta.value,'x');}
+					}else{
+						l0.Gx=delta.value;// 
+					}
+					all.stream_a.push("New x coordinate asigned on beat "+o.op6);
+				}
+
+				if(delta.signal=='y'){
+					if(l0.display=='custom'){
+						var l0c = l0.custom_a[o.op6];
+						var clo = l0c.length; 
+						while(clo--){
+							var alr = l0c[clo];
+							if(alr=='y'){l0c[clo-1] = delta.value; var dont_p = true; break;}
 						}
-						if(delta.signal=='down'){
-							anim[0].Gy=anim[0].Gy+delta.value;
-						}
-						var print = true;
-						
-					}//cursor
+						if(dont_p){}else{l0c.push(delta.value,'y');}
+					}else{
+						l0.Gy=delta.value;// 
+					}
+					all.stream_a.push("New y coordinate asigned on beat "+o.op6);
+				}
+*/
+
 
 //.signal:custom_number	Asigns a number of beats to the txt anim custom_a property. Last item holds current properties, all other items
 //			are initially empty.
 //only rgba properties values work on custom but we should be able to work with x y size spacer as well add these later..
+//we need a simple and yet illustrative feedback for these operations. maybe dots or lines that change size to indicate beat position
+//and differenciate the beat currently selected
 				if(delta.signal=='custom'){
-					var lc = delta.value; o.op6=delta.value-1; //right?
-					while(lc--){
-						l0.custom_a.push([]);
+					var lc = delta.value; o.op6=delta.value-1;
+			//if display is already custom, we need to add or substract beats to fit the new value
+					if(l0.display=='custom'){
+						if(lc<l0.custom_a.length){
+							var sub = l0.custom_a.length-lc;
+							while(sub--){
+								l0.custom_a.shift();
+							}
+						}
+						if(lc>l0.custom_a.length){
+							var add = lc-l0.custom_a.length;
+							while(add--){
+								l0.custom_a.unshift([]);
+							}
+						}
+					}else{
+					//
+						while(lc--){
+							l0.custom_a.push([]);
+						}
+						l0.display='custom'; l0.t=-1;
+						var ori = l0.custom_a[l0.custom_a.length-1];
+						//lets stick to rgba for now
+						ori.push(l0.Gr,'r',l0.Gg,'g',l0.Gb,'b',l0.Ga,'a');
 					}
-					l0.display='custom'; l0.t=-1;
-					var ori = l0.custom_a[l0.custom_a.length-1];
-					//lets stick to rgba for now
-					ori.push(l0.Gr,'r',l0.Gg,'g',l0.Gb,'b',l0.Ga,'a');
-			
+					all.stream_a.push('Total number of beats is '+lc);
+					all.screen_log();				
+					var print = true;
 				}
 
 //.signal:beat_number	Selects a beat item on custom_a by number. Now we add changes to that beat. we use op6 to track current beat. 
 //			So all changes in properties will now use op6 to push changes into custom_a correct item.
-//needs proper feedback to let user know which beat are we pushing changes at any moment
 				if(delta.signal=='beat'){
 					if(delta.value>=l0.custom_a.length){
 						o.op6=l0.custom_a.length-1;
 					}else{
 						o.op6=delta.value;
 					}
+					all.stream_a.push('Current beat '+o.op6+' Listenning to changes.');
+					all.screen_log();
 				}
 
 				o.op3 = 0;
@@ -4394,6 +4461,40 @@ Keys are persistant always by default.
 				spacer = spacer+l0.spacer;
 				i++;}
 			}//print
+//feedback
+//we need to see properties of beat selected: 11 .  and an animation to illustrate beats in time |start| 00000100007 |end|
+//use Gx rgba properties on normal display. use last custom_a item on custom display
+		//maybe custom display should be default and just use 1 beat. beat 0....
+		if(l0.display=='custom'){	
+			var c_b = o.op6; //current beat
+			var blen = l0.custom_a.length; b_n_a = [];
+			var l1s = all.find_ting(all.anim_a ,'name', l0.name+'_line1'); var c_t = l1s.t;
+			while(blen--){
+				var B = 0;
+				if(blen==c_b){var B = 1;}
+				if(blen==c_t){var B = 7;}
+				b_n_a.push(B);
+			}
+			var beatit = b_n_a.join('');
+
+			//get changes
+			var bit = l0.custom_a[o.op6].length; var changes_a = [];
+			while(bit--){
+				var bat =l0.custom_a[o.op6][bit];
+				changes_a.push(bat);
+			}
+			var batit = changes_a.join('>');
+			all.stream_a.push(
+				beatit,
+				"txt name: "+l0.name,
+				"current selected beat: "+o.op6,
+				"changes: "+batit,
+				"........",
+				"........"
+				);
+			all.screen_log('estream');//estream		
+		}
+
 		}//text edit mode
 
 
@@ -4714,6 +4815,9 @@ Keys are persistant always by default.
 				
 //circle transparency
 				if(delta.signal=='a'){
+					//i could implement new txt alpha system here as well
+					//if(delta.value>10){
+					//	all.stream_a.push("Maximum value input is 10.");
 					if(delta.operation=='+'){
 						if(s.a>=1){}else{
 							var na = s.a+(0.1);
@@ -4922,7 +5026,7 @@ Keys are persistant always by default.
 				}//cursor
 				
 				
-				if(delta.signal=='red'){
+				if(delta.signal=='r'){
 					if(delta.value>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
@@ -4931,7 +5035,7 @@ Keys are persistant always by default.
 						//all.stream_a.push("Numbers are red rect."); all.screen_log();
 					}
 				}
-				if(delta.signal=='green'){
+				if(delta.signal=='g'){
 					if(delta.signal>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
@@ -4941,7 +5045,7 @@ Keys are persistant always by default.
 					}
 				}
 				
-				if(delta.signal=='blue'){
+				if(delta.signal=='b'){
 					if(delta.signal>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
@@ -4951,7 +5055,19 @@ Keys are persistant always by default.
 					}
 				}
 				
-//rect transparency
+//rect transparency new system
+				if(delta.signal=='a'){
+					if(delta.value>10){
+						all.stream_a.push("Maximum value input is 10.");
+					}else{
+						s.u_d.push('a',delta.value/10,'is','rect');
+						s.is='c_rect'; s.t=1;
+						//if(alr=='a'){l0c[clo-1] = delta.value/10; var dont_p = true; break;}
+						//all.stream_a.push("Transparency changed.");
+					}
+					all.screen_log();
+				}
+/*
 				if(delta.signal=='a'){
 					if(delta.operation=='+'){
 						if(s.a>=1){}else{
@@ -4966,7 +5082,7 @@ Keys are persistant always by default.
 					s.u_d.push('a',na,'is','rect');
 					s.is='c_rect'; s.t=1;
 				}//a
-				
+*/				
 //rect size
 				if(delta.signal=='width'||delta.signal=='height'){
 					if(delta.signal=='width'){
@@ -5919,52 +6035,19 @@ all.void_up = function(){
 			//this run checks for prim00 which is the rad line vessel of prims
 			var s = all.find_ting(all.anim_a, "name", "prim00_"+all.up_objs[l].name);//orb.name
 			//we could check for prim01 which is a first detail ? maybe the orb name...
-		//this effect needs revamp because now txt states will not deal with t
+//custom display system on txt states works very well. its way easier to build these void animations using txt now
+//am thinking i might implement the same system to circles, rects, and perhaps even png animations later
+//the logic of the system is more efficient because we are not storing all data on each frame but only changes.
 			//var s_n = all.find_ting(all.anim_a, "name", "prim01_"+all.up_objs[l].name);
 
 			//now i can just ask for states updates
 			//should also update all kinds of animations in and outside prims
 			if(s){
-				//subevents
-				if(s.se=="white_noise_in"){
-					if(s.t==3){//ending condition
-						s.se='idle';
-						//s_n.se='a_in';
-						//s_n.t=6;
-						//all.d_rect(ctx1,320,0,600,600,0,0,0,1);
-						//all.d_rect(ctx0,300,0,600,600,0,0,0,1); //
-						//normalize values here
-						s.r=220; s.g=220; s.b=220; s.a=0.9;
-						//stop w noise
-						//w_n_bg.is='f';
-						//all.new_pv(all.anim_a, "w_n_bg", "is", "f");
-
-					}
-				}
-
 				if(s.se=="idle"){
+					all.clear_circle(ctx1,s.tx,s.ty,s.radius+3);
 					//randomize colours on idle
 					s.r=o_r; s.g=o_g; s.b=o_b;
-				/*
-				 	if(s_n.se=='a_out'){
-						if(s_n.t==3){
-							//all.clear_
-							all.clear_txt(s_n);
-							s_n.a=s_n.a-0.1;
-							s_n.is='txt'; s_n.t=5;
-							if(s_n.a<=0){s_n.se='a_in';}
-						}
-					}
-					if(s_n.se=='a_in'){
-						if(s_n.t==3){
-							all.clear_txt(s_n);
-							s_n.a=s_n.a+0.1;
-							s_n.is='txt'; s_n.t=4;
-							if(s_n.a>=1){s_n.se='a_out';}
-						}
-					}
-				*/
-					s.is="circle"; s.t=2;
+					s.is="circle"; s.t=-1;
 				}
 
 		//so if there is no prim state, because we come from edit mode ,run a new wheel
@@ -5989,59 +6072,33 @@ all.void_up = function(){
 //this clears all prim00 states .called when the number of orbs change. simple as that
 			//clear all prims?
 			all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
-			//paint black to clear for noise in any case
-			//all.d_rect(ctx1,200,0,600,600,0,0,0,1);
 			//if add_prim,  clear all prim states so it calls wheel else
 			var len = all.anim_a.length;
 			while(len--){
 				var s = all.anim_a[len]; var isaprim = s.name.substr(0,6);
 				if(isaprim=='prim00'||isaprim=='prim01'){ // or "prim01"
-					//s.se="lights_out";
-				//.. why am i not simply is='rm' on states here?
 					var index = all.anim_a.indexOf(s);
 					all.anim_a.splice(index, 1);
-					//s.se="white_noise_out"; //s.t=20;
-					//holes for w noise
-					//all.clear_circle(ctx1,s.x,s.y,s.radius);
 				}
 			}//clear loop
 
 
 //Selected prim should always be drawn on top.. we dont rly need selection buttons.
-
-//ask if w_n_bg exist, if does, update size acording to wheel size, 
-//if not then make a new state
 //maybe i can just create small white noise bg for each space that requires it.
 //could be good optimization . .
-/*
-			var w_n_bg = all.find_ting(all.anim_a, "name", "w_n_bg");
-			if(w_n_bg){
-				//updates on white noise?
-			}else{
-				
-				var w_n_bg = all.imgd_s_new(ctx0,"w_n_bg",200,0,600,600);//
-				w_n_bg.is="f";
-				all.anim_a.push(w_n_bg);
-			}
-*/
-
 
 //If there is one single orb, just draw in the middle
+//... this is almost the same operation for different number of orbs on screen. i could write this once
 			if(all.up_objs.length==1){
-				//paint black
-				//all.d_rect(ctx1,320,0,600,600,0,0,0,1);
-				//call noise
-				//w_n_bg.is='imda';
-				//all.new_pv(all.anim_a, "w_n_bg", "is", "imda");
-				
 			//prim00
 				var s = all.circle_s_new("prim00_"+all.up_objs[0].name);
 				s.ctx=ctx1; // hmmm ctx1 ok?
 				s.tx=window.innerWidth/2; s.ty=window.innerHeight/2; 
 				s.radius=27; //
 				s.inside="empty";
-				s.is="c_circle"; s.t=9;
-				s.se="white_noise_in"; s.tch='prim'; s.ges = [];
+				s.is="circle"; s.t=-1;
+				s.se="idle"; 
+				s.tch='prim'; s.ges = [];
 				s.r=220; s.g=220; s.b=220; s.a=1; //init values
 				//make circle clear for w noise to be visible
 				all.clear_circle(ctx1,s.tx,s.ty,s.radius);
@@ -6050,27 +6107,24 @@ all.void_up = function(){
 			//create a txt state to illustrate orb name on the center.. a bit
 			//bellow.. of the prim 
 		//needs revamp
-				/*
 				var s_n = all.txt_s_new("prim01_"+all.up_objs[0].name);
 				s_n.ctx=ctx1; // hmmm ctx1 ok?
 				s_n.tx=window.innerWidth/2; s_n.ty=(window.innerHeight/2+4);
 				s_n.r=220; s_n.g=220; s_n.b=220; s_n.a=0; //init values
 				s_n.txt=all.up_objs[0].name;
 				s_n.font='18px Courier New';
-				s_n.is='c_txt'; s_n.t=9;
+				s_n.is='c_txt'; s_n.t=-1;
+				s_n.display='custom';
+				s_n.custom_a=[
+					[0.1,'a'],[0.3,'a'],[0.6,'a'],[0.9,'a'],[1,'a'],[0.9,'a'],[0.6,'a'],[0.3,'a'],
+					[200,'r',200,'g',200,'b',0.1,'a']
+				];
 				//s_n.align='left';
 				all.anim_a.push(s_n);
-				*/
 
 			}
 //if only 2, prims get drawn one on the left and the other on the right
 			if(all.up_objs.length==2){ 
-				//paint black
-				//all.d_rect(ctx1,320,0,600,600,0,0,0,1);
-				//call noise
-				//w_n_bg.is='imda';
-				//all.new_pv(all.anim_a, "w_n_bg", "is", "imda");
-
 				//prims position on wheel
 				var c_x = window.innerWidth/2; 
 				var c_y = window.innerHeight/2;
@@ -6091,24 +6145,30 @@ all.void_up = function(){
 					s.tx=x; s.ty=y; s.ctx=ctx1; //this ctx good? 
 					s.radius = p_rad; 
 					s.inside="empty";
-					s.is="c_circle"; s.t=9;
-					s.se="white_noise_in"; s.r=220; s.g=220; s.b=220; s.a=1; //init values
+					s.is="circle"; s.t=1;
+					s.se="idle";
+					s.r=220; s.g=220; s.b=220; s.a=1; //init values
 					s.tch='prim'; s.ges = [];
 					//empty circle for w noise
 					all.clear_circle(ctx1,s.tx,s.ty,s.radius);
 					all.anim_a.push(s);
-				//prim01 .. needs revamp
-				/*
+				//prim01 
+				
 					var s_n = all.txt_s_new("prim01_"+all.up_objs[l].name);
 					s_n.ctx=ctx1; // hmmm ctx1 ok?
 					s_n.tx=x; s_n.ty=y+4;
 					s_n.r=220; s_n.g=220; s_n.b=220; s_n.a=0; //init values
 					s_n.txt=all.up_objs[l].name;
 					s_n.font='18px Courier New';
-					s_n.is='c_txt'; s_n.t=9;
+					s_n.is='c_txt'; s_n.t=-1;
+					s_n.display='custom';
+					s_n.custom_a=[
+						[0.1,'a'],[0.3,'a'],[0.6,'a'],[0.9,'a'],[1,'a'],[0.9,'a'],[0.6,'a'],[0.3,'a'],
+						[200,'r',200,'g',200,'b',0.1,'a']
+					];
 					//s_n.align='left';
 					all.anim_a.push(s_n);
-				*/
+				
 				angle_n = angle_n+angle;
 				}
 			}
@@ -6116,13 +6176,6 @@ all.void_up = function(){
 //take a center c_x and c_y as refference . wheel should normally be a bit lower, not in the middle of the screen?
 
 			if(all.up_objs.length>2){
-//add a condition to make orbs smaller after 22 or so so they can fit in the cirfunference ..
-				//paint black
-				//all.d_rect(ctx1,320,0,600,600,0,0,0,1);
-				//call noise
-				//w_n_bg.is='imda';
-				//all.new_pv(all.anim_a, "w_n_bg", "is", "imda");
-
 				//prims position on wheel
 //i could change these parameters to change the center of the wheel when user is moving around maybe using touchscreen..
 				var c_x = window.innerWidth/2;
@@ -6151,24 +6204,28 @@ all.void_up = function(){
 					s.tx=x; s.ty=y; s.ctx=ctx1;
 					s.radius = p_rad-(all.up_objs.length*2); 
 					s.inside = "empty";
-					s.is="c_circle"; s.t=9;
-					s.se="white_noise_in"; s.r=220; s.g=220; s.b=220; s.a=1; //init values
+					s.is="circle"; s.t=1;
+					s.se="idle";
+					s.r=220; s.g=220; s.b=220; s.a=1; //init values
 					s.tch='prim'; s.ges = [];
 					//empty circle for w noise
 					all.clear_circle(ctx1,s.tx,s.ty,s.radius);
 					all.anim_a.push(s);
 
-				//prim01 .. needs revamp
-			/*
+				//prim01 
 					var s_n = all.txt_s_new("prim01_"+all.up_objs[l].name);
 					s_n.ctx=ctx1; // hmmm ctx1 ok?
 					s_n.tx=x; s_n.ty=y+4;
 					s_n.r=220; s_n.g=220; s_n.b=220; s_n.a=0; //init values
 					s_n.txt=all.up_objs[l].name;
-					s_n.is='c_txt'; s_n.t=9;
 					s_n.font='18px Courier New';
+					s_n.is='c_txt'; s_n.t=-1;
+					s_n.display='custom';
+					s_n.custom_a=[
+						[0.1,'a'],[0.3,'a'],[0.6,'a'],[0.9,'a'],[1,'a'],[0.9,'a'],[0.6,'a'],[0.3,'a'],
+						[200,'r',200,'g',200,'b',0.1,'a']
+					];
 					all.anim_a.push(s_n);
-			*/
 
 				angle_n = angle_n+angle;
 				}
@@ -6404,7 +6461,7 @@ all.c_com = function(){ //(check commands)
 					if(mc_a[2]=='inner mode'){
 						all.stream_a.push(
 					'_______________________________________________________________________________________________',
-					'Orbs on idle enter inner mode. When users take control , they now have access to orbs commands.',
+					'Orbs on idle enter inner mode. When users take control , they now have access to orbs edit commands.',
 					'Orbs can upload images and audio files into the browser to be used on Sunya.',
 					'All edit commands are available from inner mode; .img , .audio, .txt, .circle, .rect, .osc... ',
 					'There is also; .perform and .signal',
@@ -6421,7 +6478,7 @@ all.c_com = function(){ //(check commands)
 					'Type in .mainstream to print user mainstream properties.',
 					'You can type in; .mainstream.[property]:[new value]  to change mainstream properties',
 					'Color settings use rgba values, red, green, blue and alpha. These all work between 0 to 220',
-					'except for alpha. "a" can go from 0.0 to 1',
+					'except for alpha. "a" can go from 1 to 10',
 					'---entry incomplete---',
 					'________________________________________________________________________________________'
 						);
@@ -6466,12 +6523,12 @@ all.c_com = function(){ //(check commands)
 						all.stream_a.push(
 					'______________________________________________________________________________________',
 					'Type in .help.[delta] for detailed explanation on each delta operation down bellow.',
-					'exit, next/back, left_123, right_123, up_123, down_123,',
-					'gain_+-, start time_+-, end time_+-, hz up_123, hz down_123,',
-					'sine, square, saw, triangle, e, size_+-, r_123, g_123, b_123, a_+-,',
-					'change, remove, sleft_123, sright_123,',
-					'sup_123, sdown_123, width_+-, height_+-, center,',
-					'empty, filled, radius_+-, define, capture, run, alltime_123, time_123,',
+					'exit, next, back, left, right, up, down,',
+					'gain, start time, end time, hz up, hz down,',
+					'sine, square, saw, triangle, e, size, r, g, b, a,',
+					'change, remove, sleft, sright, sup, sdown, width, height, center,',
+					'empty, filled, radius, define, capture, run, alltime, time,',
+					'custom, beat',
 					'______________________________________________________________________________________'
 						);
 					}
@@ -6481,21 +6538,28 @@ all.c_com = function(){ //(check commands)
 					'______________________________________________________________________________',
 					'.signal:exit',
 					'If user is on inner mode, this command will take user to the void.',
-					'This command will also allow user to exit from all edit modes into inner mode',
+					'This command will also allow user to exit from all edit modes into inner mode,',
+					'while saving all changes done on the animation.',
 					'______________________________________________________________________________'
 						);
 					}
-					if(mc_a[2]=='next/back'){
+					if(mc_a[2]=='next'||mc_a[2]=='back'){
 						all.stream_a.push(
 					'______________________________________________________________________________',
 					'.signal:next/back',
 					'In osc editor, we use "next" and "back" to change osc edit stored on current orb.',
-					'On txt editor, "next" and "back" lets us move between lines to work on.',
+					'On txt editor, "next" and "back" lets us move between txt lines to work on.',
 					'circle, rect and img editors use "next" and "back" to move between the animation frames.',
 					'______________________________________________________________________________'
 						);
 					}
-	
+					if(mc_a[2]=='left'||mc_a[2]=='right'||mc_a[2]=='up'||mc_a[2]=='down'){
+						all.stream_a.push(
+					'______________________________________________________________________________',
+					
+					'______________________________________________________________________________'
+						);
+					}
 					if(mc_a[2]=='upload'){
 						all.stream_a.push(
 					'______________________________________________________________________________________',
@@ -6513,14 +6577,14 @@ all.c_com = function(){ //(check commands)
 					if(mc_a[2]=='img'){
 						all.stream_a.push(
 					'____________________________________________________',
+					'.img',
+					'Prints out informtation of current img edits on this orb.',
 					'.img:[img edit name]',
 					'Modifies or creates an image edit. Starts img editor.',
 					'.img.[img edit name].delete',
 					'Deletes specified img edit only.',
 					'.img.purge',
 					'Deletes all previously stored img edits on this orb.',
-					'.img.list',
-					'Prints out a list of current img edits on this orb.',
 					'____________________________________________________'
 						);
 					}
@@ -7190,7 +7254,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 //maybe we could use .void to go to void from inner mode..
 
 //EDIT animations using forms, texts  or files.
-			
+	
+//needs revision....
 //AUDIO , EDIT
 //.audio 
 //.audio:[audio name]
@@ -7348,9 +7413,18 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}
 					//clear is too much a light word to do this... purge is better
 					if(purge){
-						c_orb.img = [];
-						all.stream_a.push('img edits container has been cleared..');
-						all.screen_log();
+						var rl = c_orb.img.length;
+						while(rl--){
+							var a = c_orb.img[rl];
+							var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+							if(sr){
+								sr.u_d.push('is','rm');
+								sr.is='c_img'; sr.t=1; sr.et = -1;
+							}
+						}
+						c_orb.img= [];
+						all.stream_a.push("All img animations have been deleted."); all.screen_log();
+
 					}
 					if(list){
 //list img animations and a brief description. number of frames, which event is tied to etc
@@ -7429,8 +7503,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 //TXT , EDIT
 //.txt
 //.txt:[txt name]
-//.txt.[txt name].delete //not ready..
-//.txt.[txt name].run //not ready..
+//.txt.[txt name].delete
+//.txt.[txt name].run
 //.txt.purge
 //.. so all these list commands are redundant. make it so when we type in .txt , all edits are printed along with useful information
 //about txt edits in this orb.. same with img , circle etc...
@@ -7506,7 +7580,25 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}//
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
 					if(mcp_a[1]!=undefined){var proceed = true;}
-					if(purge){c_orb.txt = [];}
+					if(purge){
+						c_orb.txt = [];
+						var l0=a[0];
+						var al = all.anim_a.length; var cl_pl = (l0.name.length+5);
+						while(al--){
+							var s = all.anim_a[al];
+							if(s.name){
+								var name = s.name.substr(0, cl_pl);
+								if(name == l0.name+'_line'){ //so it removes all lines
+									//s.is="rm"; 
+									all.clear_txt(s);
+									var index = all.anim_a.indexOf(s); 
+									all.anim_a.splice(index,1);
+								}
+							}
+						}//clears
+						all.stream_a.push("..All txt edits have been deleted.");all.screen_log();
+						//all.clear_rect(ctx1,0,0,window.innerWidth,window.innerHeight);
+					}
 					if(list){
 						//list texts and a brief description. number of lines, which event is tied to etc
 						var l = c_orb.txt.length;
@@ -7622,7 +7714,19 @@ all.stream_a.push("but yes, you can try again if you want..");
 	
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
 					if(mcp_a[1]!=undefined){var proceed = true;}
-					if(purge){c_orb.circle= [];}
+					if(purge){
+						var rl = c_orb.circle.length;
+						while(rl--){
+							var a = c_orb.circle[rl];
+							var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+							if(sr){
+								sr.u_d.push('is','rm');
+								sr.is='c_circle'; sr.t=1; sr.et = -1;
+							}
+						}
+						c_orb.circle= [];
+						all.stream_a.push("All circle animations have been deleted."); all.screen_log();
+					}
 					if(list){
 						var l = c_orb.circle.length;
 						all.stream_a.push("---------------------------");
@@ -7732,7 +7836,20 @@ all.stream_a.push("but yes, you can try again if you want..");
 	
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
 					if(mcp_a[1]!=undefined){var proceed = true;}
-					if(purge){c_orb.rect= [];}
+					if(purge){
+						var rl = c_orb.rect.length;
+						while(rl--){
+							var a = c_orb.rect[rl];
+							var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
+							if(sr){
+								sr.u_d.push('is','rm');
+								sr.is='c_rect'; sr.t=1; sr.et = -1;
+							}
+						}
+						c_orb.rect= [];
+						all.stream_a.push("All rect animations have been deleted."); all.screen_log();
+
+					}
 					if(list){
 						var l = c_orb.rect.length;
 						all.stream_a.push("---------------------------");
@@ -7783,7 +7900,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}//proceed
 					
 				}//rect
-
+//needs revision...
 //OSC , EDIT
 //.osc
 //.osc:[osc name]
@@ -7817,6 +7934,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 						mcp_a[1]=undefined; var noname = true;
 					}
 					if(mcp_a[1]!=undefined){var proceed = true;}
+					//needs revision..
 					if(purge){c_orb.osc= [];}
 					if(list){
 						//list rect anims and a brief description, which event is tied to etc
@@ -7875,7 +7993,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 				
 			}//inner mode commands
 			
-//RADIANCE . ACT		
+//RADIANCE . ACT
 //whats the point of orb.out stance now? Acts will run and create instances for orbs to
 //interact. the same acts will make instances for orbs
 //to do things on their own as well. We only need a stance to check for acts activity... we should be able to do this from void.
@@ -7917,7 +8035,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 
 //PLAY . ACT		
 //a command to run an act
-//only radiant orbs can perform. yes we can run acts from orbs not in control
+//only radiant orbs can perform. yes we can also run acts from orbs not in control
 //as long as such orbs are on orb.out stance?, on radiant mode
 //... so update this ... hmmm should not have a second parameter here.. while on radiant mode, users can only play acts from currently
 //controled orb
