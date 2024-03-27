@@ -84,7 +84,7 @@ all.user = {
 	//mainstream , scrollable
 	mainstream:	{
 		name:"__default",
-		r:220, g:220, b:220, a:0.6, x:6, y:window.innerHeight-12, on_screen:0, limit:30, 
+		r:220, g:220, b:220, a:0.6, x:6, y:window.innerHeight-12, limit:30, 
 		font:'px Courier New', size:13, spacer:-15, align:'left',
 		freeze: false, up:false, down:false, left:false,right:false, c_last:0,
 		history: []
@@ -281,7 +281,7 @@ all.keys_feed = function(){
 //EVENT funcs KEY
 const kdown = function(ev){
 	//event.preventDefault();
-	if(ev.repeat){return}//prevents repeating
+	if(ev.repeat){return}//prevents repeating.. but we want repeat on certain instances. scrolling stream for example
 	//console.log(ev);
 	//ev.shiftKey
 	//ev.ctrlKey
@@ -290,6 +290,10 @@ const kdown = function(ev){
 	//console.log(e + " " + String.fromCharCode(e)); //allow this to see what key code you press on console
 	var u = all.user;
 	var c_o = all.find_ting(all.up_objs,"u_in_contrl", true);
+	//strem for streaming target
+	if(c_o){
+		if(c_o.radiant_mode==true){var strem = c_o.stream;}else{var strem = u.mainstream;}
+	}else{var strem = all.user.mainstream;}
 
 //SPACEBAR
 //a system to attach commands into keys
@@ -341,8 +345,9 @@ const kdown = function(ev){
 		all.s_s_t_r = []; all.sstr = ' '; all.sstr_l = ' '; all.user.wait_com_key = false; all.sstr_g=220; all.sstr_r=220;
 		all.user.wait_com_key_forget = false; //clear forget key lock also
 	//and also, just clear active stream?
-	//.. for now this is ok
-		all.clear_stream(all.user.mainstream);
+	//ok if user is on radiant mode, we have to clear the orb stream
+		//if(c_o.radiant_mode){var strem = c_o.stream;}else{var strem = all.user.mainstream;}
+		all.clear_stream(strem);
 		//console.log("Clear");
 		//rip all.clean_f   F
 	}//backspace
@@ -483,40 +488,39 @@ const kdown = function(ev){
 //... still needs to handle orb streams on radiant mode update this
 //all arrow keys except for right arrow should freeze stream
 	if(e == 37 & all.chat_on == false){
-		//console.log('left?');
 		//detach from stream updates but keep storing messages on history. freeze stream
-		if(u.stance=='void'||u.stance=='orb.in'){
-			u.mainstream.left=true;
-			all.screen_log();
-		}
+		//if(u.stance=='void'||u.stance=='orb.in'){
+		strem.left=true;
+		all.screen_log();
+		//}
 
 	}//left arow
 
 	if(e == 39 & all.chat_on == false){
 		//console.log('right?');
 		//unfreeze stream, scroll to last message
-		if(u.stance=='void'||u.stance=='orb.in'){
-			u.mainstream.right = true;
-			all.screen_log();
-		}
+		//if(u.stance=='void'||u.stance=='orb.in'){
+		strem.right = true;
+		all.screen_log();
+		//}
 	}//right arow
 
 	if(e == 38 & all.chat_on == false){
 		//console.log('up?');
 		//detach and print current lines - 1 using limit and history
-		if(u.stance=='void'||u.stance=='orb.in'){
-			u.mainstream.up = true;
-			all.screen_log();
-		}
+		//if(u.stance=='void'||u.stance=='orb.in'){
+		strem.up = true;
+		all.screen_log();
+		//}
 	}//up arow
 
 	if(e == 40 & all.chat_on == false){
 		//console.log('down?');
 		//detach and print current lines + 1 , dont do anything if already on last line
-		if(u.stance=='void'||u.stance=='orb.in'){
-			u.mainstream.down=true;
-			all.screen_log();
-		}
+		//if(u.stance=='void'||u.stance=='orb.in'){
+		strem.down=true;
+		all.screen_log();
+		//}
 	}//down arow
 
 
@@ -749,9 +753,10 @@ all.handleImgFile = () => {
 	//console.log(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);//name, size, type of the file
 	//type string is empty is file cant be determined
 }
+//EVENT
 img_in.addEventListener("change", all.handleImgFile);
 
-//AUDIO EVENT
+//AUDIO
 //return a buffer into controled orb.audio_access using a file uploaded by user
 //it needs to be located on a BufferSource
 all.handleAudioFile = () => {
@@ -786,6 +791,7 @@ all.handleAudioFile = () => {
 	all.stream_a.push(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);
 	all.screen_log();
 }
+//EVENT
 audio_in.addEventListener("change", all.handleAudioFile);
 
 
@@ -834,12 +840,14 @@ audio_in.addEventListener("change", all.handleAudioFile);
 //if user is on radiant mode, we use the orb stream we use ACT stream system
 //
 all.screen_log = function(stream){ //stream, ctx? orb? the stream itself we could pass here?
-
-	if(stream===undefined){var stream = all.user.mainstream;}
+	if(stream===undefined){
+		var c_o = all.find_ting(all.up_objs,"u_in_contrl", true);
+		if(c_o){
+			if(c_o.radiant_mode==true){var stream = c_o.stream;}else{var stream = all.user.mainstream;}
+		}else{var stream = all.user.mainstream;}
+	}
 
 	if(stream=='estream'){var stream = all.user.estream; var clear_history = true;}
-
-	//if(stream=='ostream'){}
 
 //all STREAMs use HISTORY..
 	var sal = all.stream_a.length; //2
@@ -901,9 +909,10 @@ all.screen_log = function(stream){ //stream, ctx? orb? the stream itself we coul
 }//screen_log
 
 
-//a function to clear a specific stream. it removes states that start with a specific string of words
+//a function to CLEAR a specific STREAM. it removes states that start with a specific string of words
 //maybe i should also ask for '__line'...
 //ok so this clear is great because it simply clears by name match no matter the number of the line at the end
+//so we use stream name to clear all corresponding states.
 all.clear_stream = function(stream){
 	var l = all.anim_a.length; var extr_name = stream.name.length;
 	while(l--){
@@ -1066,10 +1075,7 @@ all.orb_new = function(orb_name){
 		name: orb_name , u_in_contrl : false,  
 		img_access: undefined, current_img_file : undefined,
 		audio_access: undefined, current_audio_file : undefined,
-		stream:	[
-//ok so streams will be neccesary on act , but am still not sure what really should hold as act elements..
 
-		],
 //just one init will suffice.. no need to have so many init booleans in here
 		init : false,  //controls inits on modes
 		inner_mode: true,
@@ -1090,6 +1096,14 @@ all.orb_new = function(orb_name){
 		rec: ["off"], //holds a recording memory,may or may not be kept, if kept, it goes into..
 		records : [],//..here
 		actors:[], //actor acts currently playing
+
+		stream:	{
+			name:"__default",
+			r:220, g:220, b:220, a:0.6, x:6, y:window.innerHeight-12, limit:15, 
+			font:'px Courier New', size:14, spacer:-15, align:'left',
+			freeze: false, up:false, down:false, left:false,right:false, c_last:0,
+			history: []
+		},
 
 		//we hold custom key shorts in here
 //default keys could be requested and removed on demand so we dont saturate orbs with these
@@ -2098,6 +2112,14 @@ all.actuator = function(txt, orb){
 //link[3] holds edit nature and link[4] will hold buffer now if any
 			}//check link line
 
+//an instruction to link resource owner orb stream into the resource itself.
+//STREAM
+//	/stream
+			var le_stream = line.txt.substr(0,7);
+			if(le_stream=="/stream"){//... txt first 7 item should say "/stream"
+				act_obj.stream=orb.stream;
+			}
+
 		}//resource
 
 //ACTOR
@@ -2136,7 +2158,7 @@ all.actuator = function(txt, orb){
 //[ltag1]{keep1}
 //[ltag1]//str=#a string am looking for{keep1}
 //[ltag1]//num=#a number am looking for{keep1}
-//{keep1}[R]//asign(new tag1)
+//{keep1}[R]//cast(new tag1)
 //[R]//name=#a name am looking for{keep2}
 			var i2 = 0; var l2 = line.txt.length; 
 			var statement = []; var input_a = [];
@@ -2199,7 +2221,7 @@ all.actuator = function(txt, orb){
 				}
 
 				if(push_com){
-					if(operator||parenthesis||lock||brackets){
+					if(operator||parenthesis||lock||brackets||l2==0){//!! this works for /end
 						//push com
 						var com = input_a.join(''); input_a = [];
 						statement.push("com",com); com = undefined;
@@ -2208,7 +2230,10 @@ all.actuator = function(txt, orb){
 						var parenthesis = undefined; var lock = undefined;
 						var brackets = undefined; var statemend = undefined;
 					}else{
-						if(sym!='/'){input_a.push(sym); }
+						if(sym!='/'){
+							input_a.push(sym); 
+							//if(l2==0)...
+						}
 					}
 					var no_push = true;
 				}				
@@ -2233,7 +2258,7 @@ all.actuator = function(txt, orb){
 //[resource tag]//logic(logic key)(logic access tag)
 //[access tag1]//subcommand=[access tag2]//command{condition evaluated} ..
 //{condition}[access tag]//subcommand ..
-//update: we are adding literals to statements now
+//update: we are adding literals to statements now..?
 //#literal string>>[tag]//subcommand
 //[tag]//subcommand+#literal number
 //[tag]//subcommand=#literal string{condition}
@@ -2371,11 +2396,12 @@ all.runa = function(aa){
 all.playl = function(ra,aa){
 	var i1 = 0; //statements should be read in order
 	var l1 = aa.phase1_stmts.length;
-	var p1perform = []; //we use all.perform exclusively to push ra on phase1
+	var p1perform = []; //p1perform is a phase1 perform array.we use all.perform exclusively to push ra(resource acts) on phase1
 	while(l1--){
 		var stmt = aa.phase1_stmts[i1];
 //PHASE1 possible arrangements
-//we need literals on phase1 so its more practical to find resources
+//we need literals on phase1 so its more practical to find resources.
+//we can add resources by its name, by a logic string,a logic number or a logic key
 //[R]//logic(lkey)(ltag1) ,  length 8, [3] 'logic'  done
 //[R]//name=#a name am looking for{keep1} , length 10, [1] R  done
 //[ltag1]//str=#a string am looking for{keep1} , length 10 [3] str  done
@@ -2386,51 +2412,59 @@ all.playl = function(ra,aa){
 //maybe i should only push ra into perform array and use a diferent array for cond
 //and ltags? .. not sure yet
 		if(stmt.length==8){
-		//[R]//logic(key)(tag)
+		//[R]//logic(key)(access tag)
 			if(stmt[3]=='logic'){
 				var l2 = ra.logics.length;
 				while(l2--){
 					var logi = ra.logics[l2];
-					if(stmt[5]==logi[2]){//logic matched
+					if(stmt[5]==logi[2]){//logic key matched
+						//so we are pushing the access tag and the logic object itself..ok
 						p1perform.push(stmt[7],logi); break
 					}
 				}
 			}//logic
-			
-//{keep1}[R]//cast(new tag1) , length 8 [0] 'condition'
+
+//when the condition is fullfilled, we add the resource to all.perform using the "cast" instruction
+//{keep1}[R]//cast(access tag for current resource) , length 8 [0] 'condition'
 			if(stmt[0]=='condition'){
 				var l2 = p1perform.length;
 				while(l2--){
 					var cond = p1perform[l2];
-					if(stmt[1]==cond){//cond tag found on perform
-						all.perform.push(stmt[7],'ra',ra);
+					if(stmt[1]==cond){
+				//cond tag found on p1perform so we run the statement. in this case the only possible statement to run
+				//is to pass on the resource into all.perform for act to work with.
+				//we pass an access tag, the 'ra' word and the resource itself. we need 'ra' to identify the resource..?
+						all.perform.push(stmt[7],'ra',ra); break //break?
 					}
 				}	
 			}//condition
 		}//length 8
 
+//finding a resource
 		if(stmt.length==10){
 			var l2 = p1perform.length;
 			while(l2--){
 				var ltag = p1perform[l2];
 				if(stmt[1]==ltag){//ltag found on perform
 					var logi = p1perform[l2+1];
+//by accessing a logic string..
 //[ltag1]//str=#a string am looking for{keep1} , length 10 [3] str
 					if(stmt[3]=='str'){
-						if(logi[0]==stmt[7]){
-							p1perform.push(stmt[9]); break
+						if(logi[0]==stmt[7]){ //logi0 is the string
+							p1perform.push(stmt[9]); break //so we push stmnt9 which is the condition keyword
 						}
 					}
-					
+//by accessing a logic number..		
 //[ltag1]//num=#a number am looking for{keep1} , length 10 [3] num
 					if(stmt[3]=='num'){
-						if(logi[1]==stmt[7]){
-							p1perform.push(stmt[9]); break
+						if(logi[1]==stmt[7]){ //logi1 is the number.. ok
+							p1perform.push(stmt[9]); break //we push stmnt9 which is the condition keyword
 						}
 					}
 				}
 			}//find ltag
-			
+
+//..or by accessing a a resource name
 //[R]//name=#a name am looking for{keep1} , length 10, [1] R
 			if(stmt[3]=='name'){
 				if(ra.name==stmt[7]){
@@ -2440,12 +2474,13 @@ all.playl = function(ra,aa){
 
 		}//length 10
 
+// also the simple prescence of a tag can unlock a condition.
 		if(stmt.length==4){
 //[ltag1]{keep1} , length 4
 			var l2 = p1perform.length;
 			while(l2--){
 				var ltag = p1perform[l2];
-				if(stmt[1]==ltag){//ltag found on perform
+				if(stmt[1]==ltag){//ltag found on p1perform so condition is unlocked
 					p1perform.push(stmt[3]); break
 				}
 			}	
@@ -2467,8 +2502,13 @@ all.playa = function(aa){
 //on first lines, we expect any number of these
 //[resource tag]//logic(logic key)(logic access tag) 8 .... 
 //[resource tag]//link(link key)(link access tag) 8 .... 
+//what about streams..
+//[resource tag]//stream(access tag) 6...
+
 //am thinking phase2 doesnt need to handle literals. we have resources already
-//and the stream sc should be able to provide more than enough versatility
+//and the stream sc(subcommand) should be able to provide more than enough versatility
+//.. am thinking instead of calling these 'subcommands' they should should be called 'instructions' for consistency s sake. we already
+//have commands and subcommands to work with sunya input box...
 //[tag]//subcommand=[tag]//subcommand{cond} 12
 //[tag]//subcommand<[tag]//subcommand{cond} 12
 //[tag]//subcommand>[tag]//subcommand{cond} 12
@@ -2484,7 +2524,8 @@ all.playa = function(aa){
 	var l1 = aa.phase2_stmts.length;
 	while(l1--){
 		var stmt = aa.phase2_stmts[i1];
-//here goes thecondition thing. handle condition at beggining
+//here goes thecondition thing. handle condition at beggining. we just strip 'tag' and condition tag from the statement and run it normally
+//if the condition tag was already on all.perform. if not, then we just ignore the statement and proceed with next line(next statement)
 		if(stmt[0]=='condition'){
 			//ask if its on perform, if its on, then..
 			var l2 = all.perform.length;
@@ -2500,26 +2541,54 @@ all.playa = function(aa){
 				continue
 			}
 		}//condition on 0
+
+//we need an instruction to end the act... ending an act would imply removing all states under the act control. so we need  way to identify
+//states created by this act.. it worked
+///end
+		if(stmt[1]=='end'){
+			//clear all asociated states
+			var l = all.anim_a.length; 
+			var rname = '_lks_'+aa.name+aa.orb;
+			while(l--){
+				var s = all.anim_a[l]; 
+				var ename = s.name.substr(-rname.length);
+				if(ename == rname){
+					//all.clear_txt(s); //s.name=undefined;
+					var rmsi = all.anim_a.indexOf(s);
+					all.anim_a.splice(rmsi,1);
+					//s.is="rm";
+				}
+			}
+			//remove this act from orb.actors
+			var orb = all.find_ting(all.up_objs, 'name', aa.orb);
+			var rmactor = orb.actors.indexOf(aa);
+			orb.actors.splice(rmactor,1);
+			break	
+		}
 		
-		if(stmt[3]=='logic'||stmt[3]=='link'){
+		if(stmt[3]=='logic'||stmt[3]=='link'||stmt[3]=='stream'){
 			var l2 = all.perform.length;
 			while(l2--){
 				var tag = all.perform[l2];
+				//looking for resource access tag..
 				if(tag==stmt[1]){
-					//[R]//logic(key)(tag)
+					//[resource tag]//logic(key)(tag)
 					if(stmt[3]=='logic'){
-						var R = all.perform[l2+2];//resource
-						//R.logics
+						var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
+						//R.logics grants access to logic resources
 						var l3 = R.logics.length;
 						while(l3--){
 							var logi = R.logics[l3];
-							if(stmt[5]==logi[2]){//logic matched
-								all.perform.push(stmt[7],'logi',logi); break
+							if(stmt[5]==logi[2]){//logic key matched
+								all.perform.push(stmt[7],'logi',logi); break //logi access tag, 'logi', logi
 							}
 						}
+
 					}//logic
-					
-					//[R]//link(key)(tag)
+
+//so far its link[0] edit name, link[1] is link key , link[2] reference to edit ,
+//link[3] holds edit nature and link[4] will hold buffer now if any
+					//[resource tag]//link(key)(tag)
 					if(stmt[3]=='link'){
 						var R = all.perform[l2+2];
 						//R.links
@@ -2531,56 +2600,91 @@ all.playa = function(aa){
 //txt and other types of edits. .. we can control txt from first line state.
 //audio edits structure need revision!!!!!!!! records too.. 
 								if(lin[3]=='img'){
-				var lks = all.find_ting(all.anim_a, "name", lin[0]+'_lks_'+aa.name);
+				var lks = all.find_ting(all.anim_a, "name", lin[0]+'_lks_'+aa.name+aa.orb);//act and orb names.. yup
 									if(lks){}else{
+		//not sure if here is the best instance to check for loaded img file...
 				var lks = all.ims_s_new(lin[0]+'_lks_'+aa.name, lin[4]);
-								var f0 = lin[2][0];
-								lks.anim=lin[2]; lks.is='f'; lks.f=0; //?
-								lks.a=f0.a; lks.t=f0.t; lks.nfreq=0;
-								lks.x=f0.x; lks.y=f0.y; lks.w=f0.w; lks.h=f0.h;
-								lks.px=f0.px; lks.py=f0.py; lks.pw=f0.pw; lks.ph=f0.ph;
-								lks.ctx = ctx0;//
+								var sret = all.getetv(lin[2])
+								lks.anim=lin[2]; lks.is='f'; 
+								//lks.f=0; //?
+								//lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
 								lks.tx = Math.floor(window.innerWidth/2); 
 								lks.ty = Math.floor(window.innerHeight/2);
-								//lks.run=2; //!!!!!!!
+								lks.ctx = ctx1;// lets use ctx1 by default for now
+								lks.t=1; lks.nfreq=0; lks.rt=0; lks.et=sret;
+								lks.run=2; //!!!!!!!
 
 								all.anim_a.push(lks);
 									}
-									
+							//we use access tag and +2 to affect the edit state directly	
 									all.perform.push(stmt[7],'img',lks); break
 								}//img
 								
+								//txt
 								//...
 								
 							}//link match
 						}//links loop
 					}//link
+
+//resources should be able to grant access to orbs streams. so streams could be stored on resources directly, since streams are
+//just objects with properties, we could access orbs stream properties and also change values to make the stream appear on our
+//screen. streams could be treated exactly as logi and link resources. stream txt, x y position, color, size etc. same as edits
+//we would use stream properties to create states, and we could affects the states but not the properties of the original stream.
+//we could direct the stream to another orb while modifying its appearance, or we could use a stream txt to affect other states.
+//one things big thing... maybe we dont need to make all history accessible, just one line at a time. so we can take the last stream
+//line and process it using its own custom display..? 
+					//[resource tag]//stream(access tag)
+					if(stmt[3]=='stream'){
+						var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
+						all.perform.push(stmt[5],'stream',R.stream); 
+						//stream access tag, 'stream', resource orb stream
+					}
+
 					
 				}//tag found .. else let user know res not found?
 			}//perform loop l2 for 1 R in line on phase2 ..
+
+
 			
-			i1++; continue   //
+			i1++; continue   //to the next statement..
 		}//logic and link check
-				
-//by now all.perform should have consecutive triplets with tags , natureof and
-//resource elements. 
+
+
+
+
+
+//by now all.perform should have consecutive triplets with tag , natureof and resource itself.
 //we only need to find tags on perform and we already know its asociated resource
 //is located +2 next to it on the same perform array.
 //.. i can narrow down this further..
 //if perform is empty at this point, we can simply ignore all this and break
 //or cont
 
-//.. then a tag, a command, an operation, and again, a tag, a command, an
-//operation..
+//.. then a tag, a command, an operation, and again, a tag, a command, an operation..
+//i think i designed it like this for simplicity. these statements always need 2 resources to operate. if one of the resource isnt
+//found or condition isnt found then the statement is simply ignored . even condition tag at the begginning was considered previously
+//we have to work with these structures to create all effects desired for eficiency s sake
+//[tag]//subcommand=[tag]//subcommand{cond} 12
+//[tag]//subcommand<[tag]//subcommand{cond} 12
+//[tag]//subcommand>[tag]//subcommand{cond} 12
+
+//[tag]//subcommand+[tag]//subcommand 10
+//[tag]//subcommand-[tag]//subcommand 10
+//[tag]//subcommand>>[tag]//subcommand 10
 		var l2 = all.perform.length;
 		while(l2--){
 			var tag = all.perform[l2];
 			//find tags
-			if(stmt[1]==tag){var R1 = all.perform[l2+2]; var R1N = all.perform[l2+1];}
+			if(stmt[1]==tag){var R1 = all.perform[l2+2]; var R1N = all.perform[l2+1];} //Resource and RestourceNature
 			if(stmt[7]==tag){var R2 = all.perform[l2+2]; var R2N = all.perform[l2+1];}
 		}//perform loop to get tags
+
 		if(R1==undefined||R2==undefined){
 			if(cond!=undefined){
+				//i think am just restoring the condition here for the next resource check..
+				//because the condition was fullfilled, but the resource wasnt found so we ignore this statement
+				//maybe on another heartbeat in the future the resource we lack now might available.
 				stmt.unshift('condition',cond);
 				var cond = undefined;
 			}
@@ -2588,7 +2692,7 @@ all.playa = function(aa){
 			continue
 		}
 
-//we need to retrieve values from subcommands running on resources. the idea is
+//we need to retrieve values from subcommands(instructions) running on resources. the idea is
 //to ask all the same questions to both resources so we do a double loop
 //rvalue would look like [wheretowork, res1 value, wheretowork, res2 value].
 		var l2 = 2; var rvalues =[];
@@ -2598,21 +2702,32 @@ all.playa = function(aa){
 //second loop
 			if(l2==0){var R = R2; var sc_pos = 9;}
 				//
-			if(stmt[sc_pos]=='str'){rvalues.push('lstr',R[0]);}
-			if(stmt[sc_pos]=='num'){rvalues.push('lnum',R[1]);}
-				
-			if(stmt[sc_pos]=='x'){rvalues.push('tx',R.tx);}
+		//logi
+			if(stmt[sc_pos]=='str'){rvalues.push('lstr',R[0]);} //R[0] holds logic string
+			//we could transform values into numbers here...
+			if(stmt[sc_pos]=='num'){rvalues.push('lnum',R[1]);} //R[0] holds logic number
+
+		//img, rect circle links. these affect states directly
+			//these also need to be numbers...
+			if(stmt[sc_pos]=='x'){rvalues.push('tx',R.tx);} //R is a state now
 			if(stmt[sc_pos]=='y'){rvalues.push('ty',R.ty);}
 			//if(stmt[sc_pos]=='run')
 			//if(stmt[sc_pos]=='time')
 			//if(stmt[sc_pos]=='duration')
-			//if(stmt[sc_pos]=='stream')
-			//if(stmt[sc_pos]=='name')
+		//stream
+//so we have a stream resource. what we are really interested in is in history. we want to be able to extract a specific history item
+//so we need an instruction to change the history item we want to extract and an instruction to extract the value of selected item
+//we can then pipe this value into other streams or into txt animations so no need to worry about effects right here
+		//lets just make the last input available with the "stream" instruction
+		//stream values should be able to handle both numbers and strings
+			if(stmt[sc_pos]=='streams'){rvalues.push('streams',R.history[R.history.length-1]);}
+			//if(stmt[sc_pos]=='history')//{rvalues.push();}
 			//
 		}//l2 loop rvalues
 
 
 //All that is left, is to ask for operations and place results where they go
+		//'+' and '-' operation need to work with numbers...
 		if(stmt[5]=='+'){var NV = (rvalues[1]+rvalues[3]); var to = 1;}
 		if(stmt[5]=='-'){var NV = (rvalues[1]-rvalues[3]); var to = 1;}
 		if(stmt[5]=='>>'){var NV = rvalues[1]; var to = 2;}
@@ -2639,7 +2754,12 @@ all.playa = function(aa){
 			if(to==1){R1.ty=NV;}
 			if(to==2){R2.ty=NV;}
 		}
-			
+		if(rvalues[0]=='streams'){
+			if(to==1){R1[0]=NV;}
+			if(to==2){R2[0]=NV;}
+		}	
+
+
 		//restoring stmt original structure
 		if(cond!=undefined){
 			stmt.unshift('condition',cond);
@@ -6801,9 +6921,10 @@ all.c_com = function(){ //(check commands)
 				}
 			//if no new value, just push the value to inform user of current stream param
 				if(dont){}else{
+					var us = all.user.mainstream;
 					if(mc_a[2]==undefined){
+						
 						//just print all mainstream stats
-						var us = all.user.mainstream;
 						all.stream_a.push(
 				'___________________________________',
 				'Use .mainstream.[property]:[new value] to change a property.',
@@ -6814,12 +6935,16 @@ all.c_com = function(){ //(check commands)
 						);
 						all.screen_log();
 					}else{
-						if(mc_a[2]=='font'){
-							var p = mcp_a[1]
-						}else{
-							var p = parseFloat(mcp_a[1]);
+						//a somehow funky command to clear history
+						if(mc_a[2]=='clear'){us.history=[]; var done = true;}
+						if(done){}else{
+							if(mc_a[2]=='font'){
+								var p = mcp_a[1]
+							}else{
+								var p = parseFloat(mcp_a[1]);
+							}
+							all.n_param_com(mc_a[2], p ,all.user.mainstream);
 						}
-						all.n_param_com(mc_a[2], p ,all.user.mainstream);
 					}
 				//probly needs to clear stream activity when changes occur
 				}
@@ -8110,6 +8235,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 							}else{
 								//named_act.running = true;
 								var act = all.actuator(a, c_orb); //actuator call
+		//after actuator, act is pushed into all.res_acts array or into orb.actors array depending on "is" value
 								if(act.is=='resource'){
 									all.res_acts.push(act);
 								}
@@ -9569,28 +9695,5 @@ window.addEventListener('keyup', kup);
 //and continues execution of the loop with the next iteration.
 //The break statement terminates the current loop or switch statement and transfers program control to the statement following
 //the terminated statement. It can also be used to jump past a labeled statement when used within that labeled statement.
-*/
-
-//window methods
-/*
-window.scroll(x,y)  Scrolls window to position
-window.innerWidth	The width of the visible window
-window.innerHeight	The height of the visible window
-window.scrollX	The current x position of the window
-window.scrollY	The current y pos of the window
-window.scrollTo(x,y) Scrolls window to position also?
-*/
-
-
-/*
-function strToBool(s)
-{
-    // will match one and only one of the string 'true','1', or 'on' rerardless
-    // of capitalization and regardless off surrounding white-space.
-    //
-    regex=/^\s*(true|1|on)\s*$/i
-
-    return regex.test(s);
-}
 */
 
