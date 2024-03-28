@@ -1631,6 +1631,53 @@ all.anim_func = function(){
 //we just pass instructions just like when we pass a refference to anim with all other edits.
 */
 		if(s.is=="c_txt"){
+//only line1 should be able to have print value here. print takes properties from this state and uses them to create the rest
+//of the ext anim lines. kinda like print does on edit mode but now we use this state as anim[0] line 1. this state has the anim
+//property to retrieve all lines txt values. print actually searches the rest of the line states if they are already on animf and
+//quickly clears and banishes them and then it prints the whole text again.
+			if(s.display=='print'){
+				//always clear old lines if any
+				var l0=s.anim[0];
+				var al = all.anim_a.length; var cl_pl = (l0.name.length+5);
+				while(al--){
+					var cs = all.anim_a[al];
+					if(s.name){
+						var name = cs.name.substr(0, cl_pl);
+						if(name == l0.name+'_line'){ //so it removes all lines
+							//s.is="rm"; 
+							all.clear_txt(cs);
+							if(index==l){}else{
+								var index = all.anim_a.indexOf(cs); 
+								all.anim_a.splice(index,1);
+							}
+						}
+					}
+				}//old lines clear loop
+
+				//print lines of anim from top to bottom using s as starting point
+				var i = 2; //we start from 2 here because we dont want to create line1(this very state) again. 
+				var al = s.anim.length-1; //not sure what length to use
+				var spacer = s.spacer; //spacer unsure yes
+				while(al--){
+					var l_txt = s.anim[(i-1)].txt;
+					var print = all.txt_s_new(s.anim[0].name+"_line"+i+s.actid);
+					print.ctx=ctx1; 
+					print.x=s.x; print.y=s.y;
+					print.r=s.r; print.g=s.g; print.b=s.b; print.a=s.a;
+					print.font=s.font;
+					print.tx=s.tx; print.ty=s.ty;
+					print.is="txt"; print.txt=l_txt;
+					print.y=print.y+spacer; //next line y position difference . we need spacer on s0
+					print.display=s.anim[0].display;
+					print.custom_a=s.anim[0].custom_a;
+					print.t=-1;
+					all.anim_a.push(print);
+				spacer = spacer+s.spacer;
+				i++;}
+
+				s.display=s.anim[0].display;
+			}
+
 			if(s.display=='normal'){all.clear_txt(s); s.is='txt';}
 			if(s.display=='ignore'){s.is='f';}
 //custom
@@ -1667,8 +1714,11 @@ all.anim_func = function(){
 		}//txt animations
 
 
-
-//..we could simply update states here. this is what act scoms do;
+//We need to synch properly access from acts to animations parameters with animf. An act instruction might miss a beat if we
+//run animf and change a value before the instruction is executed...!!!!!
+//states holding run are merely used to talk with act scripts, we dont need the run parameter to explicitly affect animf
+//operations. When we use time and duration on a script we are also reffering to different parameters on states wich account
+//to what users perceive as time. scripts synthax purpose is to facilitate animation to users.
 //if run = 0, we s.t=1, rt = et, loop = false
 //if run = 1, we s.is = s, s.loop = true.. loop could be default
 //if run = 2, we s.is = 'f'
@@ -2258,7 +2308,8 @@ all.actuator = function(txt, orb){
 //[resource tag]//logic(logic key)(logic access tag)
 //[access tag1]//subcommand=[access tag2]//command{condition evaluated} ..
 //{condition}[access tag]//subcommand ..
-//update: we are adding literals to statements now..?
+//update: we are adding literals to statements now..?.. we probly dont really need literals on phase 2 but lets just keep
+//them here for now..
 //#literal string>>[tag]//subcommand
 //[tag]//subcommand+#literal number
 //[tag]//subcommand=#literal string{condition}
@@ -2504,28 +2555,24 @@ all.playa = function(aa){
 //[resource tag]//link(link key)(link access tag) 8 .... 
 //what about streams..
 //[resource tag]//stream(access tag) 6...
+//an instruction to grant actors access into reading a running resource script in the wild
+//unfinished...
+//[resource tag]//script
+//an instruction to ask for resource removal
+//[resource tag]//shutdown
 
-//am thinking phase2 doesnt need to handle literals. we have resources already
-//and the stream sc(subcommand) should be able to provide more than enough versatility
-//.. am thinking instead of calling these 'subcommands' they should should be called 'instructions' for consistency s sake. we already
-//have commands and subcommands to work with sunya input box...
-//[tag]//subcommand=[tag]//subcommand{cond} 12
-//[tag]//subcommand<[tag]//subcommand{cond} 12
-//[tag]//subcommand>[tag]//subcommand{cond} 12
-
-//[tag]//subcommand+[tag]//subcommand 10
-//[tag]//subcommand-[tag]//subcommand 10
-//[tag]//subcommand>>[tag]//subcommand 10
-
-//use resources available to run statements on them. if no resource then ignore
-//the statement. 
+//an instruction to end the script execution
+// /end
+	
+ 
 //loop phase2 statements of actor
 	var i1 = 0; //statements should be read in order
 	var l1 = aa.phase2_stmts.length;
 	while(l1--){
 		var stmt = aa.phase2_stmts[i1];
 //here goes thecondition thing. handle condition at beggining. we just strip 'tag' and condition tag from the statement and run it normally
-//if the condition tag was already on all.perform. if not, then we just ignore the statement and proceed with next line(next statement)
+//if the condition tag was already on all.perform. PERFORM .if not, then we just ignore the statement and proceed with next 
+//line(next statement)
 		if(stmt[0]=='condition'){
 			//ask if its on perform, if its on, then..
 			var l2 = all.perform.length;
@@ -2553,9 +2600,11 @@ all.playa = function(aa){
 				var s = all.anim_a[l]; 
 				var ename = s.name.substr(-rname.length);
 				if(ename == rname){
-					//all.clear_txt(s); //s.name=undefined;
-					var rmsi = all.anim_a.indexOf(s);
-					all.anim_a.splice(rmsi,1);
+	//ok maybe we do need to clear and remove states using s_u 
+					s.u_d.push('is','rm','et',-1);
+					s.is='c_'+s.s; s.t=1;
+					//var rmsi = all.anim_a.indexOf(s);
+					//all.anim_a.splice(rmsi,1);
 					//s.is="rm";
 				}
 			}
@@ -2565,7 +2614,7 @@ all.playa = function(aa){
 			orb.actors.splice(rmactor,1);
 			break	
 		}
-		
+	//maybe we dont need to gather all these here together we could simply ask one by one..	
 		if(stmt[3]=='logic'||stmt[3]=='link'||stmt[3]=='stream'){
 			var l2 = all.perform.length;
 			while(l2--){
@@ -2599,11 +2648,14 @@ all.playa = function(aa){
 //.. yeah we probly should just push the state or a unique control container for
 //txt and other types of edits. .. we can control txt from first line state.
 //audio edits structure need revision!!!!!!!! records too.. 
+//okok why not just push the edit straight away in here as the third element on perform triads. that would be way more consistent
+//we can then do what we want after we have the instruction and the values we want to work with.
 								if(lin[3]=='img'){
 				var lks = all.find_ting(all.anim_a, "name", lin[0]+'_lks_'+aa.name+aa.orb);//act and orb names.. yup
 									if(lks){}else{
+										console.log('worked!');
 		//not sure if here is the best instance to check for loaded img file...
-				var lks = all.ims_s_new(lin[0]+'_lks_'+aa.name, lin[4]);
+				var lks = all.ims_s_new(lin[0]+'_lks_'+aa.name+aa.orb, lin[4]);
 								var sret = all.getetv(lin[2])
 								lks.anim=lin[2]; lks.is='f'; 
 								//lks.f=0; //?
@@ -2614,13 +2666,45 @@ all.playa = function(aa){
 								lks.t=1; lks.nfreq=0; lks.rt=0; lks.et=sret;
 								lks.run=2; //!!!!!!!
 
-								all.anim_a.push(lks);
+										all.anim_a.push(lks);
 									}
-							//we use access tag and +2 to affect the edit state directly	
+							//we use access tag and +2 to work with the edit state	
 									all.perform.push(stmt[7],'img',lks); break
 								}//img
 								
 								//txt
+//so txt edits need to get a grip on several states at once using the print function. but the state we really need to be able to
+//push into perform here is the first line state since this is the one that holds the parameters that control the rest of the lines.
+//.. ok  so what we really need to do is just pass on the edit txt access instead of a state. we are not modifying the edit later anyway
+//we are just using it to print later.. maybe we could actually create the states here..yeah create all lines here and control them
+//from here find a way.. maybe use the first line state to work with script changes but at each change call print.
+								if(lin[3]=='txt'){
+				var lks = all.find_ting(all.anim_a, 'name', lin[0]+'_line1'+aa.name+aa.orb);
+									if(lks){}else{
+								var actid = aa.name+aa.orb;
+								var lks = all.txt_s_new(lin[0]+'_line1'+actid);
+								lks.anim=lin[2]; lks.actid=actid;
+								l0=lin[2][0]; //this l0 omg
+								lks.ctx=ctx1; //ctx1 by default
+								lks.x=l0.Gx; lks.y=l0.Gy;
+								lks.r=l0.Gr; lks.g=l0.Gg; lks.b=l0.Gb; lks.a=l0.Ga;
+								lks.font=l0.font;
+								lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
+								lks.is="f"; lks.txt=l0.txt; lks.spacer=l0.spacer;
+								lks.display='ignore';
+								lks.custom_a=l0.custom_a;
+								lks.t=-1;
+	//create a function print on animf to create all lines using line1 properties. so we only change line1 and print
+	//but for now just use actual anim[0] properties on this state because we will use this state properties from here on
+											all.anim_a.push(lks);
+										}
+
+								//work with lks which line1
+									all.perform.push(stmt[7],'txt',lks); break
+
+								}//txt
+
+								//
 								//...
 								
 							}//link match
@@ -2651,15 +2735,13 @@ all.playa = function(aa){
 		}//logic and link check
 
 
-
-
-
+//PERFORM
+//all.perform
 //by now all.perform should have consecutive triplets with tag , natureof and resource itself.
 //we only need to find tags on perform and we already know its asociated resource
 //is located +2 next to it on the same perform array.
-//.. i can narrow down this further..
-//if perform is empty at this point, we can simply ignore all this and break
-//or cont
+//.. i can narrow down this further..?
+//if perform is empty at this point, we can simply ignore all this and break or cont
 
 //.. then a tag, a command, an operation, and again, a tag, a command, an operation..
 //i think i designed it like this for simplicity. these statements always need 2 resources to operate. if one of the resource isnt
@@ -2672,12 +2754,20 @@ all.playa = function(aa){
 //[tag]//subcommand+[tag]//subcommand 10
 //[tag]//subcommand-[tag]//subcommand 10
 //[tag]//subcommand>>[tag]//subcommand 10
+		//
+//am thinking phase2 doesnt need to handle literals. we have resources already
+//and the stream sc(subcommand) should be able to provide more than enough versatility
+//.. am thinking instead of calling these 'subcommands' they should be called 'instructions' for consistency s sake. we already
+//have commands and subcommands to work with sunya input box...
+//use resources available to run statements on them. if no resource then ignore the statement.
+		//
 		var l2 = all.perform.length;
 		while(l2--){
 			var tag = all.perform[l2];
 			//find tags
 			if(stmt[1]==tag){var R1 = all.perform[l2+2]; var R1N = all.perform[l2+1];} //Resource and RestourceNature
 			if(stmt[7]==tag){var R2 = all.perform[l2+2]; var R2N = all.perform[l2+1];}
+			//am not using resource nature ahead so far..
 		}//perform loop to get tags
 
 		if(R1==undefined||R2==undefined){
@@ -2694,7 +2784,9 @@ all.playa = function(aa){
 
 //we need to retrieve values from subcommands(instructions) running on resources. the idea is
 //to ask all the same questions to both resources so we do a double loop
-//rvalue would look like [wheretowork, res1 value, wheretowork, res2 value].
+//rvalues would look like [wheretowork, res1 value, wheretowork, res2 value]... whererowork has no point we already have each resource
+//nature
+//rvalues now will look like[res1 value, res2 value]  ... no we also need wheretowork
 		var l2 = 2; var rvalues =[];
 		while(l2--){
 //first loop
@@ -2703,15 +2795,24 @@ all.playa = function(aa){
 			if(l2==0){var R = R2; var sc_pos = 9;}
 				//
 		//logi
-			if(stmt[sc_pos]=='str'){rvalues.push('lstr',R[0]);} //R[0] holds logic string
+			if(stmt[sc_pos]=='str'){rvalues.push('lstr', R[0]);} //R[0] holds logic string
 			//we could transform values into numbers here...
-			if(stmt[sc_pos]=='num'){rvalues.push('lnum',R[1]);} //R[0] holds logic number
+			if(stmt[sc_pos]=='num'){rvalues.push('lnum', R[1]);} //R[1] holds logic number
 
-		//img, rect circle links. these affect states directly
-			//these also need to be numbers...
-			if(stmt[sc_pos]=='x'){rvalues.push('tx',R.tx);} //R is a state now
-			if(stmt[sc_pos]=='y'){rvalues.push('ty',R.ty);}
-			//if(stmt[sc_pos]=='run')
+//img, rect circle links. these affect states directly.. also txt now
+//these also need to be numbers...
+			if(stmt[sc_pos]=='x'){
+				rvalues.push('tx', R.tx);//when instruction is x, we are dealing with tx of a state
+			} //R is a state now.. again lol 
+
+			if(stmt[sc_pos]=='y'){
+				rvalues.push('ty',R.ty);
+			}
+
+//ok so how would run work here... because we want the same instruction to work with img, rect, circle, txt.. and ideally audio, osc..
+//x y w and h can directly modify the state parameters by their name but run values need to affect different states properties acording
+//to state nature in order to produce the desired effect.
+			if(stmt[sc_pos]=='run'){rvalues.push('run',R.run);}
 			//if(stmt[sc_pos]=='time')
 			//if(stmt[sc_pos]=='duration')
 		//stream
@@ -2733,32 +2834,38 @@ all.playa = function(aa){
 		if(stmt[5]=='>>'){var NV = rvalues[1]; var to = 2;}
 		if(stmt[5]=='='){
 			if(rvalues[1]==rvalues[3]){
-				//condition tag is pushed alone, we only need to ask if its there
+				//condition tag is pushed alone, we only need to ask if its there.. ?
 				 all.perform.push(stmt[11]);
 			}
 		}
-//place results
-		if(rvalues[0]=='lstr'){
-			if(to==1){R1[0]=NV;}
-			if(to==2){R2[0]=NV;}
+//place results. this are not being placed right. R2[0] ?
+//ok what if : [logictag]//num>>[link tag]//x
+//we need to account for target resource nature
+//maybe ask for to first, then ask for nature.. rvalues 0 has no point in here, we already know the nature
+//of the resources at play and so we can determine where to put operation results.. no actually we need to pass what do
+		if(to==1){
+			if(rvalues[0]=='lstr'){R1[0]=NV;}
+			if(rvalues[0]=='lnum'){R1[1]=NV;}
+			if(rvalues[0]=='streams'){R1.history[R1.history.length-1]=NV;}
+			if(rvalues[0]=='tx'){if(R1N == 'txt'){R1.display='print';} R1.tx=NV;}
+			if(rvalues[0]=='ty'){if(R1N == 'txt'){R1.display='print';} R1.ty=NV;}
+			//if(rvalues[0]=='run'){R1.run=NV;}
 		}
-		if(rvalues[0]=='lnum'){
-			if(to==1){R1[1]=NV;}
-			if(to==2){R2[1]=NV;}
-		}
-		if(rvalues[0]=='tx'){
-			if(to==1){R1.tx=NV;}
-			if(to==2){R2.tx=NV;}
-		}
-		if(rvalues[0]=='ty'){
-			if(to==1){R1.ty=NV;}
-			if(to==2){R2.ty=NV;}
-		}
-		if(rvalues[0]=='streams'){
-			if(to==1){R1[0]=NV;}
-			if(to==2){R2[0]=NV;}
-		}	
 
+		if(to==2){
+			if(rvalues[2]=='lstr'){R2[0]=NV;}
+			if(rvalues[2]=='lnum'){R2[1]=NV;}
+			if(rvalues[2]=='streams'){R2.history[R2.history.length-1]=NV;}
+			if(rvalues[2]=='tx'){if(R2N == 'txt'){R2.display='print';}R2.tx=NV;}
+			if(rvalues[2]=='ty'){if(R2N == 'txt'){R2.display='print';} R2.ty=NV;}
+			if(rvalues[2]=='run'){
+				if(R2N == 'img'){
+					
+					R2.run=NV;
+				}
+			}
+		}
+		
 
 		//restoring stmt original structure
 		if(cond!=undefined){
@@ -7631,8 +7738,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 //.txt.[txt name].delete
 //.txt.[txt name].run
 //.txt.purge
-//.. so all these list commands are redundant. make it so when we type in .txt , all edits are printed along with useful information
-//about txt edits in this orb.. same with img , circle etc...
+//maybe a command to change edits names would be nice
 				if(mc_a[1]=="txt"){
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
@@ -9532,7 +9638,8 @@ function update(){
 
 	
 //checks states inside anim_a .animation func comes after logic updates
-//maybe anim func should go first Actually? cant rememebr why its here anyway
+//maybe anim func should go first Actually? cant rememebr why its here anyway. Yeah i think this is ok, we run animf
+//after all logic has been defined. on the next heartbeat, we work with all new values, we push changes using u_s arrays
 	all.anim_func();
 
 }//updates
