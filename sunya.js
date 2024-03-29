@@ -1216,16 +1216,15 @@ all.imgd_s_new = function(ctx,name,w,h){
 //as well.. et = -1
 all.ims_s_new = function(name, img_access){
 	var state = { 
-		anim:undefined, name: name, ctx:undefined, img_access:img_access, 
-		loop:false, //sf:sf,
-		x:0, y:0, 
+		name: name, img_access:img_access,  
+		x:0, y:0, tx: 0, ty: 0,
 		w:img_access.width, h:img_access.height,
 		//w:window.innerWidth, h:window.innerHeight, 
 		px:0, py:0, 
 		pw:img_access.width, ph:img_access.height, a:1,
 		//pw:window.innerWidth, ph:window.innerHeight, 
-		tx: 0, ty: 0,
-		nfreq:undefined, s:"img", is:'f', t:-1, rt:0, et:-1, run:undefined,
+		ft:undefined, rt:-1, et:undefined, nfreq:undefined, anim:undefined, ctx:undefined, 
+		nfreq:undefined, s:"img", is:'f', run:true, loop:false,
 		u_d:[]
 		//se , tch?
 	};
@@ -1254,11 +1253,13 @@ all.txt_s_new = function(name){ //loop, st, sf, ctx
 //rect state
 all.rect_s_new = function(name){
 	var state = {
-		is:"f", anim:undefined, name:name, loop:false, ctx:undefined, //sf:sf,
+		is:"f",  name:name,   
 		x:0, y:0, w:70, h:70, inside:"empty",
-		tx: 0, ty: 0,
 		r:180, g:180, b:180, a:0.8, //se: undefined, //subevent
-		nfreq:undefined, s:"rect",t:-1, rt:0, et:-1, run:undefined,
+		tx: 0, ty: 0,
+		//t:-1, rt:0, et:-1, run:undefined, //old
+		ctx:undefined, loop:false, run:true, s:"rect",
+		ft:undefined, rt:-1, et:undefined, nfreq:undefined, anim:undefined, 
 		u_d: []
 	};
 	return state;
@@ -1287,11 +1288,26 @@ all.circle_s_new = function(name){
 all.getetv = function(a){
 	var l = a.length; var i = 0; var et = 0;
 	while(l--){
-		et = et+a[i].t;
+		et = et+a[i].ft;
 	i++;
 	}
 	return et
 }
+//returns corresponding time and frame given a run time number.testing
+all.getcfv = function(a,rt){//takes edit and a desired time
+	var l = a.length; var i = 0; var ct = 0;
+	while(l--){
+		ct = ct+a[i].ft; 
+		if(ct>=rt){
+			var sub = ct-a[i].ft
+			var ft = rt-sub;
+			return [ft,i] //0 is the frame time, 1 is the frame we are looking for
+		}
+	i++;
+	}
+}
+
+
 
 // returns an img object using parameter img src
 //Users should be able to use this function while inside an Orb to ready an image for it
@@ -1719,13 +1735,9 @@ all.anim_func = function(){
 //states holding run are merely used to talk with act scripts, we dont need the run parameter to explicitly affect animf
 //operations. When we use time and duration on a script we are also reffering to different parameters on states wich account
 //to what users perceive as time. scripts synthax purpose is to facilitate animation to users.
-//if run = 0, we s.t=1, rt = et, loop = false
-//if run = 1, we s.is = s, s.loop = true.. loop could be default
-//if run = 2, we s.is = 'f'
 //if time = number, sum t(ft) of every frame operation to asign requested nfreq and ft
 //if duration = number, simply change et directly
 //For any change we want to apply just t=1 to clear and then change any param, u state
-//is necesary to clear previous position.
 //if we want to ignore clear phase we s.is=s directly.
 //if we want to clear and self remove in one beat, t=1, nfreq= undefined using u_d
 //if we want to clear and draw and freeze ignoring nfreq ; t=1, et=-1, will freeze
@@ -1765,8 +1777,6 @@ all.anim_func = function(){
 */
 
 //c_img
-//maybe i can clean this up a bit. we could implement the run parameter here so it
-//fits act language mechanics
 //ok so we are adding a rt(run time) counter which adds up 1 on every update. its
 //reference will be nfreq. we can synch all using nfreq, rt and ft. t will
 //change name to ft(frame time). we are also adding et(end time) , by defaul
@@ -1774,13 +1784,58 @@ all.anim_func = function(){
 //will automatically reinit when rt value
 //reaches et value. et will be stored on frame0 for visuals.
 //acts will now be able to control very precisely how animations will run.
+//everytime we want to do anything its c_something , run true. we clear and add changes. we can even freeze again after changes
+
 		//FUNC
 		if(s.is=="c_img"){
+//this system is clearer , more versatile and less poluted
+//ok so to mannually just print once and let it be which is rare, mostly bg operations, make s.is=s.s and set run to false
+//to ignore checks.
+			if(s.run==false){s.is="f";}
+			if(s.run==true){
+				//clear up
+				//ask for manual changes with s_u after we clear.
+				var c_x = s.px+s.tx; var c_y = s.py+s.ty;
+				all.clear_rect(s.ctx, c_x, c_y, s.pw, s.ph);
+				all.u_state(s);
+				if(s.rt==-1){}else{ //here is how we clear and do nothing
+					s.rt++; s.ft--; //keep timers together here
+					if(s.rt<s.et){
+						//we ask for frame time
+						if(s.ft>0){
+							s.is='img';
+						}
+						if(s.ft==0){//ask for nextframe
+							s.nfreq++;
+							var nf = s.anim[s.nfreq];
+							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
+							s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
+							s.a=nf.a; s.ft=nf.ft; s.is='img';
+						}
+					}
+					if(s.rt>=s.et){//!!!!!!!!!!!!!!!! >=!!!!
+						//time up. we reinitialize the state.all properties are taken from f0
+//to initialize we want to set rt=0 , and nfreq=0; . we dont need to touch et. and loop will determine s.is value
+						var nf = s.anim[0];
+						s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
+						s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
+						s.a=nf.a; s.ft=nf.ft;
+						s.rt=0; s.nfreq=0;
+						//we then ask for loop
+						if(s.loop){s.is='img';}else{s.is='f';}
+					}	
+				}
+
+			}
+/*
 			if(s.t <= 0){s.is="f";}else{// ==0
 				s.t--; //s.rt++;//
 				var c_x = s.px+s.tx; var c_y = s.py+s.ty;
 				all.clear_rect(s.ctx, c_x, c_y, s.pw, s.ph);
 				all.u_state(s);
+
+
+				//if(s.run==0){}
 				if(s.t == 0){
 					if(s.et==-1){ //no frames request
 						//
@@ -1802,43 +1857,73 @@ all.anim_func = function(){
 							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
 							s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph; s.a=nf.a; 
 							s.t=nf.t; s.rt=0;
-							s.nfreq=0; s.is="f";
+							s.nfreq=0; s.is="f"; s.run=0;
 							
 							if(s.loop==true){
-								s.is="img"; s.rt++; s.nfreq=1;
+								s.is="img"; s.rt++; s.nfreq=1; s.run=1;
 							}
 						}
 						
 					}//et not -1
 
-				}else{s.rt++; s.is='img';}
+				}else{//t not zero
+					if(s.run==1){s.rt++; s.is='img';}
+					if(s.run==0){s.is='f';}
+				}
 			}
+*/
 		}//c_img
 
 //img
 		if(s.is=="img"){
 			//s.se ='started';?
-//is it ok to just store a context refference on a state? i l have to test out
-//the cost
-//.. maybe i could use a number to create the context refference here on use..
-//i l test that later
-//..so instead of inmediately draw , we cue state data to be used to draw
-//later
+//is it ok to just store a context refference on a state? i l have to test out the cost
+//.. maybe i could use a number to create the context refference here on use.. i l test that later
+//..so instead of inmediately draw , we cue state data to be used to draw later
 			all.anim_cue.push(s);
 		}//img animation
 
 
 //c_rect
-//testing new system here. ok so now t all is going to do, is decide if the frame is going to print again or if its going to move on to the
-//next one. so..
-//c_rect always clears first, then substract 1 t, then update state, if t is equal or less than 0, we move to the next frame, if not,
-//then we print the same frame again.
-//hmmp.. so all i really did was move up  the clearing and make s.is = s.s if t is anything but 0 or -1 ...
-
-//.. ok so we initialize an animation by pushing anim into state, calling c_something, time 1, nfreq 0 and rt 0. loop is optional
-//we stop and reinit the animation by calling c something, time 1, rt = et, and loop false
-///*
 		if(s.is=="c_rect"){
+//this system is clearer , more versatile and less poluted
+			if(s.run==false){s.is="f";}
+			if(s.run==true){
+				//clear up
+				//ask for manual changes with s_u after we clear.
+				var c_x = s.x+s.tx; var c_y = s.y+s.ty;
+				all.clear_rect(s.ctx, c_x-2, c_y-2, s.w+4, s.h+4);
+				all.u_state(s);
+				if(s.rt==-1){}else{ //here is how we clear and do nothing, but leaving all up to s_u
+					s.rt++; s.ft--; //keep timers together here
+					if(s.rt<s.et){
+						//we ask for frame time
+						if(s.ft>0){
+							s.is='rect';
+						}
+						if(s.ft==0){//ask for nextframe
+							s.nfreq++;
+							var nf = s.anim[s.nfreq];
+							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
+							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
+							s.inside=nf.inside; s.ft=nf.ft; s.is='rect';
+						}
+					}
+					if(s.rt>=s.et){
+						//time up. we reinitialize the state.all properties are taken from f0
+//to initialize we want to set rt=0 , and nfreq=0; . we dont need to touch et. and loop will determine s.is value
+						var nf = s.anim[0];
+						s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
+						s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
+						s.inside=nf.inside; s.ft=nf.ft;
+						s.rt=0; s.nfreq=0;
+						//we then ask for loop
+						if(s.loop){s.is='rect';}else{s.is='f';}
+					}	
+				}
+
+			}
+/*
 //so we can use t = -1 to paint once and basically ignore all logic after.
 			if(s.t <= 0){s.is="f";}else{
 				s.t--; //s.rt++; //here goes rt add i think....no
@@ -1881,6 +1966,7 @@ all.anim_func = function(){
 					}//et not -1
 				}else{s.rt++; s.is='rect';} //s.rt++; .. not here now
 			}//not t -1
+*/
 		}
 
 //rect
@@ -1895,6 +1981,45 @@ all.anim_func = function(){
 //new system . i could even go further and just check if it really is more efficient to just clear all screen on a specific context
 //once instead of making all these little clears for each state.
 		if(s.is=="c_circle"){
+		/*
+//this system is clearer , more versatile and less poluted
+			if(s.run==false){s.is="f";}
+			if(s.run==true){
+				//clear up
+				//ask for manual changes with s_u after we clear.
+				var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
+				all.clear_circle(s.ctx, c_x, c_y, s.radius+2);
+				all.u_state(s);
+				if(s.rt==-1){s.is='f'}else{ //here is how we clear and do nothing
+					s.rt++; s.ft--; //keep timers together here
+					if(s.rt<s.et){
+						//we ask for frame time
+						if(s.ft>0){
+							s.is='circle';
+						}
+						if(s.ft==0){//ask for nextframe
+							s.nfreq++;
+							var nf = s.anim[s.nfreq];
+							s.x=nf.x; s.y=nf.y; s.radius=nf.radius;
+							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
+							s.inside=nf.inside; s.ft=nf.ft; s.is='circle';
+						}
+					}
+					if(s.rt==s.et){
+						//time up. we reinitialize the state.all properties are taken from f0
+//to initialize we want to set rt=0 , and nfreq=0; . we dont need to touch et. and loop will determine s.is value
+						var nf = s.anim[0];
+						s.x=nf.x; s.y=nf.y; s.radius=nf.radius;
+						s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
+						s.inside=nf.inside; s.ft=nf.ft;
+						s.rt=0; s.nfreq=0;
+						//we then ask for loop
+						if(s.loop){s.is='circle';}else{s.is='f';}
+					}	
+				}
+
+			}
+		*/
 			if(s.t <= 0){s.is="f";}else{
 				s.t--;
 				var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
@@ -2653,19 +2778,25 @@ all.playa = function(aa){
 								if(lin[3]=='img'){
 				var lks = all.find_ting(all.anim_a, "name", lin[0]+'_lks_'+aa.name+aa.orb);//act and orb names.. yup
 									if(lks){}else{
-										console.log('worked!');
+										//console.log('worked!');
 		//not sure if here is the best instance to check for loaded img file...
+//ok we need to initialize this state right here and now . we cant wait for animf to do it because phase 2 might want to start
+//running the animation inmediately with customized properties so the state must be ready from here on
 				var lks = all.ims_s_new(lin[0]+'_lks_'+aa.name+aa.orb, lin[4]);
-								var sret = all.getetv(lin[2])
-								lks.anim=lin[2]; lks.is='f'; 
-								//lks.f=0; //?
+								var sret = all.getetv(lin[2]);
+								lks.anim=lin[2];
+								lks.et=sret;
 								//lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
 								lks.tx = Math.floor(window.innerWidth/2); 
 								lks.ty = Math.floor(window.innerHeight/2);
 								lks.ctx = ctx1;// lets use ctx1 by default for now
-								lks.t=1; lks.nfreq=0; lks.rt=0; lks.et=sret;
-								lks.run=2; //!!!!!!!
-
+								var f0 = lks.anim[0];
+								lks.x=f0.x; lks.y=f0.y; lks.w=f0.w; lks.h=f0.h;
+								lks.px=f0.px; lks.py=f0.py; lks.pw=f0.pw; lks.ph=f0.ph; lks.a=f0.a; 
+								lks.nfreq=1; lks.is="f"; lks.run=0;
+								lks.rt=0; lks.t=f0.t;
+								lks.loop=false;
+								lks.run=0; //!!!!!!!
 										all.anim_a.push(lks);
 									}
 							//we use access tag and +2 to work with the edit state	
@@ -2850,7 +2981,7 @@ all.playa = function(aa){
 			if(rvalues[0]=='tx'){if(R1N == 'txt'){R1.display='print';} R1.tx=NV;}
 			if(rvalues[0]=='ty'){if(R1N == 'txt'){R1.display='print';} R1.ty=NV;}
 			//if(rvalues[0]=='run'){R1.run=NV;}
-		}
+		}//to 1
 
 		if(to==2){
 			if(rvalues[2]=='lstr'){R2[0]=NV;}
@@ -2860,11 +2991,40 @@ all.playa = function(aa){
 			if(rvalues[2]=='ty'){if(R2N == 'txt'){R2.display='print';} R2.ty=NV;}
 			if(rvalues[2]=='run'){
 				if(R2N == 'img'){
-					
+//duration = et directly
+//run = 1 runs once from rt and self reinit. also at end animf makes run = 0
+//ok this run unrun system looking quite convoluted in practice.. maybe the old idea of working in loop as default was not bad
+//Okok the idea of making run work as a loop is good because it reduces the number of instructions we need to get an edit going
+//run 1 starts looping the animation but from rt to et
+//we need to modify the effect of the instruction so it does conflict with itself when executed at every beat, same with all other control
+//properties. maybe we need an instruction control protocol. let edit states hold marks to inform instructions they dont need to be executed
+//again.. this would massively improve sinthax..changes would act more like switches than statements.. but conditions already work good
+//like switches.. maybe we just need to write in a specific way
 					R2.run=NV;
+					if(NV==0){R2.is='c_'+R2.s; R2.t=2;}//
+					if(NV==1){R2.is=R2.s;}
+				}
+			}	
+			if(rvalues[2]=='loop'){
+				if(R2N == 'img'){
+//loop = 0 is off, loop = 1 is on.. its more universal this way
+					if(NV==0){R2.loop=false;}
+					if(NV==1){R2.loop=true;}
+				}
+			}	
+//ok i thinks its going well.. try using time to restore rt and nfreq to what we want.
+			if(rvalues[2]=='time'){
+				if(R2N == 'img'){
+//time controls from where to run... beats for visuals, seconds for audio. txt for later lol... duration controls where to end.
+//time = number, sum t(ft) of every frame operation to asign requested nfreq and ft.. a function to calculate corresponding
+//frame given a number for time. all.getcfv = function(a,t) for visuals, takes the edit and the desired time
+//time 0 should always reinit the animation. we should be able to retrieve time as a number but also when we  place a number on
+//time container it should affect the edit properly. same with duration. we should be able to change duration and retrieve its value
+//in the same way we do with time.
+					//R2.time=NV;
 				}
 			}
-		}
+		}//to 2
 		
 
 		//restoring stmt original structure
@@ -3136,10 +3296,9 @@ all.ml_up = function(o){
 									var sr = all.rect_s_new(a[0].name+"__r");
 									sr.anim=a; sr.ctx=ctx1;
 									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2;
-									//new
 							 		var sret = all.getetv(a);
-							 		sr.is='c_rect'; sr.t=1; sr.nfreq=0; sr.loop = true;
-									sr.run=1; sr.rt=0; sr.et=sret;
+							 		sr.is='c_rect'; sr.loop = true;
+									sr.et=sret; sr.rt=sr.et; 
 									all.anim_a.push(sr);
 								}
 							}//rect
@@ -3156,8 +3315,8 @@ all.ml_up = function(o){
 									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
 									//new
 							 		var sret = all.getetv(a);
-							 		sr.is='c_img'; sr.t=1; sr.nfreq=0; sr.loop = true;
-									sr.run=1; sr.rt=0; sr.et=sret;
+									sr.et=sret; sr.rt=sr.et;
+							 		sr.is='c_img'; sr.loop = true;
 									all.anim_a.push(sr);
 								}//no img file safe
 								}
@@ -3182,7 +3341,7 @@ all.ml_up = function(o){
 							print.y=print.y+spacer; //next line y position difference
 							print.display=l0.display;
 							print.custom_a=l0.custom_a;
-							print.t=-1;
+							print.t=-1; print.run=1;
 							all.anim_a.push(print);
 						spacer = spacer+l0.spacer;
 						i++;}
@@ -3195,6 +3354,7 @@ all.ml_up = function(o){
 						all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
 						obg.radius=obg.radius+85; obg.is="circle";
 					}
+			//obg anim
 					if(obg.se=='expand_fadeout'){
 						if(obg.a<=0){
 							obg.se='idle_pick';
@@ -3368,7 +3528,7 @@ all.ml_up = function(o){
 							all.anim_a.splice(l,1);
 						}
 					}
-			//we also need to clear txt, txt doesnt end in '__r'
+			//we also need to clear txt, txt doesnt end in '__r' ??
 	/*
 				if(erase){
 					var l0=a[0];
@@ -5223,14 +5383,15 @@ Keys are persistant always by default.
 				}
 				
 				if(delta.signal=='empty'){
-					s.u_d.push('inside','empty','is','rect');
-					s.is='c_rect'; s.t=1;
+					s.u_d.push('inside','empty');//,'is','rect');
+					s.is='c_rect'; 
+					
 					
 				}
 				
 				if(delta.signal=='filled'){
-					s.u_d.push('inside','filled','is','rect');
-					s.is='c_rect'; s.t=1;
+					s.u_d.push('inside','filled');//,'is','rect');
+					s.is='c_rect'; 
 				}
 				
 	//cursor
@@ -5247,8 +5408,8 @@ Keys are persistant always by default.
 					if(delta.signal=='down'){
 						var u_p = 'y'; var u_v = s.y+delta.value;
 					}
-					s.u_d.push(u_p, u_v,'is','rect');
-					s.is='c_rect'; s.t=1; 
+					s.u_d.push(u_p, u_v);//,'is','rect');
+					s.is='c_rect';  
 					
 				}//cursor
 				
@@ -5257,8 +5418,8 @@ Keys are persistant always by default.
 					if(delta.value>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
-						s.u_d.push('r',delta.value,'is','rect');
-						s.is='c_rect'; s.t=1;
+						s.u_d.push('r',delta.value);//,'is','rect');
+						s.is='c_rect'; //s.t=1;
 						//all.stream_a.push("Numbers are red rect."); all.screen_log();
 					}
 				}
@@ -5266,8 +5427,8 @@ Keys are persistant always by default.
 					if(delta.signal>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
-						s.u_d.push('g',delta.value,'is','rect');
-						s.is='c_rect'; s.t=1;
+						s.u_d.push('g',delta.value);//,'is','rect');
+						s.is='c_rect'; //s.t=1;
 						//all.stream_a.push("Numbers are green rect."); all.screen_log();
 					}
 				}
@@ -5276,8 +5437,8 @@ Keys are persistant always by default.
 					if(delta.signal>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
-						s.u_d.push('b',delta.value,'is','rect');
-						s.is="c_rect"; s.t=1;
+						s.u_d.push('b',delta.value);//,'is','rect');
+						s.is="c_rect"; //s.t=1;
 						//all.stream_a.push("Numbers are blue rect."); all.screen_log();
 					}
 				}
@@ -5287,8 +5448,8 @@ Keys are persistant always by default.
 					if(delta.value>10){
 						all.stream_a.push("Maximum value input is 10.");
 					}else{
-						s.u_d.push('a',delta.value/10,'is','rect');
-						s.is='c_rect'; s.t=1;
+						s.u_d.push('a',delta.value/10);//,'is','rect');
+						s.is='c_rect'; 
 						//if(alr=='a'){l0c[clo-1] = delta.value/10; var dont_p = true; break;}
 						//all.stream_a.push("Transparency changed.");
 					}
@@ -5328,8 +5489,8 @@ Keys are persistant always by default.
 							var u_p = 'h'; var u_v = (s.h-delta.value);
 						}
 					}
-					s.u_d.push(u_p,u_v,'is','rect');
-					s.is='c_rect'; s.t=1;
+					s.u_d.push(u_p,u_v);//,'is','rect');
+					s.is='c_rect'; 
 				}//size
 				
 //time
@@ -5337,23 +5498,21 @@ Keys are persistant always by default.
 					var al = anim.length;
 					while(al--){
 						var af = anim[al];
-						af.t=delta.value; 
+						af.ft=delta.value; 
 					}
 					if(sr.loop){
 						//update times
-						sr.et = all.getetv(anim); sr.rt=0; sr.t=1;
-						sr.nfreq=0; sr.is='c_rect';
+						sr.et = all.getetv(anim); sr.rt=sr.et; sr.is='c_rect';
 					}
 					all.stream_a.push("New beat"); all.screen_log();
 
 				}
 				
 				if(delta.signal=='time'){
-					f.t=delta.value; 
+					f.ft=delta.value; 
 					if(sr.loop){
-						//update times
-						sr.et = all.getetv(anim); sr.rt=0; sr.t=1;
-						sr.nfreq=0; sr.is='c_rect';
+						//update time
+						sr.et = all.getetv(anim); sr.rt=sr.et; sr.is='c_rect';
 					}
 					all.stream_a.push("Numbers are time."); all.screen_log();
 				}
@@ -5361,23 +5520,22 @@ Keys are persistant always by default.
 //define rect
 				if(delta.signal=='define'){
 					//let t be 20 on default but dont overide if t already has a value
-					if(f.t==undefined){
-						var t=20;
+					if(f.ft==undefined){
+						var ft=20;
 					}else{
-						var t = f.t;
+						var ft = f.ft;
 					}
 
 					f.x=s.x; f.y=s.y;  //f.f=o.op2;
 					f.w=s.w; f.h=s.h; f.inside=s.inside;
 					f.r=s.r; f.g=s.g; f.b=s.b; f.a=s.a;
-					f.t=t;
+					f.ft=ft;
 					//update duration
 					sr.et = all.getetv(anim);
 					
 					if(sr.loop){
-						//update times
-						sr.rt=0; sr.t=1;
-						sr.nfreq=0; sr.is='c_rect';
+						sr.rt=sr.et;
+						sr.is='c_rect';
 					}
 
 					if(sr.loop==false){
@@ -5397,9 +5555,9 @@ Keys are persistant always by default.
 							var f = anim[o.op2];
 							s.u_d.push(
 								'r',f.r,'g',f.g,'b',f.b,'a',f.a,'x',f.x,'y',f.y,
-								'w',f.w,'h',f.h,'inside',f.inside,'is','rect'
+								'w',f.w,'h',f.h,'inside',f.inside//,'is','rect'
 							);
-							s.is='c_rect'; s.t=1;
+							s.is='c_rect';
 						}
 					}else{
 						all.stream_a.push("First frame"); all.screen_log();
@@ -5415,9 +5573,9 @@ Keys are persistant always by default.
 							var f = anim[o.op2];
 							s.u_d.push(
 								'r',f.r,'g',f.g,'b',f.b,'a',f.a,'x',f.x,'y',f.y,
-								'w',f.w,'h',f.h,'inside',f.inside,'is','rect'
+								'w',f.w,'h',f.h,'inside',f.inside//,'is','rect'
 							);
-							s.is='c_rect'; s.t=1;
+							s.is='c_rect';
 						}
 						
 					}else{
@@ -5427,40 +5585,24 @@ Keys are persistant always by default.
 
 //run simulation
 				if(delta.signal=='run'){
-	//so i think i dont even need to push properties directly from here on run sim because all i really need to push is
-	//anim and nfreq to handle that. .
 					if(sr.loop){
-				//how to stop safely..
-				//we stop and reinit the animation by calling c something, time 1, rt = et, and loop false
-						//sr.is='c_rect'; sr.t=1; sr.rt=sr.et; sr.loop=false; se.run=0; //.. but loop false condition..
-					
-						sr.u_d.push('loop',false,'run',0,'rt',sr.et);
-						sr.is='c_rect'; sr.t=1;
+						sr.u_d.push('loop',false,'rt',sr.et); sr.is='c_rect';
 							
 						var f = anim[o.op2];
 						s.u_d.push(
 							'r',f.r,'g',f.g,'b',f.b,'a',f.a,'x',f.x,'y',f.y,
-							'w',f.w,'h',f.h,'inside',f.inside,'is','rect'
+							'w',f.w,'h',f.h,'inside',f.inside//,'is','rect'
 						);
-						s.is='c_rect'; s.t=1;
+						s.is='c_rect';
 						//when we out of loop we push ghost frame again
 						anim.push({});
 					}
 					if(sr.loop==false){
 						anim.pop();
 						var sret = all.getetv(anim); 
-						sr.anim=anim; sr.is='c_rect'; sr.t=1; sr.nfreq=0; sr.run=1;
-						sr.loop=true;
+						sr.anim=anim; sr.is='c_rect'; //sr.t=1; 
+						sr.loop=true; sr.rt=sr.et;
 
-				/*//old
-						var ff = anim[0];
-						sr.u_d.push(
-							'anim',anim,'et',sret,'rt',0,'loop',true,'nfreq',0,
-							't',ff.t,'inside',ff.inside,'x',ff.x,'y',ff.y,
-							'w',ff.w,'h',ff.h,'r',ff.r,'g',ff.g,'b',ff.b,'a',ff.a
-						);
-						sr.is='c_rect'; sr.t=1; sr.run=1;
-				*/
 					}
 					
 					all.clear_rect(ctx0, 0, 0, window.innerWidth, window.innerHeight);
@@ -5480,8 +5622,10 @@ Keys are persistant always by default.
 				o.op5=0;
 			}
 			
-			csx.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csx.is='c_rect'; csx.t=1;
-			csy.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csy.is='c_rect'; csy.t=1;
+			//suport forms print
+			csx.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csx.is='c_rect'; //csx.t=1;
+			csy.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csy.is='c_rect'; //csy.t=1;
+			s.u_d.push('is','rect');
 
 			var update_sel = true;
 
@@ -5510,7 +5654,7 @@ Keys are persistant always by default.
 				all.stream_a.push(
 			"Animation name: "+anim[0].name+" Frame: "+framed,
 			"Run Time:"+sr.rt+" Duration: "+sr.et,
-			"Frame  X:"+f.x+" Y:"+f.y+" W:"+f.w+" H:"+f.h+" Time:"+f.t,
+			"Frame  X:"+f.x+" Y:"+f.y+" W:"+f.w+" H:"+f.h+" Time:"+f.ft,
 			"R:"+f.r+" G:"+f.g+" B:"+f.b+" A:"+f.a,
 			"Cursor X:"+s.x+" Y:"+s.y+" W:"+s.w+" H:"+s.h,
 			"R:"+s.r+" G:"+s.g+" B:"+s.b+" A:"+s.a
@@ -5568,12 +5712,9 @@ t from each frame, when we reach 21, thats the frame we looking for
 				//leaving this line just in case
 				all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; all.com_a=[];
 //push rect state empty with rainbow colors.
-//all select states should be like this ..... !!!! ok lets do this one.. done
-//.. i wasted 2 hours not realizing the order of unshift here was affecting
-//capture drag clears!!!!!!!!!!!!!!!!
 				var s = all.rect_s_new("rect__sel"); 
 				s.is="rect"; s.ctx=ctx1;
-				s.a=0.8; s.inside="empty"; //rect_s.tch='sel';
+				s.a=0.9; s.inside="empty"; //rect_s.tch='sel';
 //when cursor is exploring bg img ,translates of s need to be 0.. they are by default
 				all.anim_a.unshift(s);
 			
@@ -5586,12 +5727,13 @@ t from each frame, when we reach 21, thats the frame we looking for
 					o.op6=1;
 				}
 				bg.is = "img"; //activate on push
+				bg.run=false; //ignore everything just draw
 				all.anim_a.unshift(bg);
 
 				//push a state to illustrate a caption from the img
 				var ims = all.ims_s_new("img__sel",o.img_access);//img__sel
 				ims.anim = anim; ims.ctx = ctx1;
-				//ims.tx=window.innerWidth/2; ims.ty=window.innerHeight/2; 
+				ims.tx=window.innerWidth/2; ims.ty=window.innerHeight/2;  //!!!!
 				all.anim_a.unshift(ims);
 
 				//push a state to illustrate animation frames sequentially
@@ -5649,7 +5791,6 @@ t from each frame, when we reach 21, thats the frame we looking for
 //allthese new delta functions need to limit number range so it doesnt break program ..
 			if(delta){
 
-//... se error on exit ?
 				if(delta.signal=='exit'){
 //op1 tracks animation index, op2 tracks animation frame index
 					o.inner_mode=true; o.edit_img_mode = false; o.init = true;
@@ -5664,8 +5805,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 					o.op1=0; o.op2=0; o.op3=0; o.op4=0; o.op5=0; o.op6=0; 
 
 					//i need to remove the ghost frame here too..
-					//remove the ghost frame...but why its not doing it?
-					if(imr.loop==false){anim.pop();} //?
+					if(imr.loop==false){anim.pop();}
 
 					//remove empty array if user didnt even frame once
 					if(anim.length==0){var rmf = o.img.indexOf(anim); o.img.splice(rmf,1);}
@@ -5718,8 +5858,8 @@ t from each frame, when we reach 21, thats the frame we looking for
 					if(delta.signal=='sdown'){
 						var u_p = 'y'; var u_v = bg.y+delta.value;
 					}
-					bg.u_d.push(u_p, u_v,'is','img');
-					bg.is='c_img'; bg.t=1;
+					bg.u_d.push(u_p, u_v,'is','img','run',false);
+					bg.is='c_img'; bg.run=true;
 					
 				}//scroll cursor
 
@@ -5740,26 +5880,27 @@ t from each frame, when we reach 21, thats the frame we looking for
 						var u_p = 'y'; var u_v = s.y+delta.value;
 					}
 
-					s.u_d.push(u_p, u_v,'is','rect');
-					s.is='c_rect'; s.t=1;
+					s.u_d.push(u_p, u_v);//,'is','rect');
+					s.is='c_rect'; //s.t=1;
 					//if(o.selected_drag==true){
 					if(o.op4==1){
 						if(u_p=='y'){u_p='py';}
 						if(u_p=='x'){u_p='px';}
-						ims.u_d.push(u_p,u_v,'is','img');
-						ims.is='c_img'; ims.t=1;
+				//i think i need to add tx and ty here..
+						ims.u_d.push(u_p,u_v);//,'is','img');
+						ims.is='c_img'; //ims.t=1;
 						//all.clear_rect(ctx1,0,0,window.innerWidth, window.innerHeight);
 					}
 				
 				}//cursor
 
-//.. do i need center.. yes i do
+//.. do i need center.. yes i do.. not sure is this is ok tho
 				if(delta.signal=='center'){
 					//if(o.selected_drag==false){
 					if(o.op4==0){
 						var u_x = window.innerWidth/2; var u_y = window.innerHeight/2;
-						s.u_d.push('x',u_x,'y',u_y,'is','rect');
-						s.is='c_rect'; s.t=1;
+						s.u_d.push('x',u_x,'y',u_y);//,'is','rect');
+						s.is='c_rect'; s//.t=1;
 					}
 				}
 
@@ -5781,14 +5922,14 @@ t from each frame, when we reach 21, thats the frame we looking for
 							var u_p = 'h'; var u_v = s.h-delta.value;
 						}
 					}
-					s.u_d.push(u_p, u_v,'is','rect');
-					s.is='c_rect'; s.t=1;
+					s.u_d.push(u_p, u_v);//,'is','rect');
+					s.is='c_rect'; //s.t=1;
 					//if(o.selected_drag==true){
 					if(o.op4==1){
 						if(u_p=='w'){u_p='pw';}
 						if(u_p=='h'){u_p='ph';}
-						ims.u_d.push(u_p,u_v,'is','img');
-						ims.is='c_img'; ims.t=1;
+						ims.u_d.push(u_p,u_v);//,'is','img');
+						ims.is='c_img'; //ims.t=1;
 						//all.clear_rect(ctx1,0,0,window.innerWidth, window.innerHeight);
 					}
 				}//size
@@ -5807,13 +5948,14 @@ t from each frame, when we reach 21, thats the frame we looking for
 				if(delta.signal=='time'){
 
 					//all.stream_a.push("Numbers without frames?"); all.screen_log();
-					if(delta.operation=='+'){f.t = (f.t+delta.value);}
-					if(delta.operation=='-'){f.t = (f.t-delta.value);}
-					if(delta.operation!=undefined){}else{f.t = delta.value;}
+					if(delta.operation=='+'){f.ft = (f.ft+delta.value);}
+					if(delta.operation=='-'){f.ft = (f.ft-delta.value);}
+					if(delta.operation!=undefined){}else{f.ft = delta.value;}
 					if(imr.loop){
 						//update times
-						imr.et = all.getetv(anim); imr.rt=0; imr.t=1;
-						imr.nfreq=0; imr.is='c_img';
+						imr.et = all.getetv(anim); imr.rt=imr.et; //imr.t=1;
+						//imr.nfreq=0; 
+						imr.is='c_img';
 					}
 				}
 				
@@ -5821,12 +5963,13 @@ t from each frame, when we reach 21, thats the frame we looking for
 					var al = anim.length;
 					while(al--){
 						var af = anim[al];
-						af.t=delta.value; 
+						af.ft=delta.value; 
 					}
 					if(imr.loop){
 						//update times
-						imr.et = all.getetv(anim); imr.rt=0; imr.t=1;
-						imr.nfreq=0; imr.is='c_img';
+						imr.et = all.getetv(anim); imr.rt=imr.et; //imr.t=1;
+						//imr.nfreq=0; 
+						imr.is='c_img';
 					}
 					all.stream_a.push("New beat"); all.screen_log();
 				}
@@ -5843,28 +5986,17 @@ t from each frame, when we reach 21, thats the frame we looking for
 						o.op2--;
 						if(imr.loop){
 							var f = anim[o.op2];//refer selected frame again
-
-							//updates ims and s to this frame data
-							//ims.is='img'; ims.a=f.a;
-							//ims.x=f.x; ims.y=f.y; ims.w=f.w; ims.h=f.h;
-							//ims.px=f.px; ims.py=f.py; ims.pw=f.pw; ims.ph=f.ph;
-							//i think translates updates not neccesary here...
-							//ims.tx=window.innerWidth/2; ims.ty=window.innerHeight/2;
 							ims.u_d.push(
 							'x',f.x,'y',f.y,'w',f.w,'h',f.h,
 							'px',f.px,'py',f.py,'pw',f.pw,'ph',f.ph,
 							'a',f.a,'is','img'
 							);
-							ims.is='c_img'; ims.t=1;
+							ims.is='c_img'; //ims.t=1;
 							
-							//s.is='rect';
-							//s.x=f.px; s.y=f.py;
-							//s.w=f.pw; s.h=f.ph;//maybe just w and h is ok??
-							//s.tx=window.innerWidth/2; s.ty=window.innerHeight/2; 
 							s.u_d.push(
-							'x',f.px,'y',f.py,'w',f.pw,'h',f.ph,'is','rect'
+							'x',f.px,'y',f.py,'w',f.pw,'h',f.ph//,'is','rect'
 							);
-							s.is='c_rect'; s.t=1;
+							s.is='c_rect'; //s.t=1;
 
 							//all.clear_rect(ctx0, 0, 0, window.innerWidth, window.innerHeight);
 							//all.clear_rect(ctx1, 0, 0, window.innerWidth, window.innerHeight);
@@ -5887,27 +6019,17 @@ t from each frame, when we reach 21, thats the frame we looking for
 						o.op2++;
 						if(imr.loop){
 							var f = anim[o.op2];//refer selected frame again
-							//updates ims and s to this frame data
-							//ims.is='img'; ims.a=f.a;
-							//ims.x=f.x; ims.y=f.y; ims.w=f.w; ims.h=f.h;
-							//ims.px=f.px; ims.py=f.py; ims.pw=f.pw; ims.ph=f.ph;
-							//i think translates updates not neccesary here...
-							//ims.tx=window.innerWidth/2; ims.ty=window.innerHeight/2;
 							ims.u_d.push(
 							'x',f.x,'y',f.y,'w',f.w,'h',f.h,
 							'px',f.px,'py',f.py,'pw',f.pw,'ph',f.ph,
 							'a',f.a,'is','img'
 							);
-							ims.is='c_img'; ims.t=1;
-							
-							//s.is='rect';
-							//s.x=f.px; s.y=f.py;
-							//s.w=f.pw; s.h=f.ph;//maybe just w and h is ok??
-							//s.tx=window.innerWidth/2; s.ty=window.innerHeight/2; 
+							ims.is='c_img'; //ims.t=1;
+ 
 							s.u_d.push(
-							'x',f.px,'y',f.py,'w',f.pw,'h',f.ph,'is','rect'
+							'x',f.px,'y',f.py,'w',f.pw,'h',f.ph//,'is','rect'
 							);
-							s.is='c_rect'; s.t=1;
+							s.is='c_rect'; //s.t=1;
 
 							//all.clear_rect(ctx0, 0, 0, window.innerWidth, window.innerHeight);
 							//all.clear_rect(ctx1, 0, 0, window.innerWidth, window.innerHeight);
@@ -5930,7 +6052,6 @@ t from each frame, when we reach 21, thats the frame we looking for
 					if(imr.loop==true){
 						all.stream_a.push("Unrun first"); all.screen_log();
 					}else{
-						//o.C = {x:s.x, y:s.y, w:s.w, h:s.h}
 						o.C = {x:s.x+bg.x, y:s.y+bg.y, w:s.w, h:s.h}
 							 
 						all.stream_a.push("Frame captured on orb.C"); all.screen_log();
@@ -5941,9 +6062,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 						//all.clear_rect(ctx2,0,0,window.innerWidth, window.innerHeight);
 
 						//updates the section just selected and ready it to drag around..
-						//ims.x=s.x; ims.y=s.y; ims.w=s.w; ims.h=s.h;
 						ims.x=(s.x+bg.x); ims.y=(s.y+bg.y); ims.w=s.w; ims.h=s.h;
-						
 						//o.selected_drag = true;
 						o.op4=1;
 
@@ -5970,7 +6089,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 						f.x=o.C.x; f.y=o.C.y; f.w=o.C.w; f.h=o.C.h;
 						f.px=s.x; f.py=s.y; f.pw=s.w; f.ph=s.h;
 						f.a=1; //f.st=0; f.f=o.op2;
-						f.t=15;
+						f.ft=15;
 	
 						all.stream_a.push("Frame SAVED"); all.screen_log();
 
@@ -5989,9 +6108,10 @@ t from each frame, when we reach 21, thats the frame we looking for
 					all.clear_rect(ctx1, 0, 0, window.innerWidth, window.innerHeight);
 					all.clear_rect(ctx2, 0, 0, window.innerWidth, window.innerHeight);
 
-							bg.is='img';
-							//sel drag lock off
-							//o.selected_drag = false;
+					//paint img bg again
+							bg.u_d.push('is','img','run',false);
+							bg.is='c_img'; bg.run=true;
+						//sel drag lock off
 							o.op4=0;
 
 			//when cursor is exploring bg img translates need to be 0?
@@ -5999,7 +6119,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 								'tx',0,'ty',0,'x',(f.x-bg.x),'y',(f.y-bg.y),
 								'w',f.w,'h',f.h,'is','rect'
 							);
-							s.is='c_rect'; s.t=1;
+							s.is='c_rect'; //is.t=1;
 							
 							//s.tx=0; s.ty=0;
 							//s.x=f.x; s.y=f.y; 
@@ -6023,8 +6143,8 @@ t from each frame, when we reach 21, thats the frame we looking for
 				if(delta.signal=='run'){
 					if(imr.loop){
 						
-						imr.u_d.push('loop',false,'run',0,'rt',imr.et);
-						imr.is='c_img'; imr.t=1;
+						imr.u_d.push('loop',false, 'rt',imr.et);
+						imr.is='c_img'; //imr.t=1;
 						
 			//prevents mess for  when modifing a frame on loop
 						//o.selected_drag=false; 
@@ -6033,12 +6153,14 @@ t from each frame, when we reach 21, thats the frame we looking for
 			//.. sel rect should now be positioned on where the frame is extracted from !
 						s.u_d.push(
 							'x',(f.x-bg.x),'y',(f.y-bg.y),
-							'w',f.w,'h',f.h,'tx',0,'ty',0,'is','rect'
+							'w',f.w,'h',f.h,'tx',0,'ty',0//,'is','rect'
 						);
-						s.is='c_rect'; s.t=1;
-
-						//ims.is='f';
-						bg.is='img';
+						s.is='c_rect'; //s.t=1;
+			
+					//paint bg again
+						bg.u_d.push('is','img','run',false);
+						bg.is='c_img'; bg.run=true;
+						//bg.is='img';
 
 						//when we out of loop we push ghost frame again
 						anim.push({});
@@ -6055,24 +6177,16 @@ t from each frame, when we reach 21, thats the frame we looking for
 						//new
 						var imret = all.getetv(anim); 
 						imr.tx=window.innerWidth/2; imr.ty=window.innerHeight/2;//neccesary?
-						imr.anim=anim; imr.is='c_img'; imr.t=1; imr.nfreq=0; imr.run=1;
-						imr.loop=true; imr.et=imret; imr.rt=0;
-/*
-						imr.loop = true;
-						var ff = anim[0]; 
-
-						imr.t=ff.t; imr.nfreq=0; imr.a=ff.a; //imr.ctx=ctx0;
-						imr.x=ff.x; imr.y=ff.y; imr.w=ff.w; imr.h=ff.h;
-						imr.px=ff.px; imr.py=ff.py; imr.pw=ff.pw; imr.ph=ff.ph;
-						imr.tx=window.innerWidth/2; imr.ty=window.innerHeight/2;
-						imr.is='img';
-*/						
+						imr.anim=anim; imr.is='c_img';
+						//imr.t=1; imr.nfreq=0; imr.run=1;
+						imr.loop=true; imr.et=imret; imr.rt=imr.et;
+						
 						//place cursor on selected frame pos
 						s.u_d.push(
 							'x',f.px,'y',f.py,'w',f.pw,'h',f.ph,
 							'tx',window.innerWidth/2,'ty',window.innerHeight/2
 						);
-						s.is='c_rect'; s.t=1;
+						s.is='c_rect'; //s.t=1;
 						//s.x=f.px; s.y=f.py; s.w=f.pw; s.h=f.ph;
 						//s.tx=window.innerWidth/2; s.ty=window.innerHeight/2; //
 						all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
@@ -6088,6 +6202,31 @@ t from each frame, when we reach 21, thats the frame we looking for
 				o.op3=0;//clear operation
 			}//if delta
 
+
+
+//i think its ok to update these at every beat on editor mode. not rly that much
+//happenning anyway so performance its not a concern here.
+			
+			//rainbow selection is nice
+			s.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); s.is='c_rect';
+
+//maybe i can print bg once when is needed, and just clear it when its not needed
+			//if(imr.loop==false||o.op4!=1){bg.is='img';}
+			
+			//if(o.selected_drag){
+			if(o.op4==1){
+				//cross updates
+				csx.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); 
+				csx.is='c_rect'; 
+				csy.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect');
+				csy.is='c_rect';
+				//selected image drawing
+				ims.u_d.push('is','img');
+				ims.is='c_img';
+			}
+
+//feedback
+//ask if frames have new params and if they do, gather data and print feedback acordingly
 //we can make 3 random calls to create a color at every update and then
 //just use the same color for all things orbs inner systems related..
 //that l surely help with performance.
@@ -6098,73 +6237,35 @@ t from each frame, when we reach 21, thats the frame we looking for
 			if(o.op5==9){
 				var s_0 = all.user.estream;
 				s_0.r=o_r; s_0.g=o_g; s_0.b=o_b;
-				
-//always visible. a color vibration that can always be seen regardless of bg
-//color .? .. didnt work. we need a dark semitransparent screen in the back of
-//words
-				//switch(a_v){
-				//	case 0: a_v = 220;break
-				//	case 220: a_v = 0;break
-				//}
-				//s_0.r=a_v; s_0.g=a_v; s_0.b=a_v;
-				
 				o.op5=0;
 			}
 
-//i think its ok to update these at every beat on editor mode. not rly that much
-//happenning anyway so performance its not a concern here.
-//.. ok so cxt3 should deal with static  reacting elements that
-//only refresh on changes
-			//var update_sel = true;
-			
-			//rainbow selection is nice
-			s.r=o_r; s.g=o_g; s.b=o_b;
-			if(s.is=='f'){s.is='rect';}
-			
-			//update darkened canvas to make txt always visible here?
-			//d_c.u_d.push(is','rect'); 
-			//d_c.is='c_rect'; d_c.t=1;
-			
-			//if(o.selected_drag){
-			if(o.op4==1){
-				//cross updates
-				csx.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); 
-				csx.is='c_rect'; csx.t=1;
-				csy.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect');
-				csy.is='c_rect'; csy.t=1;
-			}
-
-//feedback
-//ask if frames have new params and if they do, gather data and print feedback acordingly
-			//if(update_sel){//should be update_interface
-				var f = anim[o.op2];
+			var f = anim[o.op2];
 				
-				var frames = anim.length; var f_n_a = []; //frame number array
-				if(frames == 1){f_n_a.push("[0]");}
-				if(frames == 2){
-					if(o.op2==0){f_n_a.push("[0]",1);}
-					if(o.op2==1){f_n_a.push(0,"[1]");}
+			var frames = anim.length; var f_n_a = []; //frame number array
+			if(frames == 1){f_n_a.push("[0]");}
+			if(frames == 2){
+				if(o.op2==0){f_n_a.push("[0]",1);}
+				if(o.op2==1){f_n_a.push(0,"[1]");}
+			}
+			if(frames >= 3){
+				if(o.op2==0){}else{f_n_a.push(0);}
+				while(frames--){
+					if(frames == o.op2){f_n_a.push("["+frames+"]");}
 				}
-				if(frames >= 3){
-					if(o.op2==0){}else{f_n_a.push(0);}
-					while(frames--){
-						if(frames == o.op2){f_n_a.push("["+frames+"]");}
-					}
-					if(o.op2==(anim.length-1)){}else{f_n_a.push((anim.length-1));}
-				}	
-				var framed = f_n_a.join("...");//join f_n_a togheter separated by ...
-			
-				all.stream_a.push(
-					"Animation name: "+anim[0].name, 
-					"Frame: "+framed,
-					"Frame X:"+f.px+" Y:"+f.py+" W:"+f.pw+" H:"+f.ph,
-					"Timer: "+f.t,
-					"Alpha:"+f.a,
-					"Cursor X:"+s.x+" Y:"+s.y+" W:"+s.w+" H:"+s.h
-				);
-				all.screen_log('estream'); //estream
-
-			//}//up sel
+				if(o.op2==(anim.length-1)){}else{f_n_a.push((anim.length-1));}
+			}	
+			var framed = f_n_a.join("...");//join f_n_a togheter separated by ...
+		
+			all.stream_a.push(
+				"Animation name: "+anim[0].name, 
+				"Frame: "+framed,
+				"Frame X:"+f.px+" Y:"+f.py+" W:"+f.pw+" H:"+f.ph,
+				"Timer: "+f.ft,
+				"Alpha:"+f.a,
+				"Cursor X:"+s.x+" Y:"+s.y+" W:"+s.w+" H:"+s.h
+			);
+			all.screen_log('estream'); //estream
 
 		}//edit img mode
 
@@ -7157,6 +7258,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}
 				}else{//mc_a[2] is orb name or .in
 					//.orb.in:[json text]
+//IN
 					if(mc_a[2]=='in'){
 					//import a json text into sunya
 						var ta = str.split(":"); ta.shift(); 
@@ -7225,14 +7327,14 @@ all.stream_a.push("but yes, you can try again if you want..");
 							all.stream_a.push("__________________");
 							all.screen_log();
 							break
-							
+//OUT							
 						case 'out':
 				//print out orb in json
 							var orb = all.find_ting(all.up_objs, 'name', mc_a[2]);
-				//but first empty current img and audio files
-							orb.current_img_file={}
-							orb.current_audio_file={}
-
+				//but first empty current img and audio files... problem here is i need to put these back again lol
+							//orb.current_img_file={}
+							//orb.current_audio_file={}
+							
 							var txt = JSON.stringify(orb);
 							all.chat_on = true; chat_in.focus();
 							chat_in.style.display="inLine";
@@ -7612,7 +7714,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 				if(sr){
 					if(sr.loop){
 						sr.u_d.push('is','rm');
-						sr.is='c_img'; sr.t=1; sr.et = -1;
+						sr.is='c_img'; sr.rt = -1;
 						a[0].running='FALSE';
 					}
 				}else{
@@ -7622,7 +7724,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 					var sret = all.getetv(a);
 					sr.anim=a; sr.ctx=ctx1;
 					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-					sr.is='c_img'; sr.t=1; sr.run=1; sr.rt=0; sr.et=sret; sr.nfreq=0; sr.loop=true;
+					sr.is='c_img'; //sr.t=1;
+					sr.et=sret; sr.rt=sr.et; sr.loop=true;
 					a[0].running='TRUE';
 					all.anim_a.push(sr);
 					}
@@ -7704,22 +7807,23 @@ all.stream_a.push("but yes, you can try again if you want..");
 						while(l--){
 							var a = c_orb.img[l];
 							if(a){
-								if(a[0]){//ok no need to ask now.? no more empty array
+								//if(a[0]){//ok no need to ask now.? no more empty array
 									if(a[0].name==mcp_a[1]){
 										var index = c_orb.img.indexOf(a);
 										c_orb.op1 = index;
 								all.stream_a.push("Recalling...   " + mcp_a[1]); all.screen_log();
 										var found = true;
+										break
 									}
-								}
+								//}
 							}
 						}
-						if(found){}else{
+						if(found){a.push({});}else{ //we push an empty frame to start editing
 							var na = [];
 							var f = {};
 							f.x=0; f.y=0; f.w=100; f.h=100; f.f=0;
 							f.px=0; f.py=0; f.pw=100; f.ph=100;
-							f.t=15; f.a=1;
+							f.ft=15; f.a=1;
 							f.name=mcp_a[1];
 							f.img_file_name=c_orb.current_img_file.name;
 							f.running='FALSE';
@@ -8045,7 +8149,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 				if(sr){
 					if(sr.loop){
 						sr.u_d.push('is','rm');
-						sr.is='c_rect'; sr.t=1; sr.et = -1;
+						sr.is='c_rect'; sr.rt = -1;
 						a[0].running = 'FALSE';
 					}
 				}else{
@@ -8053,7 +8157,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 					var sret = all.getetv(a);
 					sr.anim=a; sr.ctx=ctx1;
 					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-					sr.is='c_rect'; sr.t=1; sr.run=1; sr.rt=0; sr.et=sret; sr.nfreq=0; sr.loop=true;
+					sr.is='c_rect'; //sr.t=1; 
+					sr.et=sret; sr.run=true; sr.rt=sr.et; sr.loop=true;
 					a[0].running = 'TRUE';
 					all.anim_a.push(sr);
 			
@@ -8336,8 +8441,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 							}
 
 							if(playing_already!=undefined){
-								all.stream_a.push("Already playing.. "+mcp_a[1]);
-								all.screen_log();
+								//all.stream_a.push("Already playing.. "+mcp_a[1]);
+								//all.screen_log();
 							}else{
 								//named_act.running = true;
 								var act = all.actuator(a, c_orb); //actuator call
@@ -8348,8 +8453,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 								if(act.is=='actor'){
 									c_orb.actors.push(act);
 								}
-								all.stream_a.push("Playing.. "+mcp_a[1]);
-								all.screen_log();
+								//all.stream_a.push("Playing.. "+mcp_a[1]);
+								//all.screen_log();
 							}
 						}else{
 							all.stream_a.push("No such act has been found.");
