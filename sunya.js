@@ -485,7 +485,7 @@ const kdown = function(ev){
 
 
 //ARROW keys control STREAM SCROLLing HISTORY
-//... still needs to handle orb streams on radiant mode update this
+//... still needs to handle orb streams on radiant mode update this? no i think it works already
 //all arrow keys except for right arrow should freeze stream
 	if(e == 37 & all.chat_on == false){
 		//detach from stream updates but keep storing messages on history. freeze stream
@@ -860,17 +860,24 @@ all.screen_log = function(stream){ //stream, ctx? orb? the stream itself we coul
 		stream.up=false; 
 		if(stream.c_last==0){}else{stream.c_last--;}
 		stream.freeze=true;
+		stream.left=false;
 	}
 	//if down arrow, normalize and then increase current_last but leave as is if on last already, print and freeze
 	if(stream.down){
 		stream.down=false;
 		if(stream.history.length==stream.c_last){}else{stream.c_last++;}
 		stream.freeze=true;
+		stream.left=false;
 	}
-	//if left arrow, normalize and leave current as is , print and freeze
-	if(stream.left){stream.left=false; stream.freeze=true;}
+
 	//if right arrow, normalize and make current_last equal to actual history length, print and unfreeze
-	if(stream.right){stream.right=false; stream.freeze=false;}
+	if(stream.right){stream.right=false; stream.freeze=false; stream.left=false;}
+
+	//if left arrow, normalize and leave current as is , print and freeze
+	if(stream.left){
+		all.clear_stream(stream); return
+		//stream.left=false; stream.freeze=true;
+	}
 
 //so if freeze.. then use current last
 	if(stream.freeze==true){var l = stream.c_last;}
@@ -1255,10 +1262,9 @@ all.rect_s_new = function(name){
 	var state = {
 		is:"f",  name:name,   
 		x:0, y:0, w:70, h:70, inside:"empty",
-		r:180, g:180, b:180, a:0.8, //se: undefined, //subevent
 		tx: 0, ty: 0,
-		//t:-1, rt:0, et:-1, run:undefined, //old
-		ctx:undefined, loop:false, run:true, s:"rect",
+		r:180, g:180, b:180, a:0.8, 
+		ctx:undefined, loop:false, run:true, s:'rect',
 		ft:undefined, rt:-1, et:undefined, nfreq:undefined, anim:undefined, 
 		u_d: []
 	};
@@ -1268,11 +1274,12 @@ all.rect_s_new = function(name){
 //circle state
 all.circle_s_new = function(name){
 	var state = {
-		is:'f', anim: undefined, name:name, loop:false, ctx:undefined, //sf:sf,
+		is:'f', name:name, 
 		x:0, y:0, radius:40, inside:"empty",
 		tx:0, ty:0,
 		r:180, g:180, b:180, a:0.8, 
-		nfreq:undefined, s:"circle",t:-1, rt:0, et:-1, run:undefined,
+		ctx:undefined, loop:false, run:true, s:'circle',
+		ft:undefined, rt:-1, et:undefined, nfreq:undefined, anim:undefined,
 		u_d:[]
 	};
 	return state;
@@ -1293,14 +1300,16 @@ all.getetv = function(a){
 	}
 	return et
 }
-//returns corresponding time and frame given a run time number.testing
+//returns corresponding time and frame given a run time number.tested.
 all.getcfv = function(a,rt){//takes edit and a desired time
 	var l = a.length; var i = 0; var ct = 0;
 	while(l--){
-		ct = ct+a[i].ft; 
+		var mf = a[i].ft; ct = ct+mf; 
+//we need ft. ft runs backwards so we need to find how much to subtract from ft acording to the difference between ct and rt
 		if(ct>=rt){
-			var sub = ct-a[i].ft
-			var ft = rt-sub;
+			//var sub = ct-mf;
+			var diff = ct-mf; var ft = mf-diff;
+			//var ft = rt-sub;
 			return [ft,i] //0 is the frame time, 1 is the frame we are looking for
 		}
 	i++;
@@ -1610,47 +1619,25 @@ all.anim_func = function(){
 
 
 //text states
-//if state is "c_txt" only needs timer check. time up sends to freeze. 
-//needs rework . should work in conjunction with stream_a and screen_log.?
-//Am currently not even using the nfreq mechanism on these text states
-//needs a simple tag to self remove maybe
-//needs subevents to implement generic text effects. would be nice to be
-//manageable from here..
-//... a pulsating alpha in and out value. with adjustable pulsing rate..
-//maybe it could be done on txt editor.. or maybe we leave all this to act scripts
-//.. needs replanteamiento
-//.. txt animations have a different structure because they work with streams.
-//question is: Do we need txt animations to be able to be displayed
-//independently from streams mechanics? yeah.. i think we do
-//!!!!!A mechanism to improve visibility, draw a rect area behind text thats
-//colored in a way that it makes txt always be visible by contrast. maybe
-//on clear phase,a tag
-//animf should be able to create effects on txt states using tags. . blinking, fading in and out, random colors etc..
-//ok lets say so we dont check t on txt, we directly check for an effect.
-//s.display = 'normal'	Print at every beat to keep up with other animations running over it.
 /*
 //ok so now am thinking, we need time. we select a number of beats to loop the txt animation. we say 10 beats, animation will print
 //10 times the same. but now we need a command to modify each beat properties. so the first 5 beats will have all the same properties
 //but 20 red, and the last 5 beats is the same, but now we l have 200 red... so its basically a framing system.. yeah 
 //ok so choose a number of beats, and add one change at a time for each beat. . so animf asks what beat number are we, then checks
 //for a change on said beat, and then prints and loop
-//.signal:beats_number	Asigns a number of beats to the txt anim.
-//.signal:beat_number	Selects a beat. Now we add changes to that beat. So only changes and beat number are stored.
 //o.op6 keep track of beat. all changes in color, position, transparency are registered with currently selected beat and pushed into
-//a[0].beats=[] . Now animf keeps an eye on this array. beats[{},{},{}] has as many items as txt frames¿ 0:0 means no changes,
-//0:'r_10' means we modify r, ... idk lets just print as is on inner mode. maybe i l come back later here
-
-//ok .. another idea.. what if
+//a[0].custom_a=[] .
 //s.display = 'custom'.. custom has an array with objects. each object represents changes from then to the end of the loop. a loop
-//has as many beats as this array. so we use a counter to change what item to use to affect the line property... thats a lot of counters.
-//.. we probly need to store data in line1.. do all txt lines need to be an independant state..?.. ok so when we create the line,
-//we just pass instructions just like when we pass a refference to anim with all other edits.
+//has as many beats as this array. so we use a counter to change what item to use to affect the line property.
 */
 		if(s.is=="c_txt"){
 //only line1 should be able to have print value here. print takes properties from this state and uses them to create the rest
 //of the ext anim lines. kinda like print does on edit mode but now we use this state as anim[0] line 1. this state has the anim
 //property to retrieve all lines txt values. print actually searches the rest of the line states if they are already on animf and
 //quickly clears and banishes them and then it prints the whole text again.
+//we use print on act scripts because is easier to keep track of line1 to apply any desired changes to the rest of the animation lines.
+//and i think we can treat ft and rt on txt states just the same as others..? noup, ft counts up, t counts down..
+//but maybe we dont really need to manipulate time and duration on texts from act scripts.. i rly dont think its escential
 			if(s.display=='print'){
 				//always clear old lines if any
 				var l0=s.anim[0];
@@ -1705,9 +1692,9 @@ all.anim_func = function(){
 	//s.custom_a.length last item :) yeah nice one
 				}
 				var delta = s.custom_a[s.t];
-//the custom_a items are simple strings with instructions
-//to change the state properties. these changes remain until s.t reaches 0
-//so delta could be; ['r',20,'a',0.4]...or better yet let it be [20,'r',0.4,'a'] so it fits while loop better
+//the custom_a items are simple strings with instructions. there are as many items as beats the txt animation has. instructions on each item
+//change all the states properties. these changes apply for each succesive beat until s.t reaches 0
+//so delta could be;  [20,'r',0.4,'a'] , alpha is set to 0.4, r is set to 20 and so on
 /*
 .signal:custom_number	Asigns a number of beats to the txt anim custom_a property. Last item holds current properties, all other items
 			are initially empty.
@@ -1730,50 +1717,34 @@ all.anim_func = function(){
 		}//txt animations
 
 
-//We need to synch properly access from acts to animations parameters with animf. An act instruction might miss a beat if we
-//run animf and change a value before the instruction is executed...!!!!!
-//states holding run are merely used to talk with act scripts, we dont need the run parameter to explicitly affect animf
-//operations. When we use time and duration on a script we are also reffering to different parameters on states wich account
+//When we use time and duration on a script we are also reffering to different parameters on states wich account
 //to what users perceive as time. scripts synthax purpose is to facilitate animation to users.
 //if time = number, sum t(ft) of every frame operation to asign requested nfreq and ft
 //if duration = number, simply change et directly
-//For any change we want to apply just t=1 to clear and then change any param, u state
-//if we want to ignore clear phase we s.is=s directly.
-//if we want to clear and self remove in one beat, t=1, nfreq= undefined using u_d
-//if we want to clear and draw and freeze ignoring nfreq ; t=1, et=-1, will freeze
-//on next beat because t will be 0, and use u_d to set is = s
 
 /*
 //run time rt could manage nfreq to run the animation from a specific point.
 //run time param retrieving sums all ft from every frame and stops at requested number
 //we just need to asign to nfreq the frame at which sum stoped
-//just reinit the rt counter every time anim starts running from 0
 //what if we stop, change rt and start running.. ? in that case, we need to run the
 //ft sum operation so anim f can tell from where animation starts running
 //the reason we are working with rt now and not frames directly is because we can
 //decide for how long a frame stays on screen to control animation speed and rythm,
 //and so the number of beats may differ from the number of frames depending on the
 //specific animation we are running, hence, we need a beat counter for animations
-//that run with frames. audio anims and txt work differently but we still want to
-//use 'time' and 'duration' subcommands to make these operations
-//len here controls when to reinitialize the animation.
+//that run with frames.
+//audio anims and txt work differently but we still want to
+//use 'time' and 'duration' instructions to make these operations
+			//
 //rt, run time. a counter to manage how many beats are we into the animation at
-//any time. et, end time when rt reaches et value, animation reinits from frame 0.
-//the duration act parameter, et,  could replace len
+//any time. 
+//et, end time when rt reaches et value, animation reinits from frame 0.
 //frame time, end time, run time. ft , et, rt
 //logic is permanent, we should be able to manage these timers from the state,
 //we dont want to create logic resources to always control directly timer parameters
 //of a state because actors could mess up timers for other actors
 //.. so rt adds 1 at every check and it becomes 0 when animation initializes
-//we keep using len as default to control init, but now we could add et which can
-//end the animation run at its value.. wait we could simply use rt to do this..
-//we dont need to change duration to end the run at a specified time, we can just use
-//rt and a logic value. or we can use durati0n and a logic value so we use the end
-//as reference instead of rt. .. no.. its more consistent for act language to be
-//able to read and to change a duration parameter that on change it has an effect
-//on the run. if a run reaches an asigned duration value, it will stop and reinit
-//and keep stopping and reinit as long as run parameter is 1. to restore duration
-//to its original value, we need to store it previously on a logic container.
+//if a run reaches an asigned duration value, it will stop and reinit and ask for loop
 */
 
 //c_img
@@ -1791,6 +1762,9 @@ all.anim_func = function(){
 //this system is clearer , more versatile and less poluted
 //ok so to mannually just print once and let it be which is rare, mostly bg operations, make s.is=s.s and set run to false
 //to ignore checks.
+//ok. make it so we can control run start just by changing rt . you need to work on phase 1 statement pushing the link of img state
+//.. gn
+//ok so if run on, animation will run from rt to et and self reinit.
 			if(s.run==false){s.is="f";}
 			if(s.run==true){
 				//clear up
@@ -1798,7 +1772,7 @@ all.anim_func = function(){
 				var c_x = s.px+s.tx; var c_y = s.py+s.ty;
 				all.clear_rect(s.ctx, c_x, c_y, s.pw, s.ph);
 				all.u_state(s);
-				if(s.rt==-1){}else{ //here is how we clear and do nothing
+				if(s.rt==-1){}else{ //here is how we clear and do nothing but keep running
 					s.rt++; s.ft--; //keep timers together here
 					if(s.rt<s.et){
 						//we ask for frame time
@@ -1813,65 +1787,23 @@ all.anim_func = function(){
 							s.a=nf.a; s.ft=nf.ft; s.is='img';
 						}
 					}
+
 					if(s.rt>=s.et){//!!!!!!!!!!!!!!!! >=!!!!
-						//time up. we reinitialize the state.all properties are taken from f0
-//to initialize we want to set rt=0 , and nfreq=0; . we dont need to touch et. and loop will determine s.is value
-						var nf = s.anim[0];
+						var nf = s.anim[0]; //frame 0
 						s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
 						s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
 						s.a=nf.a; s.ft=nf.ft;
 						s.rt=0; s.nfreq=0;
 						//we then ask for loop
-						if(s.loop){s.is='img';}else{s.is='f';}
+			//so instead of sending to f straight away, we could do rt-1 . this way we only need to change rt value to start
+			//the animation again just once... yeah this is good because animation run value can keep being true but the animation
+			//wont run until we do rt = 0. 
+						if(s.loop){s.is='img';}else{s.rt=-1;}//s.is='f';}
 					}	
-				}
+				}//rt -1
 
-			}
-/*
-			if(s.t <= 0){s.is="f";}else{// ==0
-				s.t--; //s.rt++;//
-				var c_x = s.px+s.tx; var c_y = s.py+s.ty;
-				all.clear_rect(s.ctx, c_x, c_y, s.pw, s.ph);
-				all.u_state(s);
+			}//run
 
-
-				//if(s.run==0){}
-				if(s.t == 0){
-					if(s.et==-1){ //no frames request
-						//
-					}else{
-						if(s.rt<s.et){
-							if(s.anim[s.nfreq]){
-								var nf = s.anim[s.nfreq];
-								
-								s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-								s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
-								s.a=nf.a; s.t=nf.t;
-								s.is="img";
-								s.nfreq++; s.rt++;
-							}else{s.is = "f";}
-						}
-						
-						if(s.rt>=s.et){ //...re init. init will now set rt to 0
-							var nf = s.anim[0];
-							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-							s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph; s.a=nf.a; 
-							s.t=nf.t; s.rt=0;
-							s.nfreq=0; s.is="f"; s.run=0;
-							
-							if(s.loop==true){
-								s.is="img"; s.rt++; s.nfreq=1; s.run=1;
-							}
-						}
-						
-					}//et not -1
-
-				}else{//t not zero
-					if(s.run==1){s.rt++; s.is='img';}
-					if(s.run==0){s.is='f';}
-				}
-			}
-*/
 		}//c_img
 
 //img
@@ -1910,8 +1842,6 @@ all.anim_func = function(){
 						}
 					}
 					if(s.rt>=s.et){
-						//time up. we reinitialize the state.all properties are taken from f0
-//to initialize we want to set rt=0 , and nfreq=0; . we dont need to touch et. and loop will determine s.is value
 						var nf = s.anim[0];
 						s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
 						s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
@@ -1920,54 +1850,11 @@ all.anim_func = function(){
 						//we then ask for loop
 						if(s.loop){s.is='rect';}else{s.is='f';}
 					}	
-				}
+				}//rt -1 else
 
-			}
-/*
-//so we can use t = -1 to paint once and basically ignore all logic after.
-			if(s.t <= 0){s.is="f";}else{
-				s.t--; //s.rt++; //here goes rt add i think....no
-	//if we use  t = 1 we can print once, clear, and have a chance to change whatever we want to the state from here.
-				var c_x = s.x+s.tx; var c_y = s.y+s.ty;
-				all.clear_rect(s.ctx, c_x-2, c_y-2, s.w+4, s.h+4);
-				all.u_state(s);
-			//if we didnt change t or et then it will proceed normally. we will usually update into et=-1 to work with new changes
-			//and ignore nfreq. editors support figures dont use nfreq.
-				if(s.t == 0){
-//to ignore anim pre edited logic just set et to -1
-					if(s.et==-1){ 
-						//
-					}else{
-						if(s.rt<s.et){
-							if(s.anim[s.nfreq]){
-								var nf = s.anim[s.nfreq];
-								s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-								s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-								s.inside=nf.inside; s.t=nf.t; 
-								s.is="rect";
-								s.nfreq++; s.rt++;//
-							}else{s.is = "f";}
-						}
-						
-						if(s.rt>=s.et){ //...re init. init will now set rt to 0
-							var nf = s.anim[0];
-							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-							s.inside=nf.inside;
-							s.t=nf.t; //s.t=1;
-							s.rt=0;
-							s.nfreq=0; s.is="f"; 
+			}//run
 
-							if(s.loop==true){
-								s.is="rect"; s.rt++; s.nfreq=1;
-							}
-						}
-
-					}//et not -1
-				}else{s.rt++; s.is='rect';} //s.rt++; .. not here now
-			}//not t -1
-*/
-		}
+		}//c_rect
 
 //rect
 		if(s.is=="rect"){
@@ -1975,13 +1862,11 @@ all.anim_func = function(){
 
 		}//rect animation
 	
-//*/
 
 //c_circle
 //new system . i could even go further and just check if it really is more efficient to just clear all screen on a specific context
 //once instead of making all these little clears for each state.
 		if(s.is=="c_circle"){
-		/*
 //this system is clearer , more versatile and less poluted
 			if(s.run==false){s.is="f";}
 			if(s.run==true){
@@ -1990,7 +1875,7 @@ all.anim_func = function(){
 				var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
 				all.clear_circle(s.ctx, c_x, c_y, s.radius+2);
 				all.u_state(s);
-				if(s.rt==-1){s.is='f'}else{ //here is how we clear and do nothing
+				if(s.rt==-1){}else{ //here is how we clear and do nothing
 					s.rt++; s.ft--; //keep timers together here
 					if(s.rt<s.et){
 						//we ask for frame time
@@ -2005,7 +1890,7 @@ all.anim_func = function(){
 							s.inside=nf.inside; s.ft=nf.ft; s.is='circle';
 						}
 					}
-					if(s.rt==s.et){
+					if(s.rt>=s.et){
 						//time up. we reinitialize the state.all properties are taken from f0
 //to initialize we want to set rt=0 , and nfreq=0; . we dont need to touch et. and loop will determine s.is value
 						var nf = s.anim[0];
@@ -2016,49 +1901,10 @@ all.anim_func = function(){
 						//we then ask for loop
 						if(s.loop){s.is='circle';}else{s.is='f';}
 					}	
-				}
+				}//rt -1
+			}//run
 
-			}
-		*/
-			if(s.t <= 0){s.is="f";}else{
-				s.t--;
-				var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
-				all.clear_circle(s.ctx, c_x, c_y, s.radius+2);
-				all.u_state(s);
-				if(s.t == 0){
-					if(s.et==-1){
-//et = -1 should allow full control using u_d so dont send to draw by default
-						//s.is='circle';
-					}else{
-						if(s.rt<s.et){
-							if(s.anim[s.nfreq]){
-								var nf = s.anim[s.nfreq];
-								s.x=nf.x; s.y=nf.y; s.radius=nf.radius;
-								s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-								s.inside=nf.inside; s.t=nf.t;
-								s.is="circle";
-								s.nfreq++; s.rt++;//
-							}else{s.is = "f";}
-						}
-						
-						if(s.rt>=s.et){ //...re init. init will now set rt to 0
-							var nf = s.anim[0];
-							s.x=nf.x; s.y=nf.y; s.radius=nf.radius;
-							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-							s.inside=nf.inside;
-							s.t=nf.t; s.rt=0;
-							s.nfreq=0; s.is="f";
-							
-							if(s.loop==true){
-								s.is="circle"; s.rt++; s.nfreq=1;
-							}
-						}
-						//rt adds up regarless. 
-						//s.rt++;
-					}//et not -1
-				}else{s.rt++; s.is='circle';}
-			}
-		}
+		}//c_circle
 
 //using circle for circle draw
 		if(s.is=="circle"){
@@ -2071,12 +1917,10 @@ all.anim_func = function(){
 
 //if state is f means is frozen, will just be ignored but kept on anim_a
 		//should simply be undefined if i just want to ignore it
-		if(s.is=="f"){//dont do anything
-		}
+		if(s.is=="f"){}//dont do anything
 
 //if state is rm means is being removed
-		if(s.is=="rm"){all.anim_a.splice(l,1);
-		}
+		if(s.is=="rm"){all.anim_a.splice(l,1);}
 
 	}//anim_func loop
 
@@ -2681,8 +2525,8 @@ all.playa = function(aa){
 //what about streams..
 //[resource tag]//stream(access tag) 6...
 //an instruction to grant actors access into reading a running resource script in the wild
-//unfinished...
-//[resource tag]//script
+//unfinished...?
+//[resource tag]//script?
 //an instruction to ask for resource removal
 //[resource tag]//shutdown
 
@@ -2739,14 +2583,20 @@ all.playa = function(aa){
 			orb.actors.splice(rmactor,1);
 			break	
 		}
-	//maybe we dont need to gather all these here together we could simply ask one by one..	
-		if(stmt[3]=='logic'||stmt[3]=='link'||stmt[3]=='stream'){
+	//maybe we dont need to gather all these here together we could simply ask one by one..	wait these are specific asking for a
+	//resource, these cant be containers. these instructions produce containers thats why they are togheter here ok ok
+	//but waut they dont need to.. hmmm one sec !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//if we find a string in all.perform to match stmt1 it means it can be an access tag to a resource or a container always.
+//we only need to ask the instruction then to know exactly if its a resource or a container what we located. we only need to confirm now
+//if confirmed then we proceed, if not, then its a resource not founc situation so we simply break out
+
+		//if(stmt[3]=='logic'||stmt[3]=='link'||stmt[3]=='stream'){ //deprecat
 			var l2 = all.perform.length;
 			while(l2--){
 				var tag = all.perform[l2];
 				//looking for resource access tag..
 				if(tag==stmt[1]){
-					//[resource tag]//logic(key)(tag)
+					//[resource tag]//logic(key)(tag) 8
 					if(stmt[3]=='logic'){
 						var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
 						//R.logics grants access to logic resources
@@ -2762,7 +2612,7 @@ all.playa = function(aa){
 
 //so far its link[0] edit name, link[1] is link key , link[2] reference to edit ,
 //link[3] holds edit nature and link[4] will hold buffer now if any
-					//[resource tag]//link(key)(tag)
+					//[resource tag]//link(key)(tag) 8
 					if(stmt[3]=='link'){
 						var R = all.perform[l2+2];
 						//R.links
@@ -2784,8 +2634,7 @@ all.playa = function(aa){
 //running the animation inmediately with customized properties so the state must be ready from here on
 				var lks = all.ims_s_new(lin[0]+'_lks_'+aa.name+aa.orb, lin[4]);
 								var sret = all.getetv(lin[2]);
-								lks.anim=lin[2];
-								lks.et=sret;
+								lks.anim=lin[2]; lks.et=sret;
 								//lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
 								lks.tx = Math.floor(window.innerWidth/2); 
 								lks.ty = Math.floor(window.innerHeight/2);
@@ -2793,10 +2642,9 @@ all.playa = function(aa){
 								var f0 = lks.anim[0];
 								lks.x=f0.x; lks.y=f0.y; lks.w=f0.w; lks.h=f0.h;
 								lks.px=f0.px; lks.py=f0.py; lks.pw=f0.pw; lks.ph=f0.ph; lks.a=f0.a; 
-								lks.nfreq=1; lks.is="f"; lks.run=0;
-								lks.rt=0; lks.t=f0.t;
-								lks.loop=false;
-								lks.run=0; //!!!!!!!
+								lks.is='c_img'; //lks.run=0;
+								lks.rt=0;//lks.et; //lks.t=f0.t;
+								lks.loop=false; lks.run=false; 
 										all.anim_a.push(lks);
 									}
 							//we use access tag and +2 to work with the edit state	
@@ -2830,7 +2678,7 @@ all.playa = function(aa){
 											all.anim_a.push(lks);
 										}
 
-								//work with lks which line1
+								//work with lks which is line1
 									all.perform.push(stmt[7],'txt',lks); break
 
 								}//txt
@@ -2845,67 +2693,104 @@ all.playa = function(aa){
 //resources should be able to grant access to orbs streams. so streams could be stored on resources directly, since streams are
 //just objects with properties, we could access orbs stream properties and also change values to make the stream appear on our
 //screen. streams could be treated exactly as logi and link resources. stream txt, x y position, color, size etc. same as edits
-//we would use stream properties to create states, and we could affects the states but not the properties of the original stream.
+//we would use stream properties to create states, and we could affect the states but not the properties of the original stream.
 //we could direct the stream to another orb while modifying its appearance, or we could use a stream txt to affect other states.
-//one things big thing... maybe we dont need to make all history accessible, just one line at a time. so we can take the last stream
+//.. maybe we dont need to make all history accessible, just one line at a time. so we can take the last stream
 //line and process it using its own custom display..? 
-					//[resource tag]//stream(access tag)
+//[resource tag]//stream(access tag)  5
 					if(stmt[3]=='stream'){
 						var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
-						all.perform.push(stmt[5],'stream',R.stream); 
+						all.perform.push(stmt[5],'stream',R.stream); break
 						//stream access tag, 'stream', resource orb stream
 					}
 
-					
-				}//tag found .. else let user know res not found?
+//if all.perform.length is 4 , this means its an independent instruction like runon, runoff , loopon, loopoff
+//these are instructions that dont require more than 2 different values so they act like switches and dont require values
+//taken from somewhere else to work. also, a statement can run these over and over again and the effect of the instruction
+//wont add. These instructions simplify the way we handle running animations.
+//[edit tag]//runon 4
+//[edit tag]//runoff 4
+//[edit tag]//loopon 4
+//[edit tag]//loopoff 4
+//we already know all.perform[1] has matched a resource so we dont need to ask again we just need to confirm its an edit container
+//the kind of tag we asked could be a resource, we need a container
+					//we know lks is 2 items away from the tag and 1 away is the nature of the edit
+//ok so since runon will be able to run an animation as long as its being executed we actually dont need loopon and loopoff.. and
+//maybe we dont need runoff either... one sec
+					if(stmt[3]=='runon'){
+						var lks = all.perform[l2+2];
+				//if run already, dont do a thing, if run false, set run on and also set is to c_thing
+						if(lks.run){}else{lks.run=true; lks.is='c_'+lks.s;} break
+						//lks.run=true; break
+					}
+					if(stmt[3]=='runoff'){
+						var lks = all.perform[l2+2];
+						lks.run=false; break
+					}
+					if(stmt[3]=='loopon'){
+						var lks = all.perform[l2+2];
+						lks.loop=true; break
+					}
+					if(stmt[3]=='loopoff'){
+						var lks = all.perform[l2+2];
+						lks.loop=false; break
+					}
+
+				}//resource found .. else let user know res not found? //deprecat
+
 			}//perform loop l2 for 1 R in line on phase2 ..
 
 
-			
-			i1++; continue   //to the next statement..
-		}//logic and link check
-
+			//i1++; continue   //to the next statement.. //deprecat
+		//}//logic, link and stream check? no need to do this at all //deprecat
 
 //PERFORM
 //all.perform
 //by now all.perform should have consecutive triplets with tag , natureof and resource itself.
 //we only need to find tags on perform and we already know its asociated resource
 //is located +2 next to it on the same perform array.
-//.. i can narrow down this further..?
-//if perform is empty at this point, we can simply ignore all this and break or cont
-
-//.. then a tag, a command, an operation, and again, a tag, a command, an operation..
-//i think i designed it like this for simplicity. these statements always need 2 resources to operate. if one of the resource isnt
+//..so any of the statements we evaluate from here on have the instructions asked above, these statements are test statements and
+//operation statements.
+//from here on we work with..
+//a resource access tag, an extraction command, an operation, another tag, and another extraction instruction
+//i think i designed it like this for simplicity. these long statements always need 2 resources to operate. if one of the resource isnt
 //found or condition isnt found then the statement is simply ignored . even condition tag at the begginning was considered previously
-//we have to work with these structures to create all effects desired for eficiency s sake
+//we have to work with these structures to create all effects that depend on complex values taken from resources.
+		//
+//these are test statements
 //[tag]//subcommand=[tag]//subcommand{cond} 12
 //[tag]//subcommand<[tag]//subcommand{cond} 12
 //[tag]//subcommand>[tag]//subcommand{cond} 12
-
+		//
+//these are operation statements
 //[tag]//subcommand+[tag]//subcommand 10
 //[tag]//subcommand-[tag]//subcommand 10
 //[tag]//subcommand>>[tag]//subcommand 10
 		//
-//am thinking phase2 doesnt need to handle literals. we have resources already
+//am thinking phase2 doesnt need to handle literals. we have resources already. the whole point is that resources provide data neccesary
+//to build all dynamics
 //and the stream sc(subcommand) should be able to provide more than enough versatility
 //.. am thinking instead of calling these 'subcommands' they should be called 'instructions' for consistency s sake. we already
 //have commands and subcommands to work with sunya input box...
 //use resources available to run statements on them. if no resource then ignore the statement.
+
+//.. whats all this?.. i could work with all.perform straight away i dont need to ask so much stuff?...okok one sec
+//if we even get this far is obviously because the structure of the statement has 10 or more items....
+//if all.perform.length >= 10 .... do all this
 		//
 		var l2 = all.perform.length;
 		while(l2--){
 			var tag = all.perform[l2];
 			//find tags
-			if(stmt[1]==tag){var R1 = all.perform[l2+2]; var R1N = all.perform[l2+1];} //Resource and RestourceNature
+			if(stmt[1]==tag){var R1 = all.perform[l2+2]; var R1N = all.perform[l2+1];} //Resource and ResourceNature
 			if(stmt[7]==tag){var R2 = all.perform[l2+2]; var R2N = all.perform[l2+1];}
-			//am not using resource nature ahead so far..
 		}//perform loop to get tags
 
-		if(R1==undefined||R2==undefined){
+		if(R1==undefined||R2==undefined){ //sooo we should always have both resources at this point.... yup
 			if(cond!=undefined){
-				//i think am just restoring the condition here for the next resource check..
-				//because the condition was fullfilled, but the resource wasnt found so we ignore this statement
-				//maybe on another heartbeat in the future the resource we lack now might available.
+//i think am just restoring the condition here for the next resource check because the condition was fullfilled,
+//but the resource wasnt found so we ignore this statement
+//maybe on another heartbeat in the future the resource we lack now might available.
 				stmt.unshift('condition',cond);
 				var cond = undefined;
 			}
@@ -2927,7 +2812,7 @@ all.playa = function(aa){
 				//
 		//logi
 			if(stmt[sc_pos]=='str'){rvalues.push('lstr', R[0]);} //R[0] holds logic string
-			//we could transform values into numbers here...
+			//we should transform values into numbers here... or are they already 
 			if(stmt[sc_pos]=='num'){rvalues.push('lnum', R[1]);} //R[1] holds logic number
 
 //img, rect circle links. these affect states directly.. also txt now
@@ -2936,16 +2821,11 @@ all.playa = function(aa){
 				rvalues.push('tx', R.tx);//when instruction is x, we are dealing with tx of a state
 			} //R is a state now.. again lol 
 
-			if(stmt[sc_pos]=='y'){
-				rvalues.push('ty',R.ty);
-			}
+			if(stmt[sc_pos]=='y'){rvalues.push('ty',R.ty);}
 
-//ok so how would run work here... because we want the same instruction to work with img, rect, circle, txt.. and ideally audio, osc..
-//x y w and h can directly modify the state parameters by their name but run values need to affect different states properties acording
-//to state nature in order to produce the desired effect.
-			if(stmt[sc_pos]=='run'){rvalues.push('run',R.run);}
-			//if(stmt[sc_pos]=='time')
-			//if(stmt[sc_pos]=='duration')
+			if(stmt[sc_pos]=='time'){rvalues.push('rt',R.rt);}
+
+			if(stmt[sc_pos]=='duration'){rvalues.push('et',R.et);}
 		//stream
 //so we have a stream resource. what we are really interested in is in history. we want to be able to extract a specific history item
 //so we need an instruction to change the history item we want to extract and an instruction to extract the value of selected item
@@ -2978,54 +2858,46 @@ all.playa = function(aa){
 			if(rvalues[0]=='lstr'){R1[0]=NV;}
 			if(rvalues[0]=='lnum'){R1[1]=NV;}
 			if(rvalues[0]=='streams'){R1.history[R1.history.length-1]=NV;}
+
 			if(rvalues[0]=='tx'){if(R1N == 'txt'){R1.display='print';} R1.tx=NV;}
 			if(rvalues[0]=='ty'){if(R1N == 'txt'){R1.display='print';} R1.ty=NV;}
-			//if(rvalues[0]=='run'){R1.run=NV;}
+			if(rvalues[0]=='rt'){if(R1N == 'txt'){ //do txt later..
+				}else{
+		//ok so we need to change not only rt but also ft and nfreq, here we run the function all.getcfv(a,rt)
+	//its backwards... ft runs backwards so we need to fix getcfv 
+					var cf = all.getcfv(R1.anim, NV);
+					R1.rt=NV; R1.ft=cf[0]; R1.nfreq=cf[1];
+				}
+			}
+			if(rvalues[0]=='et'){if(R1N == 'txt'){}else{R1.et=NV;}}
+
 		}//to 1
 
 		if(to==2){
 			if(rvalues[2]=='lstr'){R2[0]=NV;}
 			if(rvalues[2]=='lnum'){R2[1]=NV;}
 			if(rvalues[2]=='streams'){R2.history[R2.history.length-1]=NV;}
+
 			if(rvalues[2]=='tx'){if(R2N == 'txt'){R2.display='print';}R2.tx=NV;}
 			if(rvalues[2]=='ty'){if(R2N == 'txt'){R2.display='print';} R2.ty=NV;}
-			if(rvalues[2]=='run'){
-				if(R2N == 'img'){
-//duration = et directly
-//run = 1 runs once from rt and self reinit. also at end animf makes run = 0
-//ok this run unrun system looking quite convoluted in practice.. maybe the old idea of working in loop as default was not bad
-//Okok the idea of making run work as a loop is good because it reduces the number of instructions we need to get an edit going
-//run 1 starts looping the animation but from rt to et
-//we need to modify the effect of the instruction so it does conflict with itself when executed at every beat, same with all other control
-//properties. maybe we need an instruction control protocol. let edit states hold marks to inform instructions they dont need to be executed
-//again.. this would massively improve sinthax..changes would act more like switches than statements.. but conditions already work good
-//like switches.. maybe we just need to write in a specific way
-					R2.run=NV;
-					if(NV==0){R2.is='c_'+R2.s; R2.t=2;}//
-					if(NV==1){R2.is=R2.s;}
-				}
-			}	
-			if(rvalues[2]=='loop'){
-				if(R2N == 'img'){
-//loop = 0 is off, loop = 1 is on.. its more universal this way
-					if(NV==0){R2.loop=false;}
-					if(NV==1){R2.loop=true;}
-				}
-			}	
-//ok i thinks its going well.. try using time to restore rt and nfreq to what we want.
-			if(rvalues[2]=='time'){
-				if(R2N == 'img'){
 //time controls from where to run... beats for visuals, seconds for audio. txt for later lol... duration controls where to end.
 //time = number, sum t(ft) of every frame operation to asign requested nfreq and ft.. a function to calculate corresponding
 //frame given a number for time. all.getcfv = function(a,t) for visuals, takes the edit and the desired time
-//time 0 should always reinit the animation. we should be able to retrieve time as a number but also when we  place a number on
+//rt 0 should always reinit the animation. we should be able to retrieve time as a number but also when we  place a number on
 //time container it should affect the edit properly. same with duration. we should be able to change duration and retrieve its value
 //in the same way we do with time.
-					//R2.time=NV;
+			if(rvalues[2]=='rt'){if(R2N == 'txt'){
+				}else{
+//ok so we need to change not only rt but also ft and nfreq, here we run the function all.getcfv(a,rt)
+					var ct = all.getcfv(R2.anim, NV);
+					R2.rt=NV; R2.ft=ct[0]; R2.nfreq=ct[1];
 				}
 			}
+
+			if(rvalues[2]=='et'){if(R2N == 'txt'){}else{R2.et=NV;}}
 		}//to 2
 		
+
 
 		//restoring stmt original structure
 		if(cond!=undefined){
@@ -3281,8 +3153,8 @@ all.ml_up = function(o){
 									sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
 									//new
 							 		var sret = all.getetv(a);
-							 		sr.is='c_circle'; sr.t=1; sr.nfreq=0; sr.loop = true;
-									sr.run=1; sr.rt=0; sr.et=sret;
+							 		sr.is='c_circle'; sr.loop = true;
+									sr.et=sret; sr.rt=sr.et;
 									all.anim_a.push(sr);
 							
 								}
@@ -4889,7 +4761,7 @@ Keys are persistant always by default.
 //Yes. effects need to be able to be crafted by users because user will be able to
 //create their own mechanics. effects will cast areas of interaction. circles
 //expanding will trigger events when they touch something. rectangles will be
-//interaction buttons for touchscreen users maybe
+//interaction buttons for touchscreen users or maybe this is cope
 //EDIT
 		if(o.edit_circle_mode==true){
 			if(o.init){
@@ -5012,13 +4884,13 @@ Keys are persistant always by default.
 
 //inside
 				if(delta.signal=='empty'){
-					s.u_d.push('inside','empty','is','circle');
-					s.is='c_circle'; s.t=1;
+					s.u_d.push('inside','empty');//,'is','circle');
+					s.is='c_circle'; //s.t=1;
 				}
 				
 				if(delta.signal=='filled'){
-					s.u_d.push('inside','filled','is','circle');
-					s.is='c_circle'; s.t=1;
+					s.u_d.push('inside','filled');//,'is','circle');
+					s.is='c_circle'; //s.t=1;
 				}
 				
 //cursor
@@ -5036,8 +4908,8 @@ Keys are persistant always by default.
 					if(delta.signal=='down'){
 						var u_p = 'y'; var u_v = s.y+delta.value;
 					}
-					s.u_d.push(u_p, u_v,'is','circle');
-					s.is='c_circle'; s.t=1;
+					s.u_d.push(u_p, u_v);//,'is','circle');
+					s.is='c_circle'; //s.t=1;
 					
 				}//cursor
 				
@@ -5049,28 +4921,29 @@ Keys are persistant always by default.
 						var u_p = 'radius'; var u_v = s.radius-delta.value;
 						if(u_v<=0){u_v=1;}
 					}
-					s.u_d.push(u_p,u_v,'is','circle');
-					s.is='c_circle'; s.t=1;
+					s.u_d.push(u_p,u_v);//,'is','circle');
+					s.is='c_circle'; //s.t=1;
 				}
 				
 				if(delta.signal=='define'){
 					//let t be 20 on default but dont overide if t already has a value
-					if(f.t==undefined){
-						var t=20;
+					if(f.ft==undefined){
+						var ft=20;
 					}else{
-						var t = f.t;
+						var ft = f.ft;
 						all.stream_a.push("Frame SAVED"); all.screen_log();
 					}
 
 					f.x=s.x; f.y=s.y;  //f.f=o.op2;
 					f.radius=s.radius; f.inside=s.inside;
 					f.r=s.r; f.g=s.g; f.b=s.b; f.a=s.a;
-					f.t=t;
+					f.ft=ft;
 					
 					if(sr.loop){
 						//update times
-						sr.et = all.getetv(anim); sr.rt=0; sr.t=1;
-						sr.nfreq=0; sr.is='c_circle';
+						sr.et = all.getetv(anim); sr.rt=sr.et; //sr.t=1;
+						//sr.nfreq=0; 
+						sr.is='c_circle';
 					}
 					
 					if(sr.loop==false){
@@ -5093,9 +4966,9 @@ Keys are persistant always by default.
 							var f = anim[o.op2];
 							s.u_d.push(
 								'r',f.r,'g',f.g,'b',f.b,'a',f.a,'x',f.x,'y',f.y,
-								'radius',f.radius,'inside',f.inside,'is','circle'
+								'radius',f.radius,'inside',f.inside//,'is','circle'
 							);
-							s.is='c_circle'; s.t=1;
+							s.is='c_circle'; //s.t=1;
 						}
 
 					}else{
@@ -5111,9 +4984,9 @@ Keys are persistant always by default.
 							var f = anim[o.op2];
 							s.u_d.push(
 								'r',f.r,'g',f.g,'b',f.b,'a',f.a,'x',f.x,'y',f.y,
-								'radius',f.radius,'inside',f.inside,'is','circle'
+								'radius',f.radius,'inside',f.inside//,'is','circle'
 							);
-							s.is='c_circle'; s.t=1;
+							s.is='c_circle'; //s.t=1;
 						}
 
 					}else{all.stream_a.push("Last frame"); all.screen_log();}
@@ -5121,15 +4994,15 @@ Keys are persistant always by default.
 
 				if(delta.signal=='run'){
 					if(sr.loop){
-						sr.u_d.push('loop',false,'run',0,'rt',sr.et);
-						sr.is='c_circle'; sr.t=1;
+						sr.u_d.push('loop',false,'rt',sr.et);
+						sr.is='c_circle'; //sr.t=1;
 						
 						var f = anim[o.op2];
 						s.u_d.push(
 							'r',f.r,'g',f.g,'b',f.b,'a',f.a,'x',f.x,'y',f.y,
-							'radius',f.radius,'inside',f.inside,'is','circle'
+							'radius',f.radius,'inside',f.inside//,'is','circle'
 						);
-						s.is='c_circle'; s.t=1;
+						s.is='c_circle'; //s.t=1;
 						
 						//when we out of loop we push ghost frame again
 						anim.push({});
@@ -5137,8 +5010,8 @@ Keys are persistant always by default.
 						anim.pop(); 
 						//new
 						var sret = all.getetv(anim); 
-						sr.anim=anim; sr.is='c_circle'; sr.t=1; sr.nfreq=0; sr.run=1;
-						sr.loop=true; sr.rt=0; sr.et=sret;
+						sr.anim=anim; sr.is='c_circle'; //sr.t=1; sr.nfreq=0; sr.run=1;
+						sr.loop=true; sr.et=sret; sr.rt=sr.et;
 
 					}
 					
@@ -5152,22 +5025,22 @@ Keys are persistant always by default.
 					var al = anim.length;
 					while(al--){
 						var af = anim[al];
-						af.t=delta.value; 
+						af.ft=delta.value; 
 					}
 					if(sr.loop){
 						//update times
-						sr.et = all.getetv(anim); sr.rt=0; sr.t=1;
-						sr.nfreq=0; sr.is='c_circle';
+						sr.et = all.getetv(anim); sr.rt=sr.et; //sr.t=1; sr.nfreq=0; 
+						sr.is='c_circle';
 					}
 					all.stream_a.push("New beat"); all.screen_log();
 				}
 
 				if(delta.signal=='time'){
-					f.t=delta.value; 
+					f.ft=delta.value; 
 					if(sr.loop){
 						//update times
-						sr.et = all.getetv(anim); sr.rt=0; sr.t=1;
-						sr.nfreq=0; sr.is='c_circle';
+						sr.et = all.getetv(anim); sr.rt=sr.et; //sr.t=1; sr.nfreq=0;
+						sr.is='c_circle';
 					}
 					all.stream_a.push("Numbers are time."); all.screen_log();
 				}
@@ -5176,8 +5049,8 @@ Keys are persistant always by default.
 					if(delta.value>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
-						s.u_d.push('r',delta.value,'is','circle');
-						s.is='c_circle'; s.t=1;
+						s.u_d.push('r',delta.value);//,'is','circle');
+						s.is='c_circle'; //s.t=1;
 						//all.stream_a.push("Numbers are red rect."); all.screen_log();
 					}
 				}
@@ -5185,8 +5058,8 @@ Keys are persistant always by default.
 					if(delta.signal>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
-						s.u_d.push('g',delta.value,'is','circle');
-						s.is='c_circle'; s.t=1;
+						s.u_d.push('g',delta.value);//,'is','circle');
+						s.is='c_circle'; //s.t=1;
 						//all.stream_a.push("Numbers are green rect."); all.screen_log();
 					}
 				}	
@@ -5194,13 +5067,13 @@ Keys are persistant always by default.
 					if(delta.signal>220){//check if number is higher than 220
 						all.stream_a.push("Max input is 220."); all.screen_log();
 					}else{
-						s.u_d.push('b',delta.value,'is','circle');
-						s.is="c_circle"; s.t=1;
+						s.u_d.push('b',delta.value);//,'is','circle');
+						s.is="c_circle"; //s.t=1;
 						//all.stream_a.push("Numbers are blue rect."); all.screen_log();
 					}
 				}
 				
-//circle transparency
+//circle transparency. needs update to new a system
 				if(delta.signal=='a'){
 					//i could implement new txt alpha system here as well
 					//if(delta.value>10){
@@ -5215,8 +5088,8 @@ Keys are persistant always by default.
 							var na = s.a-(0.1);
 						}
 					}
-					s.u_d.push('a',na,'is','circle');
-					s.is='c_circle'; s.t=1;
+					s.u_d.push('a',na);//,'is','circle');
+					s.is='c_circle'; //s.t=1;
 				}//a
 				
 				o.op3=0;
@@ -5229,10 +5102,11 @@ Keys are persistant always by default.
 				o.op5=0;
 			}
 
-			csx.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csx.is='c_rect'; csx.t=1;
-			csy.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csy.is='c_rect'; csy.t=1;
+			csx.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csx.is='c_rect'; //csx.t=1;
+			csy.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); csy.is='c_rect'; //csy.t=1;
+			s.u_d.push('is','circle');
 
-			var update_sel = true;
+			var update_sel = true;// ?
 
 		
 //feedback for circle .
@@ -5265,7 +5139,7 @@ Keys are persistant always by default.
 					"Animation name: "+anim[0].name+" Frame: "+framed,
 					"Run Time:"+sr.rt+" Duration: "+sr.et,
 					"Frame R:"+f.r+" G:"+f.g+" B:"+f.b+" A:"+f.a+" Rad:"+f.radius,
-					"X:"+f.x+" Y:"+f.y+" Rad:"+f.radius+" Time: "+f.t,
+					"X:"+f.x+" Y:"+f.y+" Rad:"+f.radius+" Time: "+f.ft,
 					"Cursor R:"+s.r+" G:"+s.g+" B:"+s.b+" A:"+s.a,
 					"X:"+s.x+" Y:"+s.y+" Rad:"+s.radius
 					);
@@ -6649,7 +6523,7 @@ all.c_com = function(){ //(check commands)
 				if(mc_a[2]==undefined){
 					all.stream_a.push(
 					'----------------------------',
-					'Type in; .help.[keyword] for more information on any specified word down bellow.',
+					'Type in; .help.[word] for more information on any specified [word] down bellow.',
 					'user, name, speed, orb, stance, inner mode, void, mainstream, estream, commands',
 					'touchscreen, button, keyboard, type, shortcuts',
 					'edit, upload, img, audio, txt, circle, rect, osc, signal, delta',
@@ -6674,6 +6548,7 @@ all.c_com = function(){ //(check commands)
 					'----------------------------'
 						);
 					}
+				/*
 					if(mc_a[2]=='speed'){
 						all.stream_a.push(
 					'_____________________________________________________________________________',
@@ -6683,6 +6558,7 @@ all.c_com = function(){ //(check commands)
 					'_____________________________________________________________________________'
 						);
 					}
+				*/
 
 					if(mc_a[2]=='orb'){
 						all.stream_a.push(
@@ -8028,7 +7904,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 				if(sr){
 					if(sr.loop){
 						sr.u_d.push('is','rm');
-						sr.is='c_circle'; sr.t=1; sr.et = -1;
+						sr.is='c_circle'; //sr.t=1; sr.et = -1;
 						a[0].running = 'FALSE';
 					}
 				}else{
@@ -8036,7 +7912,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 					var sret = all.getetv(a);
 					sr.anim=a; sr.ctx=ctx1;
 					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-					sr.is='c_circle'; sr.t=1; sr.run=1; sr.rt=0; sr.et=sret; sr.nfreq=0; sr.loop=true;
+					sr.et=sret; sr.rt=sr.et;  sr.loop=true;
+					sr.is='c_circle';  
 					a[0].running = 'TRUE';
 					all.anim_a.push(sr);
 				} 
@@ -8093,11 +7970,11 @@ all.stream_a.push("but yes, you can try again if you want..");
 									var index = c_orb.circle.indexOf(a);
 									c_orb.op1 = index;
 							all.stream_a.push("Recalling...   " + mcp_a[1]); all.screen_log();
-									var found = true;
+									var found = true; break
 								}
 							}
 						}
-						if(found){}else{
+						if(found){a.push({});}else{
 							var new_anim = [];
 							//var new_anim = {};
 							
