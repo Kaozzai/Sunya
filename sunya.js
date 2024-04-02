@@ -489,40 +489,27 @@ const kdown = function(ev){
 //all arrow keys except for right arrow should freeze stream
 	if(e == 37 & all.chat_on == false){
 		//detach from stream updates but keep storing messages on history. freeze stream
-		//if(u.stance=='void'||u.stance=='orb.in'){
 		strem.left=true;
 		all.screen_log();
-		//}
-
 	}//left arow
 
 	if(e == 39 & all.chat_on == false){
-		//console.log('right?');
 		//unfreeze stream, scroll to last message
-		//if(u.stance=='void'||u.stance=='orb.in'){
 		strem.right = true;
 		all.screen_log();
-		//}
 	}//right arow
 
 	if(e == 38 & all.chat_on == false){
-		//console.log('up?');
 		//detach and print current lines - 1 using limit and history
-		//if(u.stance=='void'||u.stance=='orb.in'){
 		strem.up = true;
 		all.screen_log();
-		//}
 	}//up arow
 
 	if(e == 40 & all.chat_on == false){
-		//console.log('down?');
 		//detach and print current lines + 1 , dont do anything if already on last line
-		//if(u.stance=='void'||u.stance=='orb.in'){
 		strem.down=true;
 		all.screen_log();
-		//}
 	}//down arow
-
 
 //SHIFT
 //for now, we can use shift to lock oscillators in a loop on vox mode. push tag into all.k_map
@@ -1334,12 +1321,12 @@ all.get_dist = function(x1,x2,y1,y2){
 	return Math.sqrt(vx*vx+vy*vy);
 }
 
-//a function to manage stream param values
-all.n_param_com = function(p,v,s){ //parameter, value, stream
+//a function to manage stream param values... can actually accept any object box
+all.n_param_com = function(p,v,box){ //parameter, value, box
 	if(v!=undefined){
-		s[p] = v;
-	}else{
-		all.stream_a.push(s[p]); all.screen_log();
+		box[p] = v;
+	//}else{
+	//	all.stream_a.push(box[p]); all.screen_log();
 	}
 }
 
@@ -1363,6 +1350,7 @@ all.signify = function(sv){
 			return r
 		}
 	/*
+//don rememebr what i was doing here exactly, but i was trying to create a synthx to express random values inside scripts
 		if(sv_a[1][0]=='?'){
 			r.operation = '?';//random value
 			var v_a = sv_a[1].split('?');
@@ -1848,7 +1836,7 @@ all.anim_func = function(){
 						s.inside=nf.inside; s.ft=nf.ft;
 						s.rt=0; s.nfreq=0;
 						//we then ask for loop
-						if(s.loop){s.is='rect';}else{s.is='f';}
+						if(s.loop){s.is='rect';}else{s.rt=-1;}
 					}	
 				}//rt -1 else
 
@@ -1899,7 +1887,7 @@ all.anim_func = function(){
 						s.inside=nf.inside; s.ft=nf.ft;
 						s.rt=0; s.nfreq=0;
 						//we then ask for loop
-						if(s.loop){s.is='circle';}else{s.is='f';}
+						if(s.loop){s.is='circle';}else{s.rt=-1;}
 					}	
 				}//rt -1
 			}//run
@@ -2583,112 +2571,109 @@ all.playa = function(aa){
 			orb.actors.splice(rmactor,1);
 			break	
 		}
-	//maybe we dont need to gather all these here together we could simply ask one by one..	wait these are specific asking for a
-	//resource, these cant be containers. these instructions produce containers thats why they are togheter here ok ok
-	//but waut they dont need to.. hmmm one sec !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 //if we find a string in all.perform to match stmt1 it means it can be an access tag to a resource or a container always.
 //we only need to ask the instruction then to know exactly if its a resource or a container what we located. we only need to confirm now
 //if confirmed then we proceed, if not, then its a resource not founc situation so we simply break out
 
-		//if(stmt[3]=='logic'||stmt[3]=='link'||stmt[3]=='stream'){ //deprecat
-			var l2 = all.perform.length;
-			while(l2--){
-				var tag = all.perform[l2];
-				//looking for resource access tag..
-				if(tag==stmt[1]){
-					//[resource tag]//logic(key)(tag) 8
-					if(stmt[3]=='logic'){
-						var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
-						//R.logics grants access to logic resources
-						var l3 = R.logics.length;
-						while(l3--){
-							var logi = R.logics[l3];
-							if(stmt[5]==logi[2]){//logic key matched
-								all.perform.push(stmt[7],'logi',logi); break //logi access tag, 'logi', logi
-							}
+		var l2 = all.perform.length;
+		while(l2--){
+			var tag = all.perform[l2];
+			//looking for resource access tag..
+			if(tag==stmt[1]){
+				//[resource tag]//logic(key)(tag) 8
+				if(stmt[3]=='logic'){
+					var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
+					//R.logics grants access to logic resources
+					var l3 = R.logics.length;
+					while(l3--){
+						var logi = R.logics[l3];
+						if(stmt[5]==logi[2]){//logic key matched
+							all.perform.push(stmt[7],'logi',logi); break //logi access tag, 'logi', logi
 						}
+					}
 
-					}//logic
-
+				}//logic
+//LINK ANIMATION RADIANCE
 //so far its link[0] edit name, link[1] is link key , link[2] reference to edit ,
 //link[3] holds edit nature and link[4] will hold buffer now if any
-					//[resource tag]//link(key)(tag) 8
-					if(stmt[3]=='link'){
-						var R = all.perform[l2+2];
-						//R.links
-						var l3 = R.links.length;
-						while(l3--){
-							var lin = R.links[l3];
-							if(stmt[5]==lin[1]){ //link key match
+				//[resource tag]//link(key)(tag) 8
+				if(stmt[3]=='link'){
+					var R = all.perform[l2+2];
+					//R.links
+					var l3 = R.links.length;
+					while(l3--){
+						var lin = R.links[l3];
+						if(stmt[5]==lin[1]){ //link key match
 //.. yeah we probly should just push the state or a unique control container for
 //txt and other types of edits. .. we can control txt from first line state.
 //audio edits structure need revision!!!!!!!! records too.. 
 //okok why not just push the edit straight away in here as the third element on perform triads. that would be way more consistent
 //we can then do what we want after we have the instruction and the values we want to work with.
-								if(lin[3]=='img'){
-				var lks = all.find_ting(all.anim_a, "name", lin[0]+'_lks_'+aa.name+aa.orb);//act and orb names.. yup
-									if(lks){}else{
+							if(lin[3]=='img'){
+			var lks = all.find_ting(all.anim_a, "name", lin[0]+'_lks_'+aa.name+aa.orb);//act and orb names.. yup
+								if(lks){}else{
 										//console.log('worked!');
 		//not sure if here is the best instance to check for loaded img file...
 //ok we need to initialize this state right here and now . we cant wait for animf to do it because phase 2 might want to start
 //running the animation inmediately with customized properties so the state must be ready from here on
-				var lks = all.ims_s_new(lin[0]+'_lks_'+aa.name+aa.orb, lin[4]);
-								var sret = all.getetv(lin[2]);
-								lks.anim=lin[2]; lks.et=sret;
-								//lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
-								lks.tx = Math.floor(window.innerWidth/2); 
-								lks.ty = Math.floor(window.innerHeight/2);
-								lks.ctx = ctx1;// lets use ctx1 by default for now
-								var f0 = lks.anim[0];
-								lks.x=f0.x; lks.y=f0.y; lks.w=f0.w; lks.h=f0.h;
-								lks.px=f0.px; lks.py=f0.py; lks.pw=f0.pw; lks.ph=f0.ph; lks.a=f0.a; 
-								lks.is='c_img'; //lks.run=0;
-								lks.rt=0;//lks.et; //lks.t=f0.t;
-								lks.loop=false; lks.run=false; 
-										all.anim_a.push(lks);
-									}
-							//we use access tag and +2 to work with the edit state	
-									all.perform.push(stmt[7],'img',lks); break
-								}//img
-								
-								//txt
+			var lks = all.ims_s_new(lin[0]+'_lks_'+aa.name+aa.orb, lin[4]);
+							var sret = all.getetv(lin[2]);
+							lks.anim=lin[2]; lks.et=sret;
+							//lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
+							lks.tx = Math.floor(window.innerWidth/2); 
+							lks.ty = Math.floor(window.innerHeight/2);
+							lks.ctx = ctx1;// lets use ctx1 by default for now
+							var f0 = lks.anim[0];
+							lks.x=f0.x; lks.y=f0.y; lks.w=f0.w; lks.h=f0.h;
+							lks.px=f0.px; lks.py=f0.py; lks.pw=f0.pw; lks.ph=f0.ph; lks.a=f0.a; 
+							lks.is='c_img'; //lks.run=0;
+							lks.rt=0;//lks.et; //lks.t=f0.t;
+							lks.loop=false; lks.run=false; 
+									all.anim_a.push(lks);
+								}
+						//we use access tag and +2 to work with the edit state	
+								all.perform.push(stmt[7],'img',lks); break
+							}//img
+							
+							//txt
 //so txt edits need to get a grip on several states at once using the print function. but the state we really need to be able to
 //push into perform here is the first line state since this is the one that holds the parameters that control the rest of the lines.
 //.. ok  so what we really need to do is just pass on the edit txt access instead of a state. we are not modifying the edit later anyway
 //we are just using it to print later.. maybe we could actually create the states here..yeah create all lines here and control them
 //from here find a way.. maybe use the first line state to work with script changes but at each change call print.
-								if(lin[3]=='txt'){
-				var lks = all.find_ting(all.anim_a, 'name', lin[0]+'_line1'+aa.name+aa.orb);
-									if(lks){}else{
-								var actid = aa.name+aa.orb;
-								var lks = all.txt_s_new(lin[0]+'_line1'+actid);
-								lks.anim=lin[2]; lks.actid=actid;
-								l0=lin[2][0]; //this l0 omg
-								lks.ctx=ctx1; //ctx1 by default
-								lks.x=l0.Gx; lks.y=l0.Gy;
-								lks.r=l0.Gr; lks.g=l0.Gg; lks.b=l0.Gb; lks.a=l0.Ga;
-								lks.font=l0.font;
-								lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
-								lks.is="f"; lks.txt=l0.txt; lks.spacer=l0.spacer;
-								lks.display='ignore';
-								lks.custom_a=l0.custom_a;
-								lks.t=-1;
+							if(lin[3]=='txt'){
+			var lks = all.find_ting(all.anim_a, 'name', lin[0]+'_line1'+aa.name+aa.orb);
+								if(lks){}else{
+							var actid = aa.name+aa.orb;
+							var lks = all.txt_s_new(lin[0]+'_line1'+actid);
+							lks.anim=lin[2]; lks.actid=actid;
+							l0=lin[2][0]; //this l0 omg
+							lks.ctx=ctx1; //ctx1 by default
+							lks.x=l0.Gx; lks.y=l0.Gy;
+							lks.r=l0.Gr; lks.g=l0.Gg; lks.b=l0.Gb; lks.a=l0.Ga;
+							lks.font=l0.font;
+							lks.tx=window.innerWidth/2; lks.ty=window.innerHeight/2;
+							lks.is="f"; lks.txt=l0.txt; lks.spacer=l0.spacer;
+							lks.display='ignore';
+							lks.custom_a=l0.custom_a;
+							lks.t=-1;
 	//create a function print on animf to create all lines using line1 properties. so we only change line1 and print
 	//but for now just use actual anim[0] properties on this state because we will use this state properties from here on
-											all.anim_a.push(lks);
-										}
+										all.anim_a.push(lks);
+									}
 
-								//work with lks which is line1
-									all.perform.push(stmt[7],'txt',lks); break
+							//work with lks which is line1
+								all.perform.push(stmt[7],'txt',lks); break
 
-								}//txt
+							}//txt
 
-								//
-								//...
+							//
+							//...
 								
-							}//link match
-						}//links loop
-					}//link
+						}//link match
+					}//links loop
+				}//link
 
 //resources should be able to grant access to orbs streams. so streams could be stored on resources directly, since streams are
 //just objects with properties, we could access orbs stream properties and also change values to make the stream appear on our
@@ -2698,11 +2683,11 @@ all.playa = function(aa){
 //.. maybe we dont need to make all history accessible, just one line at a time. so we can take the last stream
 //line and process it using its own custom display..? 
 //[resource tag]//stream(access tag)  5
-					if(stmt[3]=='stream'){
-						var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
-						all.perform.push(stmt[5],'stream',R.stream); break
-						//stream access tag, 'stream', resource orb stream
-					}
+				if(stmt[3]=='stream'){
+					var R = all.perform[l2+2];//we know resource is 2 items away from the tag. tag, 'ra',resource
+					all.perform.push(stmt[5],'stream',R.stream); break
+					//stream access tag, 'stream', resource orb stream
+				}
 
 //if all.perform.length is 4 , this means its an independent instruction like runon, runoff , loopon, loopoff
 //these are instructions that dont require more than 2 different values so they act like switches and dont require values
@@ -2717,32 +2702,30 @@ all.playa = function(aa){
 					//we know lks is 2 items away from the tag and 1 away is the nature of the edit
 //ok so since runon will be able to run an animation as long as its being executed we actually dont need loopon and loopoff.. and
 //maybe we dont need runoff either... one sec
-					if(stmt[3]=='runon'){
-						var lks = all.perform[l2+2];
-				//if run already, dont do a thing, if run false, set run on and also set is to c_thing
-						if(lks.run){}else{lks.run=true; lks.is='c_'+lks.s;} break
-						//lks.run=true; break
-					}
-					if(stmt[3]=='runoff'){
-						var lks = all.perform[l2+2];
-						lks.run=false; break
-					}
-					if(stmt[3]=='loopon'){
-						var lks = all.perform[l2+2];
-						lks.loop=true; break
-					}
-					if(stmt[3]=='loopoff'){
-						var lks = all.perform[l2+2];
-						lks.loop=false; break
-					}
+				if(stmt[3]=='runon'){
+					var lks = all.perform[l2+2];
+			//if run already, dont do a thing, if run false, set run on and also set is to c_thing
+					if(lks.run){}else{lks.run=true; lks.is='c_'+lks.s;} break
+					//lks.run=true; break
+				}
+				if(stmt[3]=='runoff'){
+					var lks = all.perform[l2+2];
+					lks.run=false; break
+				}
+				if(stmt[3]=='loopon'){
+					var lks = all.perform[l2+2];
+					lks.loop=true; break
+				}
+				if(stmt[3]=='loopoff'){
+					var lks = all.perform[l2+2];
+					lks.loop=false; break
+				}
 
-				}//resource found .. else let user know res not found? //deprecat
+			}//resource found .. else let user know res not found? //deprecat
 
-			}//perform loop l2 for 1 R in line on phase2 ..
+		}//perform loop l2 for 1 R in line on phase2 ..
 
 
-			//i1++; continue   //to the next statement.. //deprecat
-		//}//logic, link and stream check? no need to do this at all //deprecat
 
 //PERFORM
 //all.perform
@@ -2830,7 +2813,7 @@ all.playa = function(aa){
 //so we have a stream resource. what we are really interested in is in history. we want to be able to extract a specific history item
 //so we need an instruction to change the history item we want to extract and an instruction to extract the value of selected item
 //we can then pipe this value into other streams or into txt animations so no need to worry about effects right here
-		//lets just make the last input available with the "stream" instruction
+		//lets just make the last input available with the "streams" instruction
 		//stream values should be able to handle both numbers and strings
 			if(stmt[sc_pos]=='streams'){rvalues.push('streams',R.history[R.history.length-1]);}
 			//if(stmt[sc_pos]=='history')//{rvalues.push();}
@@ -3091,6 +3074,7 @@ all.ml_up = function(o){
 				return
 			}//delta
 
+//RADIANCE
 //radiant idle means playing all actors. loops actors and feed all.runa()
 			var oal = o.actors.length;
 			while(oal--){
@@ -3400,26 +3384,7 @@ all.ml_up = function(o){
 							all.anim_a.splice(l,1);
 						}
 					}
-			//we also need to clear txt, txt doesnt end in '__r' ??
-	/*
-				if(erase){
-					var l0=a[0];
-					var al = all.anim_a.length; var cl_pl = (l0.name.length+5);
-					while(al--){
-						var s = all.anim_a[al];
-						if(s.name){
-							var name = s.name.substr(0, cl_pl);
-							if(name == l0.name+'_line'){ //so it removes all lines
-								//s.is="rm"; 
-								all.clear_txt(s);
-								var index = all.anim_a.indexOf(s); 
-								all.anim_a.splice(index,1);
-							}
-						}
-					}//clears
-					a[0].running='FALSE';				
-				}
-	*/
+
 					all.clear_rect(ctx1, 0,0,window.innerWidth, window.innerHeight);
 					
 					all.stream_a.push("User left .." + o.name); all.screen_log();
@@ -6017,11 +5982,9 @@ t from each frame, when we reach 21, thats the frame we looking for
 				if(delta.signal=='run'){
 					if(imr.loop){
 						
-						imr.u_d.push('loop',false, 'rt',imr.et);
+						imr.u_d.push('loop',false, 'run', false);
 						imr.is='c_img'; //imr.t=1;
 						
-			//prevents mess for  when modifing a frame on loop
-						//o.selected_drag=false; 
 						o.op4=0;
 			//update select rect position to selected frame
 			//.. sel rect should now be positioned on where the frame is extracted from !
@@ -6036,7 +5999,7 @@ t from each frame, when we reach 21, thats the frame we looking for
 						bg.is='c_img'; bg.run=true;
 						//bg.is='img';
 
-						//when we out of loop we push ghost frame again
+					//when we out of loop we push ghost frame again
 						anim.push({});
 
 						//and clear
@@ -6046,28 +6009,28 @@ t from each frame, when we reach 21, thats the frame we looking for
 					}
 					
 					if(imr.loop==false){
-
-						anim.pop(); //poping ghost frame
-						//new
-						var imret = all.getetv(anim); 
-						imr.tx=window.innerWidth/2; imr.ty=window.innerHeight/2;//neccesary?
-						imr.anim=anim; imr.is='c_img';
-						//imr.t=1; imr.nfreq=0; imr.run=1;
-						imr.loop=true; imr.et=imret; imr.rt=imr.et;
-						
-						//place cursor on selected frame pos
-						s.u_d.push(
-							'x',f.px,'y',f.py,'w',f.pw,'h',f.ph,
-							'tx',window.innerWidth/2,'ty',window.innerHeight/2
-						);
-						s.is='c_rect'; //s.t=1;
-						//s.x=f.px; s.y=f.py; s.w=f.pw; s.h=f.ph;
-						//s.tx=window.innerWidth/2; s.ty=window.innerHeight/2; //
-						all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
-						all.clear_rect(ctx1,0,0,window.innerWidth, window.innerHeight);
-						
-					}
-
+						if(anim.length==0){
+							all.stream_a.push('Cant run without frames..'); all.screen_log();
+						}else{
+							anim.pop(); //poping ghost frame
+							//new
+							var imret = all.getetv(anim); 
+							imr.tx=window.innerWidth/2; imr.ty=window.innerHeight/2;//neccesary?
+							imr.anim=anim; imr.is='c_img';
+							imr.loop=true; imr.run=true; imr.et=imret; imr.rt=imr.et;
+					
+							//place cursor on selected frame pos
+							s.u_d.push(
+								'x',f.px,'y',f.py,'w',f.pw,'h',f.ph,
+								'tx',window.innerWidth/2,'ty',window.innerHeight/2
+							);
+							s.is='c_rect'; //s.t=1;
+							//s.x=f.px; s.y=f.py; s.w=f.pw; s.h=f.ph;
+							//s.tx=window.innerWidth/2; s.ty=window.innerHeight/2; //
+							all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
+							all.clear_rect(ctx1,0,0,window.innerWidth, window.innerHeight);
+						}
+					}//loop false
 				}//run
 
 	//and other signals..
@@ -6180,8 +6143,7 @@ all.void_up = function(){
 //What about other users. should we be able to see other users orbs?.. maybe we 
 //dont need to.
 //We could simply see open deals on scripts available to be read and accepted and once
-//taken, acts would create other
-//users prescences on the screen and the session.
+//taken, acts would create other users prescences on the screen and the session.
 
 			var c_orb = all.find_ting(all.up_objs, "u_in_contrl", true); //orb access !
 			if(all.up_objs.length>0){//there are orbs around already so run init
@@ -6205,7 +6167,8 @@ all.void_up = function(){
 					if(obg.se=='fastcolors_compress'){
 						if(obg.radius<=60){
 							obg.radius=22; obg.is="rm";
-							c_orb.u_in_contrl=false; u.init_void=false;
+							c_orb.u_in_contrl=false;
+							u.init_void=false;
 							all.clear_rect(ctx0,0,0,window.innerWidth, window.innerHeight);
 							return
 						}
@@ -6505,12 +6468,7 @@ all.c_com = function(){ //(check commands)
 				console.log('console is responsive now, thanks eruda :)');
 			}
 
-//USER
-//.user		Print name, speed, key shorts... data related to user. should be available from any stance
-//we probly need a .user.out to print a json from user. later its gonna be useful
-			if(mc_a[1]=="user"){
 
-			}
 
 
 //HELP
@@ -6519,13 +6477,14 @@ all.c_com = function(){ //(check commands)
 //This command is available using the esc key as well. it needs a gesture..?
 //so to simplify, the  .help command will always simply show keywords wich can be used as a subcommand on .help.[keyword]. Now each
 //keyword will print information regarding a topic.
+//destroy , forget , history
 			if(mc_a[1]=="help"){
 				if(mc_a[2]==undefined){
 					all.stream_a.push(
 					'----------------------------',
 					'Type in; .help.[word] for more information on any specified [word] down bellow.',
 					'user, name, speed, orb, stance, inner mode, void, mainstream, estream, commands',
-					'touchscreen, button, keyboard, type, shortcuts',
+					'touchscreen, button, keyboard, scrolling, type, shortcuts',
 					'edit, upload, img, audio, txt, circle, rect, osc, signal, delta',
 					'act, perform, reform, radiant mode, broadcasting, help', 
 					'-----------------------------'
@@ -6548,17 +6507,16 @@ all.c_com = function(){ //(check commands)
 					'----------------------------'
 						);
 					}
-				/*
 					if(mc_a[2]=='speed'){
 						all.stream_a.push(
 					'_____________________________________________________________________________',
 					'Change the speed at wich you want to be able to displace trough the void.',
-					'.speed:[a number]',
+					'This command can only run when user is on Void.',
+					'.user.speed:[a number]',
 					'----entry incomplete---',
 					'_____________________________________________________________________________'
 						);
 					}
-				*/
 
 					if(mc_a[2]=='orb'){
 						all.stream_a.push(
@@ -6581,6 +6539,9 @@ all.c_com = function(){ //(check commands)
 					'User tries to take control of named orb. One atempt.',
 					'Some users have tried many times...',
 					'Sending a control wave may have different effects on different orbs.',
+					'.orb.[orb name].history.clear',
+					'.orb.[orb name].destroy',
+					'----entry incomplete---',
 					'_________________________________________________________________________________________'
 						);
 					}
@@ -6625,7 +6586,15 @@ all.c_com = function(){ //(check commands)
 					'_____________________________'
 						);
 					}
-
+					if(mc_a[2]=='scrolling'){
+						all.stream_a.push(
+					'_____________________________________________________________________________',
+					'Use arrows on keyboard to scroll or hide the stream.',
+					'Left arrow shuts down the stream, Right arrow scrolls to last message.',
+					'Up and Down shows stream history.',
+					'_____________________________________________________________________________'
+						);
+					}
 					if(mc_a[2]=='type'){
 						all.stream_a.push(
 					'____________________________________________________________________________________',
@@ -6850,6 +6819,18 @@ all.c_com = function(){ //(check commands)
 					'________________________________________________________'
 						);
 					}
+					if(mc_a[2]=='perform'){
+						all.stream_a.push(
+					'_______________________________________________________',
+					'Orbs can enter in radiant mode to perform acts by executing scripts',
+					'While on inner mode, user can type in:',
+					'.perform',
+					'While on void, the command to make an orb enter into radiant mode is:',
+					'.orb.[name of orb].perform',
+					'-----entry incomplete----',
+					'________________________________________________________'
+						);
+					}
 					if(mc_a[2]=='osc'){
 						all.stream_a.push(
 					'_______________________________________________________',
@@ -6918,7 +6899,8 @@ all.c_com = function(){ //(check commands)
 						while(ml--){
 							var mbt = mbox[ml];
 							all.stream_a.push(
-			`name: ${mbt.name}, key: ${mbt.key}, com1: ${mbt.com1}, com2: ${mbt.com2}, X: ${mbt.X}, Y: ${mbt.Y}`
+								`${mbt.key}`,
+			`com1: ${mbt.com1}, name: ${mbt.name},  com2: ${mbt.com2}, X: ${mbt.X}, Y: ${mbt.Y}`//, key: ${mbt.key}`
 							);
 						}
 						all.stream_a.push('___________________________________________________________');
@@ -6987,8 +6969,7 @@ all.c_com = function(){ //(check commands)
 //.mainstream.spacer	How much space between stream lines
 //.. we need to be able to scroll the stream and freeze it at will. would be nice for keyboard users to use arrows
 // up and down to scroll, left to detach, right to attach to last
-//and touchscreen users
-//could simply swipe the stream up and down, and just touch to atach/detach
+//and touchscreen users could simply swipe the stream up and down, and just touch to atach/detach
 //.mainstream.sup , .sdown, .freeze, .unfreeze
 //... so we need an object on user to hold mainstream history. Orbs can have an independent stream history object
 //we also need a way to clear and switch off mainstream....
@@ -7021,7 +7002,8 @@ all.c_com = function(){ //(check commands)
 					}else{
 						//a somehow funky command to clear history
 						if(mc_a[2]=='clear'){us.history=[]; var done = true;}
-						if(done){}else{
+					
+						if(done){}else{//its a parameter change command..
 							if(mc_a[2]=='font'){
 								var p = mcp_a[1]
 							}else{
@@ -7030,7 +7012,7 @@ all.c_com = function(){ //(check commands)
 							all.n_param_com(mc_a[2], p ,all.user.mainstream);
 						}
 					}
-				//probly needs to clear stream activity when changes occur
+		//also needs to clear stream activity before changes occur...... !!!!
 				}
 			}//mainstream
 
@@ -7049,24 +7031,45 @@ all.c_com = function(){ //(check commands)
 //We need a command to manage user properties, print user information on screen etc
 //user needs to be able to modify;
 //mainstream properties, user displacement speed trough void, name..
-//.. for consistency  s sake, maybe we just need .user to print all user related data and use usbcommands to change
+//.. for consistency  s sake, maybe we just need .user to print all user related data and use subcommands to change
 //properties. just like we do with mainstream and estream
+//.user
 //.user.name:[new name]
+//Change name at will. Void only. Offline only.
 //.user.speed:[new speed]
-//
-/* deprecat
-//.name:[new name]	Change name at will. Void only. Offline only.
-//.name			print name ?
- 			if(mc_a[1]=="name"){ 
-
+//Modify speed at will. This speed parameter affects user displacement speed trough the void. 
+//Available from void only.
+//we probly need a .user.out to print a json from user. later its gonna be useful
+			if(mc_a[1]=='user'){
+				if(mc_a[2]==undefined){
+					//print user data	
+					//just print all estream stats
+					var u = all.user;
+					all.stream_a.push(
+				'___________________________________',
+				'Use .user.[property]:[new value] to change a property.',
+				'name: '+u.name,
+				'speed: '+u.speed,
+				'___________________________________'
+					);
+					all.screen_log();
+				}
+				if(mc_a[2]=='name'){
+					//accept mcp_a[1] as new name
+					all.n_param_com('name', mcp_a[1] ,all.user);
+				}
+				if(mc_a[2]=='speed'){
+					//accept mcp_a[1] as new speed
+					var speednum = parseFloat(mcp_a[1]);
+					all.n_param_com('speed', speednum ,all.user);
+				}
 			}
 
-//.speed:[new speed]	Modify speed at will. This speed parameter affects user displacement speed trough the void. Available from void only.
-//.speed		print speed
- 			if(mc_a[1]=="speed"){ 
 
-			}
-*/
+
+
+
+
 
 //ORB
 //an orb primordial form will depend on its experience , its animations stored, its data, its jobs etc
@@ -7126,7 +7129,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 //... all orbs we see on void are under user control... this is a bit redundant ..
 //migth change later
 					//... hmm this might be a bit redundant as well
-					var orb = {name: mcp_a[1], stream: "on"}
+					var orb = {name: mcp_a[1]}
 					//!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					all.user.orbs.push(orb); //yeah i should not push the whole orb here this is expensive
 					all.up_objs.push(orb_obj);
@@ -7286,27 +7289,97 @@ all.stream_a.push("but yes, you can try again if you want..");
 								all.screen_log();
 							}
 							break
-						
+//ORB	
+			//crash and burn. first we burn the memories, then we crash the vessel
+						//.orb.[orb name].history.forget
+						case 'history':
+							if(mc_a[4]=='forget'){
+								var orb = all.find_ting(all.up_objs, 'name', mc_a[2]);
+								orb.stream.history = [];
+				all.stream_a.push('...'+mc_a[2]+' stream history has vanished for ever.'); all.screen_log();
+							}
+							break
+
+
+						//.orb.[orb name].destroy	To delete whole orb at once?
+					//this needs a really cool animation.
+						case 'destroy':
+							var orb = all.find_ting(all.up_objs, 'name', mc_a[2]);
+							var orbi = all.up_objs.indexOf(orb);
+							all.up_objs.splice(orbi,1);
+				all.stream_a.push('...'+mc_a[2]+' is just a string of words now.'); all.screen_log();
+							break
+						//.orb.[orb name].perform
+					//this needs a really cool animation as well
+//there is a problem with obg and obgr here..
+						case 'perform':
+							var orb = all.find_ting(all.up_objs, 'name', mc_a[2]);
+							orb.radiant_mode=true;
+				all.stream_a.push(mc_a[2]+' is performing.'); all.screen_log();
+							break
+
+						//add default case.. ?
+
+
+
+						}//switch
+
 //.play
 //How about users running commands that run orbs acts...
-//we use deals to work with other users or user level entities and special commands
-//to call acts from other orbs when conditions
-//are met
 //... to make orb run an  act from void, orb needs to be in radiant mode!!!!
 //Even tho a user wont see the effects from act scripts to a full extent while on void, there might be some visual changes
 //on primordials. users might just want to leave scripts running for other users on broadcasting.
-//.orb.[name of orb].play.[name of act]
-						//case 'play':
-				//check if orb name correspond to controlable orb
-				//check if act name corresponds to an act stored on target orb
-				//... what else... work on this one later when acts mechanics are finished	
-					
-						//.orb.[orb name].forget	To delete whole orb at once?
-						//case 'forget':
+//.orb.nameoforb.nameofact.play
 
-						//add default case..
+						//we need to loop txt edits to find a matching txt name. this is our script
+						//we probly need a mechanism to prevent using non script txts.. but i think its done not sure
+						if(mc_a[4]=='play'){
+							var orb = all.find_ting(all.up_objs, 'name', mc_a[2]);
+				//dont allow operation if orb is nor on radiant mode
+							if(orb.radiant_mode){
+							var txl = orb.txt.length;
+							while(txl--){
+								var atxt = orb.txt[txl];
+								if(atxt[0].name==mc_a[3]){ //name of txt is on line1
+									var lr = all.res_acts.length;
+									while(lr--){
+										var script = all.res_acts[lr];
+										if(atxt[0].name==script.name){
+											var playing_already = true;
+											break
+										}
+									}
+									var lac = orb.actors.length;
+									while(lac--){
+										var script = orb.actors[lac];
+										if(a[0].name==script.name){
+											var playing_already = true;
+											break
+										}
+									}
 
-						}//switch
+									if(playing_already!=undefined){
+										all.stream_a.push("Already playing.. "+mc_a[3]);
+										all.screen_log();
+									}else{
+										//named_act.running = true;
+										var act = all.actuator(atxt, orb); //actuator call
+		//after actuator, act is pushed into all.res_acts array or into orb.actors array depending on "is" value
+										if(act.is=='resource'){
+											all.res_acts.push(act);
+										}
+										if(act.is=='actor'){
+											orb.actors.push(act);
+										}
+										all.stream_a.push("Playing.. "+mc_a[3]);
+										all.screen_log();
+									}
+								}//mc_a[3] match
+							}//txt loop
+
+							}//radiant mode safe
+
+						} //play on mc_a[4]
 					
 					}//mc_a[2] orb access
 
@@ -7718,12 +7791,16 @@ all.stream_a.push("but yes, you can try again if you want..");
 //.txt.[txt name].delete
 //.txt.[txt name].run
 //.txt.purge
+//.txt.name:[new name]
 //maybe a command to change edits names would be nice
+//and a command to clone text.. or maybe unnecesary..
+//also, its hard to tell on which txt edit we are working when more than one is on screen
 				if(mc_a[1]=="txt"){
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
 					if(mc_a[2]!=undefined){
 						//.txt.purge
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
+						//if(mc_a[2]=="name"){mcp_a[1]!=undefined; var rename = true;}
 						//search for name match..
 						var l = c_orb.txt.length;
 						while(l--){
@@ -7741,6 +7818,13 @@ all.stream_a.push("but yes, you can try again if you want..");
 										c_orb.txt.splice(index,1);
 						all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
 									}
+						//use parameter to rename
+									if(mcp_a[1]!=undefined){
+								a[0].name = mcp_a[1];
+								all.stream_a.push('Changed txt name from '+mc_a[2]+' to '+mcp_a[1]);
+								all.screen_log();
+									}
+
 //here goes txt run on inner mode RUN unfinished.... where in hell is the problem
 									if(mc_a[3]=='run'){
 	//ok so if a[0].running='FALSE' then make it 'TRUE' and print the thing. if true then make it false and clear the thing
@@ -7790,7 +7874,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 						}//while
 					}//
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
-					if(mcp_a[1]!=undefined){var proceed = true;}
+					if(mcp_a[1]!=undefined&&mc_a[2]==undefined){var proceed = true;}
 					if(purge){
 						c_orb.txt = [];
 						var l0=a[0];
@@ -7810,6 +7894,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 						all.stream_a.push("..All txt edits have been deleted.");all.screen_log();
 						//all.clear_rect(ctx1,0,0,window.innerWidth,window.innerHeight);
 					}
+
 					if(list){
 						//list texts and a brief description. number of lines, which event is tied to etc
 						var l = c_orb.txt.length;
@@ -8186,6 +8271,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 //this means user will be able to see all effects created by currently playing scripts
 //.perform
 				if(mc_a[1]=='perform'){
+					//a stream message here before we get into radiant mode
+					all.stream_a.push("Curtain recedes..."); all.screen_log();
 					c_orb.inner_mode=false; c_orb.radiant_mode=true; c_orb.init=true;
 					
 					var s = all.rect_s_new('__lid');
@@ -8198,15 +8285,24 @@ all.stream_a.push("but yes, you can try again if you want..");
 					var obg = all.find_ting(all.anim_a, 'name', '__obg');
 					obg.se='fastcolors'; obg.a=1;
 
-					all.stream_a.push("Curtain recedes...");
-					all.screen_log();
+//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
+					var l = all.anim_a.length; 
+					while(l--){
+						var s = all.anim_a[l];
+						var namend = s.name.substr(-3, 3);
+						if(namend == '__r'){
+							all.anim_a.splice(l,1);
+						}
+					}
 
 				}//perform
 				
 				
 			}//inner mode commands
-			
-//RADIANCE . ACT
+		
+
+
+//RADIANCE . ACT RADIANT MODE   ////RADIANCE
 //whats the point of orb.out stance now? Acts will run and create instances for orbs to
 //interact. the same acts will make instances for orbs
 //to do things on their own as well. We only need a stance to check for acts activity... we should be able to do this from void.
@@ -8242,23 +8338,67 @@ all.stream_a.push("but yes, you can try again if you want..");
 					lid.is='rect';
 					all.anim_a.push(lid);
 					
+//reform needs to make a call to remove all resources , actors and states asociated with it. If broadcasting, a signal is sent to other users
+//to let them know states produced using this orb resources no longer can access the resource and so on..
+
+					//loop own actors box to
+					var l1 = c_orb.actors.length;
+					while(l1--){
+						var actor = c_orb.actors[l1];
+
+						var l2 = all.anim_a.length; 
+						//clear and remove all asociated states
+						var rname = '_lks_'+actor.name+c_orb.name;
+						while(l2--){
+							var s = all.anim_a[l2]; 
+							var ename = s.name.substr(-rname.length);
+							if(ename == rname){
+								s.u_d.push('is','rm','rt',-1);
+								s.is='c_'+s.s; 
+							}
+						}//states loop
+						//and remove this actor from orb.actors
+						//var rmactor = c_orb.actors.indexOf(actor);
+						c_orb.actors.splice(l1,1);
+					}//actors loop
+//now we need to remove resources. loop all.res_acts
+					var l1 = all.res_acts.length;
+					while(l1--){
+						var res = all.res_acts[l1];
+						if(res.orb==c_orb.name){
+							all.res_acts.splice(l1,1);
+						}
+					}
+
+
 					all.stream_a.push("Curtain drops...");
 					all.screen_log();
 				}
 
 //PLAY . ACT		
+/*
+yeah so whats up with acts.. how to stop resource acts
+So yeah one important thing i want to achieve is that
+acts need to be running
+in the bg. user can reform and go into the void while orbs carry on their
+acts. All effects should be effective but graphics of these animations
+interacting should not be displayed on user screen.
+*/
 //a command to run an act
 //only radiant orbs can perform. yes we can also run acts from orbs not in control
 //as long as such orbs are on orb.out stance?, on radiant mode
 //... so update this ... hmmm should not have a second parameter here.. while on radiant mode, users can only play acts from currently
 //controled orb
-//.play Should offer some kind of information..
+//.play Should offer some kind of information..?
+//but Its good that radiant orbs can only run 1 command "play", because they are now commited to scripts and not commands from the void.
+//.. well we also have .reform , to go back to inner mode..
 //.play:[name of act]
 				if(mc_a[1]=="play"){
 					//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
 					if(mcp_a[1]!=undefined){var proceed = true;}
 				/*
+		//.. i dont think we need a list command here, we can learn about play with the .help command
 					if(list){
 						var running=undefined;
 //list all running acts
@@ -8283,8 +8423,9 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}//list
 				*/
 					if(noname){
-						all.stream_a.push("No act to play selected.");
-						all.screen_log();}
+						//all.stream_a.push("No act to play selected.");
+						//all.screen_log();
+					}
 					if(proceed){
 						var l = c_orb.txt.length;
 						while(l--){
