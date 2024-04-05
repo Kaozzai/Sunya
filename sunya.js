@@ -44,6 +44,8 @@ const all = {};//will contain everything for now
 var o_r=220; var o_g=220; var o_b=220; 
 var a_v =0;
 
+
+
 all.gameStart = Date.now();//sunya initialization time
 all.heartbeat = undefined;//becomes hold return for heartbeat interval
 
@@ -57,6 +59,7 @@ all.sstr_font ="30px Courier New"; //string symbols size and font
 all.sstr_x=window.innerWidth/2+window.scrollX;
 all.sstr_y=window.innerHeight/2+window.scrollY-100;//update this to center
 all.sstr_r=220; all.sstr_g=220; all.sstr_b=220; all.sstr_a=0.8;
+all.wait_com_key=false; //key mem system flag
 
 all.orb_track_l = undefined; //for prims wheel updates on new orb arrival
 
@@ -68,13 +71,20 @@ all.orb_track_l = undefined; //for prims wheel updates on new orb arrival
 //all.mouse = {x:undefined, y:undefined, str:undefined}
 //all.mouse_str = undefined;
 //all.touch_xy = undefined;
+const voidn = {
+	//limitx:5000, limity:5000, 
+	pressure:1, heat:1
+}
 
 all.chat_on = false;//boolean for chat input activation
 all.c_input = undefined; //holds input before sending
 
 //USER Users are void entities
 all.user = {
-	name: undefined, stance:"void",
+//all.gameStart = Date.now();//sunya initialization time
+	//i l just go with my name since am testing stuff..
+	name: 'Kaozzai', stance:"void", speed:10 , x:0, y:0, //do we really need speed...?
+	birthday: all.gameStart,
 //default user stream (mainstream) is independent and fully customizable
 //instructions on how to print default stream are stored here and are customizable by user from void stance
 //users should be able to influence orbs streams trough other
@@ -84,39 +94,56 @@ all.user = {
 	//mainstream , scrollable
 	mainstream:	{
 		name:"__default",
-		r:220, g:220, b:220, a:0.6, x:6, y:window.innerHeight-12, limit:30, 
+		r:220, g:220, b:220, a:0.6, x:14, y:window.innerHeight-28, limit:30, 
 		font:'px Courier New', size:13, spacer:-15, align:'left',
 		freeze: false, up:false, down:false, left:false,right:false, c_last:0,
 		history: []
 	},
-	//edit stream, doesnt scroll
+	//edit stream feedback, doesnt scroll
 	estream: {
 		name:"__feed", 
-		r:220, g:200, b:140, a:1, x:window.innerWidth, y:window.innerHeight-3,
+		r:220, g:200, b:140, a:1, x:window.innerWidth-14, y:window.innerHeight-28,
 		on_screen:0, limit:6, align:'right', 
-		font:'px Courier New', size:11, spacer:-15, freeze: false, c_last:0,
+		font:'px Courier New', size:14, spacer:-15, freeze: false, c_last:0,
 		history : [] //we dont keep history here but we need it for the print system
 	},
+
 
 	init_void : true, //init void tag
 	//void properties. values to affect in-void experience
 	//speed : 0.4, range : 8, px : 1350, py : 1500, displace : undefined, // .. ?
 	//sel_prim : 0, //currently selected prim to see on perceived prims while on void
-	wait_com_key: false, //key mem system flag
+	//wait_com_key: false, //key mem system flag
 	//txt_mem_req: false,//txt memory string request
 //so key_s will now become void_k. we will now have all modes keys stored in here as well... mmm not so sure now
 //... ok so orbs will have all their animations stored and they will have a particular set of shortcuts to manipulate their own
 //assets so yeah.. maybe we do need buttons stored on orbs and not on user..
 	//void_k?
+//KEY SHORT
 	key_s: [
 		//some temporal shorts for developing..
-		{name:"in", key:"IN", com1:".type:.orb.in:", com2:".type:", X:100, Y:100, persist:"desist"},
+		{name:"in orb", key:"INO", com1:".type:.orb.in:", com2:".type:", X:100, Y:100, persist:"desist"},
+		{name:"in user", key:"INU", com1:".type:.user.in:"},
+		{name:"out Tools", key:"OO", com1:".orb.Tools.out", com2:".type:", X:170, Y:100, persist:"desist"},
+		{name:"out user", key:"OU", com1:".user.out"},
 		{name:"help", key:"H", com1:".type:.help."},
 		{name:"button", key:"BTN", com1:".button"},
 		{name:"control", key:"C", com1:".orb.Tools.control"},
-		{name:"out", key:"OUT", com1:".orb.Tools.out", com2:".type:", X:170, Y:100, persist:"desist"}
+		{name:"impulse", key:"IM", com1:".type:.impulse:"},
+		//some test impulses
+		{name:"impulse1", key:"P1", com1:".impulse:200:230:40:40"},
+		{name:"impulse2", key:"P2", com1:".impulse:400:230:40:80"},
+		{name:"impulse3", key:"P3", com1:".impulse:600:230:40:20"},
+		{name:"impulse4", key:"P4", com1:".impulse:800:230:10:120"},
+		//some user displacement tests
+		{name:"dis up", key:"W", com1:".displace.up"},
+		{name:"dis left", key:"A", com1:".displace.left"},
+		{name:"dis down", key:"S", com1:".displace.down"},
+		{name:"dis right", key:"D", com1:".displace.right"}
 	], //key shorts
 	
+
+	//prims animations:[] ..?
 	orbs: [], //currently owned orbs- stores data object concerning orb
 
 }; //user
@@ -151,16 +178,38 @@ all.stream_a = [];//contains txt lines as items to be streamed
 //.. well . .  i can use zIndex for that!... if we just print at every beat on a single context then animations should not erase
 //each other.
 
+//ok so i can scroll the page when i create a big canvas ... maybe we can change canvas size when on void, when we upload a big image
+//and when we go into radiant mode.. that might be interesting
+//i would have to change the translate thingy on editors.. but its doesnt seem to do much anyway, act scripts can simply change x and y
+//directly , they are just affecting states .. no need for translate operations rly.
+//i l just have to prevent default operations on arrow keys because i dont want to scroll i want to control mainstream with arrows
+//.. ok let me check how everything goes when we change canvas size.. again
+//yeah its good
+//window.scrollX , window.scrollY , window.scrollTo(x,y) , window.scrollBy(x,y)
+//a function to change all canvases width and heigth correctly
+/*
+//use these to get screen size
+	//j_b.style.width=window.innerWidth+"px";
+	//j_b.style.height=window.innerHeight+"px";
+*/
+all.canresize = function(width,height){
+canvas0.style.width=width+"px"; canvas0.style.height=height+"px"; canvas0.width=width; canvas0.height=height;
+canvas1.style.width=width+"px"; canvas1.style.height=height+"px"; canvas1.width=width; canvas1.height=height;
+canvas2.style.width=width+"px"; canvas2.style.height=height+"px"; canvas2.width=width; canvas2.height=height;
+canvas3.style.width=width+"px"; canvas3.style.height=height+"px"; canvas3.width=width; canvas3.height=height;
+canvas4.style.width=width+"px"; canvas4.style.height=height+"px"; canvas4.width=width; canvas4.height=height;
+}
+
 all.canvaser = function(id, zIndex){
 	var j_b = document.createElement('canvas');
 	var toma = document.getElementById('everything');
 	toma.appendChild(j_b);
 	j_b.id = id; //asigns id to element just created
 	j_b.style.position="absolute";
-	j_b.style.width=window.innerWidth+"px";
-	//j_b.style.width="3000px";
-	j_b.style.height=window.innerHeight+"px";
-	//j_b.style.height="3000px";
+	//j_b.style.width=window.innerWidth+"px";
+	j_b.style.width="3000px";
+	//j_b.style.height=window.innerHeight+"px";
+	j_b.style.height="3000px";
 	j_b.style.top ='0px';
 	j_b.style.left ='0px';
 	//j_b.style.border="1px solid rgb(255, 0, 0)";
@@ -225,6 +274,8 @@ const img_in = document.getElementById('input_img');
 const audio_in = document.getElementById('input_audio');
 
 
+
+
 ///////////////////////////////////////////////////////////////HTML
 
 
@@ -235,7 +286,7 @@ const audio_in = document.getElementById('input_audio');
 //prints keys from all.sstr on ctx4
 all.keys_feed = function(){
 	all.sstr_t++;	//timer count should run before clearing and before logic updates
-	if(all.user.wait_com_key==true){all.sstr_t--;}//wait for command to save on key_s a lock
+	if(all.wait_com_key==true){all.sstr_t--;}//wait for command to save on key_s a lock
 	if(all.sstr_t > 20){ //time limit for command feedback 
 		all.sstr_t = 0;	//reinitialization
 //x should be all.sstr_x-all.s_s_t_r.length*20 , y should be all.sstr_y , w should be all.s_s_t_r.length*20..
@@ -301,14 +352,14 @@ const kdown = function(ev){
 		ev.preventDefault();//prevents space to scroll document.. idfk how but it works
 		if(all.sstr==' '){
 			//here goes ting to clean key memory
-			all.user.wait_com_key_forget = true;
+			all.wait_com_key_forget = true;
 			all.stream_a.push("Enter key to break command line asociated");
 			all.screen_log();
 			//console.log("Enter key to break command line asociated");
 
 		}else{
 			//wait com key lock
-			all.user.wait_com_key = true; all.sstr_g=30; all.sstr_r=20;
+			all.wait_com_key = true; all.sstr_g=30; all.sstr_r=20;
 
 			var c = ctx4;
 			c.save();
@@ -342,8 +393,8 @@ const kdown = function(ev){
 			25 //h
 		);
 		//normalize key feedback from key save lock
-		all.s_s_t_r = []; all.sstr = ' '; all.sstr_l = ' '; all.user.wait_com_key = false; all.sstr_g=220; all.sstr_r=220;
-		all.user.wait_com_key_forget = false; //clear forget key lock also
+		all.s_s_t_r = []; all.sstr = ' '; all.sstr_l = ' '; all.wait_com_key = false; all.sstr_g=220; all.sstr_r=220;
+		all.wait_com_key_forget = false; //clear forget key lock also
 	//and also, just clear active stream?
 	//ok if user is on radiant mode, we have to clear the orb stream
 		//if(c_o.radiant_mode){var strem = c_o.stream;}else{var strem = all.user.mainstream;}
@@ -385,7 +436,7 @@ const kdown = function(ev){
 				}
 				//key memory system
 //if user is on touchscreen, we dont use spacebar mem system
-				if(all.user.wait_com_key==true){
+				if(all.wait_com_key==true){
 			//update here as well after act can run osc and sounds etc
 			//..!!!!!update this
 					if(c_o){if(c_o.vox_mode){var check_vox = true;}}
@@ -395,7 +446,7 @@ const kdown = function(ev){
 					//audio anim should go into an orb array to store vox special key shorts. just ignore key mem
 					//system and push the command
 						all.com_a.push(command);
-						all.user.wait_com_key=false;all.sstr_g=220; all.sstr_r=220;
+						all.wait_com_key=false;all.sstr_g=220; all.sstr_r=220;
 						all.clear_rect(ctx4,all.sstr_x-10*all.s_s_t_r.length,
 							all.sstr_y-21, all.s_s_t_r.length*20,23);
 					}else{//vox lock
@@ -429,7 +480,7 @@ const kdown = function(ev){
 						//...
 						all.stream_a.push("your command is saved on key  "+ all.sstr); all.screen_log();
 						//wait com key unlock for keyboard
-						all.user.wait_com_key = false; all.sstr_g=220; all.sstr_r=220;
+						all.wait_com_key = false; all.sstr_g=220; all.sstr_r=220;
 						all.clear_rect(ctx4,all.sstr_x-10*all.s_s_t_r.length,all.sstr_y-21, all.s_s_t_r.length*20,25);
 					
 					}//vox mode lock
@@ -488,24 +539,32 @@ const kdown = function(ev){
 //... still needs to handle orb streams on radiant mode update this? no i think it works already
 //all arrow keys except for right arrow should freeze stream
 	if(e == 37 & all.chat_on == false){
+		//if(ev.repeat){return}//prevents repeating.. but we want repeat on certain instances. scrolling stream for example
+		//ev.preventDefault();//prevents space to scroll document.. idfk how but it works
 		//detach from stream updates but keep storing messages on history. freeze stream
 		strem.left=true;
 		all.screen_log();
 	}//left arow
 
 	if(e == 39 & all.chat_on == false){
+		//if(ev.repeat){return}//prevents repeating.. but we want repeat on certain instances. scrolling stream for example
+		//ev.preventDefault();//prevents space to scroll document.. idfk how but it works
 		//unfreeze stream, scroll to last message
 		strem.right = true;
 		all.screen_log();
 	}//right arow
 
 	if(e == 38 & all.chat_on == false){
+		//if(ev.repeat){return}//prevents repeating.. but we want repeat on certain instances. scrolling stream for example
+		//ev.preventDefault();//prevents space to scroll document.. idfk how but it works
 		//detach and print current lines - 1 using limit and history
 		strem.up = true;
 		all.screen_log();
 	}//up arow
 
 	if(e == 40 & all.chat_on == false){
+		//if(ev.repeat){return}//prevents repeating.. but we want repeat on certain instances. scrolling stream for example
+		//ev.preventDefault();//prevents space to scroll document.. idfk how but it works
 		//detach and print current lines + 1 , dont do anything if already on last line
 		strem.down=true;
 		all.screen_log();
@@ -627,8 +686,8 @@ if(push){all.k_map.push(k);}
 		//var c_o = all.find_ting(all.up_objs,"u_in_contrl", true);
 		if(c_o){if(c_o.vox_mode){var check_vox = true;}}
 		if(check_vox){}else{
-			//splice key short if all.user.wait_com_key_forget is true
-			if(all.user.wait_com_key_forget){
+			//splice key short if all.wait_com_key_forget is true
+			if(all.wait_com_key_forget){
 		//splice from user if we are on void, splice from orb if we are orb.in
 				if(on_void){
 					var key_index = ksa.indexOf(key_short); ksa.splice(key_index, 1);
@@ -638,7 +697,7 @@ if(push){all.k_map.push(k);}
 					//so it doesnt delete the button.. only remove the whole object when its not a button then..do this
 				}
 				all.stream_a.push("Key liberated."); all.screen_log();
-				all.user.wait_com_key_forget = false;
+				all.wait_com_key_forget = false;
 				var dont_send_com = true;
 			}
 			if(dont_send_com){}else{
@@ -826,6 +885,7 @@ audio_in.addEventListener("change", all.handleAudioFile);
 //we only need one parameter here.. maybe 2, but for now , stream, which is any stream object. gg. 
 //if user is on radiant mode, we use the orb stream we use ACT stream system
 //
+//This is working great.... but i think we could just print at every beat anyway
 all.screen_log = function(stream){ //stream, ctx? orb? the stream itself we could pass here?
 	if(stream===undefined){
 		var c_o = all.find_ting(all.up_objs,"u_in_contrl", true);
@@ -955,7 +1015,7 @@ all.clear_rect = function(ctx,x,y,w,h){
 all.clear_txt = function(txt_s){
 	var s = txt_s;
 	var f_n_str = s.font.substr(0,2); var f_num = parseFloat(f_n_str);
-	var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
+	var c_x = (s.x+s.tx+ux); var c_y = (s.y+s.ty+uy);
 	if(s.align=='left'){
 		all.clear_rect(s.ctx, c_x-2, c_y-f_num, s.txt.length*f_num, f_num+4);
 	}
@@ -1542,6 +1602,7 @@ all.anim_func = function(){
 
 //audio states
 //.. so maybe i should put all flow logic here as well for order s sake. 
+//AUDIO
 		if(s.is=="audio"){
 			//s.t++; //...
 //maybe state needs to know animation duration....maybe. probly. for acts access
@@ -1570,6 +1631,7 @@ all.anim_func = function(){
 //and end with fade ..i shouldn t rely on loop time tho
 //I realized having audio on here doesnt make sense. The loop system is complicated
 //enough. but maybe its useful to coordinate updates loop with timestamps
+//OSC
 		if(s.is=="osc"){
 			if(s.end=="fade"){
 				//s.gain_n.gain.linearRampToValueAtTime(0,all.au.currentTime+s.fade);
@@ -1618,6 +1680,7 @@ all.anim_func = function(){
 //s.display = 'custom'.. custom has an array with objects. each object represents changes from then to the end of the loop. a loop
 //has as many beats as this array. so we use a counter to change what item to use to affect the line property.
 */
+//TXT
 		if(s.is=="c_txt"){
 //only line1 should be able to have print value here. print takes properties from this state and uses them to create the rest
 //of the ext anim lines. kinda like print does on edit mode but now we use this state as anim[0] line 1. this state has the anim
@@ -1668,7 +1731,7 @@ all.anim_func = function(){
 
 				s.display=s.anim[0].display;
 			}
-
+//do we even need normal...? i dont think so
 			if(s.display=='normal'){all.clear_txt(s); s.is='txt';}
 			if(s.display=='ignore'){s.is='f';}
 //custom
@@ -1677,7 +1740,7 @@ all.anim_func = function(){
 				if(s.t<0){
 					s.t=s.custom_a.length-1;
 	//and also we need to restore properties to initial.. so just keep initial properties on
-	//s.custom_a.length last item :) yeah nice one
+	//s.custom_a last item :) yeah nice one
 				}
 				var delta = s.custom_a[s.t];
 //the custom_a items are simple strings with instructions. there are as many items as beats the txt animation has. instructions on each item
@@ -1744,7 +1807,7 @@ all.anim_func = function(){
 //reaches et value. et will be stored on frame0 for visuals.
 //acts will now be able to control very precisely how animations will run.
 //everytime we want to do anything its c_something , run true. we clear and add changes. we can even freeze again after changes
-
+//IMG
 		//FUNC
 		if(s.is=="c_img"){
 //this system is clearer , more versatile and less poluted
@@ -1804,7 +1867,7 @@ all.anim_func = function(){
 		}//img animation
 
 
-//c_rect
+//c_rect RECT
 		if(s.is=="c_rect"){
 //this system is clearer , more versatile and less poluted
 			if(s.run==false){s.is="f";}
@@ -1851,13 +1914,17 @@ all.anim_func = function(){
 		}//rect animation
 	
 
-//c_circle
+//c_circle CIRCLE
 //new system . i could even go further and just check if it really is more efficient to just clear all screen on a specific context
 //once instead of making all these little clears for each state.
 		if(s.is=="c_circle"){
 //this system is clearer , more versatile and less poluted
 			if(s.run==false){s.is="f";}
 			if(s.run==true){
+		//we need to print where user is positioned..  but not here.. ? why not
+				//if(all.user.stance=='void'){
+				//	s.tx=-all.user.x; s.ty=-all.user.y;
+				//}
 				//clear up
 				//ask for manual changes with s_u after we clear.
 				var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
@@ -1916,8 +1983,9 @@ all.anim_func = function(){
 //modifications, second phase checks anim_cue to run animations
 //all.anim_cue simply runs all states in it and flush
 //audio anims probly dont need phase 2 check !!!!
-	
+//PHASE2	
 //phase2. draw
+//in this phase we could maybe use isPointInPath to inform state
 	var l = all.anim_cue.length;
 	while(l--){
 		var s = all.anim_cue.pop();
@@ -1983,7 +2051,7 @@ all.anim_func = function(){
 			c.fillStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
 			c.font = s.font;
 			c.textAlign=s.align;
-			var c_x = (s.x+s.tx); var c_y = (s.y+s.ty);
+			var c_x = (s.x+s.tx+ux); var c_y = (s.y+s.ty+uy); //not sure if ux and uy needs to be here....
 			//all.d_text(s.ctx, s.txt, c_x, c_y);
 			c.fillText(s.txt,c_x,c_y);
 			c.restore();
@@ -5440,7 +5508,7 @@ Keys are persistant always by default.
 						anim.pop();
 						var sret = all.getetv(anim); 
 						sr.anim=anim; sr.is='c_rect'; //sr.t=1; 
-						sr.loop=true; sr.rt=sr.et;
+						sr.loop=true; sr.et=sret; sr.rt=sr.et;
 
 					}
 					
@@ -6187,11 +6255,201 @@ all.void_up = function(){
 			return //return is useful so nothing else happens here until init is done
 		}//init_void
 
+
+	//___________________	//VOID WAVES ------------------------------/////////-----------------///////////-................
+/*
+Am going to need these...
+//return distance between two points on screen using x y values
+all.get_dist = function(x1,x2,y1,y2)
+
+ctx.isPointInPath() 
+return true if the point is inside any of the shapes. if more than one shape in canvas, method will return true if point is inside anyo
+
+context.getImageData(x, y, 1, 1).data;
+*/
+		//these might come handy
+		//var ux = all.user.x;
+		//var uy = all.user.y;
+
+//look for waves husks and vessels . woa what an advance
+		var l = all.anim_a.length; 
+		while(l--){
+			var s = all.anim_a[l];
+//check for charge value . imp.se='pumping'; needs limits. create an effect on user when too many impulses at once ?
+//while pumping charge goes up to strength level. once reach peak, chargeq decreases
+//IMPULSE
+//look for an user impulse
+			if(s.se=='pumping'){
+				s.chargeq++; s.is='c_circle'; s.u_d.push('is','circle');//,'tx',-ux,'ty',-uy);
+				if(s.a==0.7){
+					s.u_d.push('a',0.2); 
+				}else{
+					s.u_d.push('a',0.7);
+				}
+				if(s.chargeq>=s.charge){
+					s.se='inward';
+				}
+			}
+
+//INWARD the existance of an inward impulse decreases heat and pressure in the void.
+//when charge is full, impulse releases. decrease radius using void pressure as refference. s.se='inward'
+			if(s.se=='inward'){
+				//this loop is used to compare with other waves
+				var l0 = all.anim_a.length;
+				while(l0--){
+					if(l0==l){continue}
+					var s0 = all.anim_a[l0];
+					if(s0.se=='outward'){
+						if(s0.x==s.x&&s0.y==s.y){ //common center
+//we need the pressure to be directly related to propagation speed. this way we can just ask for pressure and radius so we will know at which point
+//the waves will converge...?
+//ok i got it. just plot radius of both waves and compare point distances. nice one
+							var matchr = s.radius-s0.radius;//diference between radius 
+//if colide with a radial pulse, it combines id from both waves into a state for a vessel. Freezes in place and becomes
+//an empty husk. we need to look for a radial that has the exact same x and y coordinates, so they share its center
+//HUSK CREATION
+				//to improve presition we could ask which one was inside and...
+				//however it might be interesting to leave as is because now , radial wave cant go too fast to increase match chance..
+				//husk creation animation should involve a bit of flashy white
+							if(matchr<=5){//both radius are close enough
+						//impulse wave becomes husk. lets just ignore charge and chargeq and that stuff for now
+								s.u_d.push('name', s.name+'___'+s0.name+'__husk','is','circle','r',30,'g',30,'b',30,'a',1);
+								s.is='c_circle'; s.se='husk';
+										 
+						//for now lets just rm radial
+								s0.u_d.push('is','rm');
+								s0.is='c_circle'; s0.se='null'; 
+								var next = true; break//continue
+							}
+						}//common center
+					}//comparing inwards with radials
+
+					if(s0.se=='husk'){
+						if(s0.x==s.x&&s0.y==s.y){ //common center
+							if(s.radius<=0){//impulse reached center
+//HUSK CONTROL
+//An impulse aligned with a husk once reaches its center, it will allow user to enter the husk. once inside, a command is available to name the husk, turning
+//it into a vessel.
+//The radius of the husk determines the size of the vessel.
+//user stance cant just be void or orb.in now.. we need a stance for husk
+								//s.u_d.push('name', s.name+'___'+s0.name+'__husk','is','circle','r',30,'g',30,'b',30,'a',1);
+								//s.is='c_circle'; s.se='husk';
+								//s0.u_d.push('is','rm');
+								//s0.is='c_circle'; s0.se='null'; 
+								var next = true; break//continue
+							}
+						}//common center
+					}//comparing inwards with husk
+
+				}//comparing waves loop
+				if(next){continue}
+
+				//if charge is not enough, this impulse never reaches center
+				if(s.chargeq<=0){ s.is='c_circle'; s.u_d.push('is','rm'); continue}
+
+				if(s.radius<=0){
+					s.u_d.push('se','implode','radius',0);
+					s.se='implode'; s.is='c_circle'; continue
+				}else{
+//... i think this is fine and interesting.negative values only affect radials speed, the limit of movement is pixel per beat.. so i need impulses to be slower?
+//yes might be interesting to have many slow impulses on screen.
+					var p = voidn.pressure;
+//use p to determine what to do next. we already know radius is not 0 or less. we already contemplated convergence. we need to check how much the imp
+//wave will advance from here
+					if(p<0){
+//if we have negative pressure, ask for pt(pressure time)
+						var lerad = s.radius-1;
+						if(lerad<0){var lerad = 0;}
+						if(s.pt==0){s.u_d.push('radius', lerad,'pt',p,'is', 'circle');}
+						if(s.pt<0){s.u_d.push('pt',(s.pt+1),'is','circle');}
+						if(s.pt==undefined){s.pt=p;}
+					}
+					if(p>0){
+//if we have possitive pressure, then we add speed of impulse so we add to radius diminishing .. this needs review
+						if(s.radius-p<=0){
+							var newrad = 0;
+						}else{
+							var newrad=s.radius-p;
+						}
+						s.u_d.push('radius',newrad,'is', 'circle');//,'charge',s.charge-1);
+					}
+
+		s.u_d.push('r',20,'g',20,'b',190,'a',0.9,'chargeq',(s.chargeq-1));//,'tx',-ux,'ty',-uy);//in all these cases we always draw
+						
+				}//radius more than 0
+
+				s.is='c_circle'; continue
+
+			}//inward
+
+//IMPLODE
+			if(s.se=='implode'){
+	//here goes implode effect inside vessels etc.. if inside a vessel, then take control of the vessel
+					//
+
+	//if not colliding with a radial, then the impulse becomes a radial pulse, and adds heat to the void as long as it exists.
+				//icould also just keep id and change for _radi at the end
+				var iid = Date.now(); //var sid = iid-1000000000;
+				s.u_d.push('is','circle','a',1,'r',210,'b',10,'name',iid+'__radi','se','outward');
+
+				s.is='c_circle'; continue
+			}
+
+
+//PULSE
+//use s.charge to expand as many times as there are charges left. use pressure value to substract here directly maybe.. s.se='outward'
+				//s.u_d.push('radius',s.radius+7,'charge',s.charge-1,'is','circle'); 
+			if(s.se=='outward'){
+					//voidn.heat ? here ..?
+				if(s.chargeq<=0){s.is='c_circle'; s.u_d.push('is','rm'); continue}
+//that 25 here regulates maximum pressure, if pressure is higher than 25 , program breaks. maybe this is convenient somehow..
+//i need to implement pt here as well.. we want slow radials too
+				var p = voidn.pressure;
+				var heat = 25-p;
+				if(heat<=0){
+					if(s.pt==0){s.u_d.push('radius', (s.radius+1),'pt',heat,'is', 'circle','chargeq',(s.chargeq-1));}
+					if(s.pt<0){s.u_d.push('pt',(s.pt+1),'is','circle','chargeq',(s.chargeq-1));}
+					if(s.pt==undefined){
+						s.u_d.push('pt',heat,'is', 'circle','chargeq',(s.chargeq-1));
+					}
+				}
+
+				if(heat>0){s.u_d.push('is','circle', 'radius',s.radius+heat, 'chargeq',(s.chargeq-1))}
+
+						//s.se='collide' ?
+
+				s.is='c_circle'; continue
+			}
+
+//HUSK
+//Husks can be inhabited by users that create an impulse big enough to encapsulate its radius.
+			if(s.se=='husk'){
+	//maybe they can have a timer depending on charge. and they could loose color gradually until dark grey. and just stay there as long
+	//as its not destroyed or named.
+				s.u_d.push('is','circle');
+
+				s.is='c_circle'; continue
+			}
+
+		}//void elements loop
+
+
+
+
+
+
+
+
 //void envelope needs procedural graphics.. i have to work with canvas line drawing tools ...
 //Void will be a littledifferent now since sound will be allowed and user can see streams from other orbs while on void as well
 //also void creatures animations..
 		//
-//a loop on orbs to update prim states
+		//
+		//
+		//
+		//
+//a loop on orbs to update prim states.. kinda deprecat but good for refference
+		//
 		var l = all.up_objs.length;
 		while(l--){ 
 			//var orb = all.up_objs[l];
@@ -7023,7 +7281,34 @@ all.c_com = function(){ //(check commands)
 //void stance commands . 			 /////VOID/////
 //these should mostly be easy to asign keys
 		if(all.user.stance=="void"){
-			
+
+//IMPULSE
+//A command to summon an impulse wave in the void. Let void take care of the animation flow.
+//.impulse:x:y:radius:strength
+			if(mc_a[1]=='impulse'){
+//.. should we be able to create many impulses at once ? maybe not because impulses represent the user prescence.
+//so we need to check for user impulse, if exist already then the command wont create another impulse... no we want to be able
+//to create as many impulses as we want
+				//var ux = all.user.x; var uy = all.user.y;
+				var impid = Date.now();
+				var imp = all.circle_s_new(all.user.name+impid+'__impulse');
+				//imp.tx=Math.floor(window.innerWidth/2); imp.ty=Math.floor(window.innerHeight/2);
+
+				imp.ctx=ctx0; imp.is='c_circle';
+				var xnum = parseFloat(mcp_a[1]); var ynum = parseFloat(mcp_a[2]); var radnum = parseFloat(mcp_a[3]);
+				imp.x=xnum+ux; imp.y=ynum+uy; imp.tx=-ux; imp.ty=-uy; imp.radius=radnum;
+					//
+		//using all.user coordinates here on translate seems to be workable because it allows us to work with fixed values
+		//but then we just change user or entity coordinate and we add the negative to see that area on screen
+//yeah this doesnt work in real time. .. i think this needs to go on animf
+				//imp.tx=-all.user.x; imp.ty=-all.user.y;
+				var chargenum = parseFloat(mcp_a[4]);
+				imp.charge=chargenum; imp.chargeq = 0; imp.se='pumping';
+
+				all.anim_a.push(imp);
+			}
+
+
 //needs revamp, things willl be quite different now  !!!!!!!!!!!!!!!!!!!!!!!!!
 
 //USER
@@ -7039,7 +7324,8 @@ all.c_com = function(){ //(check commands)
 //.user.speed:[new speed]
 //Modify speed at will. This speed parameter affects user displacement speed trough the void. 
 //Available from void only.
-//we probly need a .user.out to print a json from user. later its gonna be useful
+//we probly need a location. x and y coordinates for user location..?
+//we probly also need a .user.out to print a json from user. later its gonna be useful
 			if(mc_a[1]=='user'){
 				if(mc_a[2]==undefined){
 					//print user data	
@@ -7049,7 +7335,10 @@ all.c_com = function(){ //(check commands)
 				'___________________________________',
 				'Use .user.[property]:[new value] to change a property.',
 				'name: '+u.name,
-				'speed: '+u.speed,
+				'birthday: '+u.birthday,
+				//'speed: '+u.speed,
+				'x: '+u.x,
+				'y: '+u.y,
 				'___________________________________'
 					);
 					all.screen_log();
@@ -7058,37 +7347,131 @@ all.c_com = function(){ //(check commands)
 					//accept mcp_a[1] as new name
 					all.n_param_com('name', mcp_a[1] ,all.user);
 				}
+//me not like these
+		/*
 				if(mc_a[2]=='speed'){
 					//accept mcp_a[1] as new speed
 					var speednum = parseFloat(mcp_a[1]);
 					all.n_param_com('speed', speednum ,all.user);
 				}
+
+				if(mc_a[2]=='x'){
+					//accept mcp_a[1] as new x
+					var xnum = parseFloat(mcp_a[1]);
+					all.n_param_com('x', xnum ,all.user);
+					all.clear_stream(all.user.mainstream);
+					window.scrollTo(xnum,all.user.y);
+				}
+				if(mc_a[2]=='y'){
+					//accept mcp_a[1] as new y
+					var ynum = parseFloat(mcp_a[1]);
+					all.n_param_com('y', ynum ,all.user);
+					all.clear_stream(all.user.mainstream);
+					window.scrollTo(all.user.x,ynum);
+				}
+		*/
+
+
+//a command to remember a user
+//.user.in:[userjsontext]
+				if(mc_a[2]=='in'){
+				//import a json text into sunya
+					var ta = str.split(":"); ta.shift(); 
+					var txt = ta.join(":");
+					var obj_user = JSON.parse(txt);
+					//
+					all.user = obj_user;
+					//var orb = {name: obj_orb.name}
+					//obj_orb.birth_init= true;
+		//also, ask if obj_orb name already exists..
+				//!!!!!!!!!!!!!!!!!!!!!!!!!!!
+					//all.user.orbs.push(orb);
+					//all.up_objs.push(obj_orb);
+				//all.stream_a.push("Orb imported.. " + obj_orb.name); all.screen_log();
+					//i could just clear com_a and return?
+					all.com_a = [];
+					return
+				}
+
+//a command to print a json of the user
+//.user.out
+				if(mc_a[2]=='out'){
+				//print out user in json
+					//var orb = all.find_ting(all.up_objs, 'name', mc_a[2]);
+				//but first empty current img and audio files... problem here is i need to put these back again lol
+					//orb.current_img_file={}
+					//orb.current_audio_file={}
+						
+					var txt = JSON.stringify(all.user);
+					all.chat_on = true; chat_in.focus();
+					chat_in.style.display="inLine";
+					chat_in.value = txt;
+
+					all.com_a = [];
+					return
+				}
+
+
 			}
-
-
-
-
-
+	
+//commands to move trough void node
+			//.displace.grid:x:y
+			if(mc_a[1]=='displace'){
+				all.clear_stream(all.user.mainstream);
+				if(mc_a[2]=='grid'){
+					var xnum = parseFloat(mcp_a[1]); var ynum = parseFloat(mcp_a[2]);
+					window.scrollTo(xnum,ynum);
+					all.user.x = window.scrollX; all.user.y=window.scrollY;
+				}			
+//animations to displace left and right could be:
+//a white noise like vertical line in the middle of the screen for a few milisecs. together with soothing white noise sound
+//up and down is the same but now the line is horizontal. the line might be displacing. nothing else is visible for some milisecs
+				//.displace.left
+				if(mc_a[2]=='left'){
+					var disx = Math.floor(window.innerWidth);
+					window.scrollBy(-disx,0);
+					all.user.x = window.scrollX;
+				}
+				//.displace.right
+				if(mc_a[2]=='right'){
+					var disx = Math.floor(window.innerWidth);
+					window.scrollBy(disx,0);
+					all.user.x = window.scrollX;
+				}
+				//.displace.up
+				if(mc_a[2]=='up'){
+					var disy = Math.floor(window.innerHeight);
+					window.scrollBy(0,-disy);
+					all.user.y=window.scrollY;
+				}
+				//.displace.down
+				if(mc_a[2]=='down'){
+					var disy = Math.floor(window.innerHeight);
+					window.scrollBy(0,disy);
+					all.user.y=window.scrollY;
+				}
+			}
 
 
 //ORB
 //an orb primordial form will depend on its experience , its animations stored, its data, its jobs etc
-//On void, user now will be able to see a basic structure of all orbs inhabiting a node, however, information about orbs will be limited
-//to orb nature. 
-//................ or maybe we should not be able to see orbs we dont own..?
+//On void, user now will be able to see a basic structure of all orbs inhabiting a node 
 //REDEFINING RADIANCE
 	//Orbs can only interact with other orbs trough acts.
 //orbs visual configuration will change depending on their relations.
 //they could be aligned, in circle formation... their position is always in relation
 //to other orbs.
-//void navigation speed from void stance is limited. a new condition
-//to be able to navigate trough void, there must be no orbs on the node
+//void navigation speed from void stance is limited
 //displacement is a different experience now.. . . .
-//maybe at the beggining orbs spook out void entities whilest later orbs atract hungry void entities... LORE
 //The displace command can also be accessed swiping in the direction user whishes to move
 
+//deprecat . we wont create orbs like this anymore but we will asign names to empty vessels to turn them into orbs
 //a command to create an empty Orb vessel. Orbs need to have at least a name to be
-//referenced
+//referenced.. no
+//... the only way we can start controling a vessel is by naming it and so we must cast an impulse that surrounds an empty vessel
+//to excert a control wave that will now allow us to name the vessel.
+//deprecat . we will name orbs, not create them using this command
+//needs revision.............!!!!!!!!!!!!!!!!!
 //the command to create an orb takes one user parameter which is the orb name so it goes:
 //.orb:name
 //This part here should just advocate for the commands access, 
@@ -7657,6 +8040,12 @@ all.stream_a.push("but yes, you can try again if you want..");
 										c_orb.img.splice(index,1);
 						all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
 									}
+						//use parameter to rename
+									if(mcp_a[1]!=undefined){
+								a[0].name = mcp_a[1];
+								all.stream_a.push('Changed img name from '+mc_a[2]+' to '+mcp_a[1]);
+								all.screen_log();
+									}
 //here goes img run on inner mode RUN
 									if(mc_a[3]=='run'){
  				var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
@@ -7692,7 +8081,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(mcp_a[1]!=undefined&&c_orb.img_access.width==undefined){
 						var noaccess = true;
 					}
-					if(mcp_a[1]!=undefined&&c_orb.img_access.width!=undefined){
+					if(mcp_a[1]!=undefined&&c_orb.img_access.width!=undefined&&mc_a[2]==undefined){
 						var proceed = true;
 					}
 					//clear is too much a light word to do this... purge is better
@@ -7939,7 +8328,9 @@ all.stream_a.push("but yes, you can try again if you want..");
 							an.spacer=15; an.font='10px Courier New';
 							an.open=true;
 							an.running='FALSE';
-							an.display='normal'; an.custom_a=[]; an.t=-1;
+							an.display='normal';
+							//an.display='custom';
+							an.custom_a=[]; an.t=-1;
 							an.s='txt'; an.txt='First line.';
 							//an.r= 220; an.g= 220; an.b=220; an.a=1; an.t=-1;
 	
@@ -7958,6 +8349,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 //.circle:[circle name]
 //.circle.[circle name].delete
 //.circle.[circle name].run
+//.circle.[circle name]:[new name]
 //.circle.purge
 				if(mc_a[1]=="circle"){
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
@@ -7980,6 +8372,13 @@ all.stream_a.push("but yes, you can try again if you want..");
 									c_orb.circle.splice(index,1);
 			all.stream_a.push(a[0]+" has been deleted"); all.screen_log();
 	
+								}
+						//use parameter to rename
+								//.circle.[circle name]:[new name]
+								if(mcp_a[1]!=undefined){
+									a[0].name = mcp_a[1];
+								all.stream_a.push('Changed circle name from '+mc_a[2]+' to '+mcp_a[1]);
+									all.screen_log();
 								}
 	//.circle.[edit name].run
 	//a command to run the edit on loop while on inner mode :) . Use command again to stop the animation.
@@ -8010,7 +8409,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}//mc_a[2] not undefined
 	
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
-					if(mcp_a[1]!=undefined){var proceed = true;}
+					if(mcp_a[1]!=undefined&&mc_a[2]==undefined){var proceed = true;}
 					if(purge){
 						var rl = c_orb.circle.length;
 						while(rl--){
@@ -8018,7 +8417,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 							var sr = all.find_ting(all.anim_a, 'name', a[0].name+"__r");
 							if(sr){
 								sr.u_d.push('is','rm');
-								sr.is='c_circle'; sr.t=1; sr.et = -1;
+								sr.is='c_circle'; sr.rt=-1; //sr.et = -1;
 							}
 						}
 						c_orb.circle= [];
@@ -8065,7 +8464,8 @@ all.stream_a.push("but yes, you can try again if you want..");
 							
 							var an = {};
 							an.x=100; an.y=50; an.radius=40; an.r=220; an.g=220; an.b=220;
-							an.a=1; an.t=20; an.st=0; an.f=0; an.inside='empty'; an.running='FALSE';
+							an.a=1; an.ft=20; //an.st=0; an.f=0; 
+							an.inside='empty'; an.running='FALSE';
 							//an.rand = [];
 							an.name=mcp_a[1];
 							
@@ -8104,6 +8504,13 @@ all.stream_a.push("but yes, you can try again if you want..");
 									c_orb.rect.splice(index,1);
 					all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
 								}
+						//use parameter to rename
+								//.rect.[rect name]:[new name]
+								if(mcp_a[1]!=undefined){
+									a[0].name = mcp_a[1];
+								all.stream_a.push('Changed rect name from '+mc_a[2]+' to '+mcp_a[1]);
+									all.screen_log();
+								}
 			 //a command to run the edit on loop while on inner mode :)
 								if(mc_a[3]=='run'){
 
@@ -8133,7 +8540,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					}
 	
 					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
-					if(mcp_a[1]!=undefined){var proceed = true;}
+					if(mcp_a[1]!=undefined&&mc_a[2]==undefined){var proceed = true;}
 					if(purge){
 						var rl = c_orb.rect.length;
 						while(rl--){
@@ -8179,14 +8586,16 @@ all.stream_a.push("but yes, you can try again if you want..");
 								}
 							}
 						}
-						if(found){}else{
+						if(found){a.push({});}else{
 							var new_anim = [];
 							//var new_anim = {};
 							
 							var an = {};
 							an.x=100; an.y=50; an.w=50; an.h=50;
 							an.r=220; an.g=220; an.b=220; an.a=1;
-							an.t=20; an.st=0; an.f=0; an.inside='empty'; an.running='FALSE';
+							an.ft=20; //an.st=0;
+							//an.f=0; 
+							an.inside='empty'; an.running='FALSE';
 							an.name=mcp_a[1];
 							
 							//new_anim.push(an);
@@ -8204,6 +8613,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 //.osc:[osc name]
 //.osc.[osc name].delete
 //.osc.[osc name].run
+//.osc.[osc name]:[new name]
 //.osc.purge
 				if(mc_a[1]=="osc"){
 					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
@@ -8224,6 +8634,13 @@ all.stream_a.push("but yes, you can try again if you want..");
 									c_orb.osc.splice(index,1);
 					all.stream_a.push(a.name+" has been deleted"); all.screen_log();
 								}
+						//use parameter to rename
+								//.osc.[osc name]:[new name]
+								if(mcp_a[1]!=undefined){
+									a.name = mcp_a[1];
+								all.stream_a.push('Changed osc name from '+mc_a[2]+' to '+mcp_a[1]);
+									all.screen_log();
+								}
 							}
 						}
 					
@@ -8231,7 +8648,7 @@ all.stream_a.push("but yes, you can try again if you want..");
 					if(mcp_a[1]==''&&mc_a[2]==undefined){
 						mcp_a[1]=undefined; var noname = true;
 					}
-					if(mcp_a[1]!=undefined){var proceed = true;}
+					if(mcp_a[1]!=undefined&&mc_a[2]==undefined){var proceed = true;}
 					//needs revision..
 					if(purge){c_orb.osc= [];}
 					if(list){
@@ -9737,6 +10154,8 @@ function update(){
 	o_r=all.get_r_num(160,220); 
 	o_g=all.get_r_num(160,220);
 	o_b=all.get_r_num(160,220);
+//window scroll
+	ux=window.scrollX; uy=window.scrollY;
 	
 
 //prints symbols on ctx3 .this is exclusively keyboard users code. . its a bit convoluted
@@ -9833,6 +10252,10 @@ all.sunya_init = function(device, tutorial){
 //how to prevent it
 	all.au = new (AudioContext || webkitAudioContext)();
 
+//center ? CANVAS
+	window.scrollTo(canvas0.width/2, canvas0.height/2);
+	var ux = window.scrollX; var uy = window.scrollY;
+	all.user.x=ux; all.user.y=uy;
 
 //users should be able to ask for audio files from server on demand. the shared
 //folder allows for easy access. just use url as source
@@ -9902,7 +10325,12 @@ all.heartbeat = setInterval(all.pre_rendering,60);
 //just add these events here?
 window.addEventListener('keydown', kdown);
 window.addEventListener('keyup', kup);
-
+//thanks my guy . this prevents scrolling
+window.addEventListener("keydown", function(e) {
+	    if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+		            e.preventDefault();
+		        }
+}, false);
 //*/
 
 //RENDER < game pulsating heart
