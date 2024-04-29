@@ -45,6 +45,9 @@ all.heartbeat = undefined;//becomes hold return for heartbeat interval
 var o_r=220; var o_g=220; var o_b=220; 
 var a_v =0;
 
+var kaoz = undefined; //where is zai? :(
+
+
 var stance = undefined;
 var uinit = undefined;
 
@@ -76,26 +79,28 @@ var U = {
 	//mainstream , scrollable
 	mainstream:	{
 		name:"__default",
-		r:220, g:220, b:220, a:0.6, 
-		x:14, 
+		r:230, g:230, b:230, a:1, 
+		x:10, 
 		//y:window.innerHeight-28,
-		y:220,
+		y:41,
 		limit:30, 
-		font:'px Courier New', size:14, spacer:-15, align:'left',
+		font:'px Courier New', size:18, spacer:-15, align:'left',
 		freeze: false, up:false, down:false, left:false,right:false, c_last:0,
-		history: []
+		newstory:[], oldstory:[]
+		//history: []
 	},
 	//edit stream feedback, doesnt scroll
 	estream: {
 		name:"__feed", 
 		r:220, g:200, b:140, a:1,
-		//x:window.innerWidth-14,
-		x:250,
-		//y:window.innerHeight-28,
-		y:320,
+		x:window.innerWidth-14,
+		//x:250,
+		y:window.innerHeight-100,
+		//y:320,
 		on_screen:0, limit:6, align:'right', 
-		font:'px Courier New', size:15, spacer:-15, freeze: false, c_last:0,
-		history : [] //we dont keep history here but we need it for the print system
+		font:'px Courier New', size:18, spacer:-15, freeze: false, c_last:0,
+		newstory:[], oldstory:[]
+		//history : [] //we dont keep history here but we need it for the print system
 	},
 
 //so key_s will now become void_k. we will now have all modes keys stored in here as well... mmm not so sure now
@@ -138,7 +143,7 @@ var U = {
 	
 
 	//prims animations:[] ..?
-	orbs: [], //currently owned orbs- stores data object concerning orb ?
+	orbs: [], //currently owned orbs- stores data object concerning orb ? //deprecat
 
 }; //user
 
@@ -197,12 +202,12 @@ all.stream_a = [];//contains txt lines as items to be streamed
 ///////////////////////////////////////////////////////////////////////////////HTML
 //CANVAS
 //ok new resolution:
-//We are just going to create a rendering system using 1 or maybe 2 canvas elements. 
+//We are just going to create a rendering system using 1 canvas element. 
 //an offscreen tag for states will act just like a ctx but it wont draw, it will only run and
 //update the logics.
 //Now just focus on making all editors use a single context. You just learned that having txt in a canvas apart hoping
 //it would be less drawing process in the end didnt cut it because you still would like to see txt on screen being animated somehow.
-//We will just clear all and print all in one context.
+//We will just clear all and print all in one context. //done
 //
 
 /*
@@ -291,6 +296,8 @@ canvas0.style.width=width+"px"; canvas0.style.height=height+"px"; canvas0.width=
 //currently working with 5 layers, a canvas is a layer.. but maybe we could
 //do just fine with 3 layers!!!!
 //.... or maybe we could just use one or 2.. if we implement offscreen canvas
+//
+//Its just one canvas we are good .
 all.canvaser('canvas0', 1);
 //all.canvaser('canvas1', 2);
 //all.canvaser('canvas2', 3);
@@ -329,12 +336,13 @@ chat_in.style.outline="none";//no more outline. nice
 chat_in.style.zIndex=6;
 //chat_in.style.opacity=0.5;
 //chat_in.style.color='black'; 
-chat_in.style.fontSize="25px";
+chat_in.style.fontSize="18px";
 chat_in.style.position='fixed';//fixed is the bey. literally fixed my problem
 //chat_in.style.left="200px";
+chat_in.style.fontFamily='Courier New';
 chat_in.style.backgroundColor='rgba(0,0,0,0.6)';
-chat_in.style.color='rgba(220,220,220,0.9)';
-chat_in.style.borderColor='rgba(220,220,220,0)';
+chat_in.style.color='rgba(230,235,240,1)';
+chat_in.style.borderColor='rgba(230,230,230,0)';
 chat_in.style.width=window.innerWidth+"px";
 chat_in.style.display="none";
 //chat_in.offsetWidth  offsetHeight  offsetTop  offsetLeft offsetParent
@@ -398,6 +406,7 @@ const kdown = function(ev){
 	//var u = all.user;
 	//var c_o = all.find_ting(all.up_objs,"u_in_contrl", true);
 
+	//messy
 	var c_o=stance;
 	if(c_o==undefined){
 		var comav = 'void';
@@ -426,15 +435,6 @@ const kdown = function(ev){
 			//all.sstr_g=30; all.sstr_r=20;
 			kfeed.g=30; kfeed.r=20;
 
-			//var c = ctx0;
-			//c.save();
-			//c.fillStyle =`rgba(${all.sstr_r},${all.sstr_g},${all.sstr_b},${all.sstr_a})`;
-			//c.font = "30px Courier New";
-			//c.textAlign = "center";
-			//all.d_text(ctx0 ,all.sstr_l, all.sstr_x, all.sstr_y);
-			//c.fillText(all.sstr_l,all.sstr_x,all.sstr_y);
-			//c.restore();
-			//
 			all.stream_a.push(all.sstr + " key ready to be linked","Type a command for this key"); all.screen_log();
 			//console.log(all.sstr + " key ready to be linked");
 			//vox lock
@@ -449,8 +449,8 @@ const kdown = function(ev){
 	}//spacebar
 
 //BACKSPACE
-//clean command feedback with backspace on ctx4
-//.. would be nice to be able to clear the stream from the screen as well
+//clean command feedback with backspace
+//.. would be nice to be able to clear the stream from the screen as well //done
 	if (e == 8 && all.chat_on == false){ //backspace
 		//normalize key feedback from key save lock
 		all.s_s_t_r = []; all.sstr = ' '; all.sstr_l = ' '; all.wait_com_key = false;
@@ -968,23 +968,36 @@ all.screen_log = function(stream){ //we can pass a second parameter to let funct
 
 	if(stream=='estream'){var stream = U.estream; var clear_history = true;}
 
-//all STREAMs use HISTORY..
+//all STREAMs use HISTORY.. but now lets make 2 histories :3
+	//hmmmm
+	//if(stream.now==1){var urturn = stream.newstory; var urnext=stream.newstory2}
+	//if(stream.now==-1){var urturn = stream.newstory2; var urnext=stream.newstory;}
+	//if(urturn.length>=stream.limit){stream.now=stream.now*-1; urnext=[];}
 	var sal = all.stream_a.length; //2
 	while(sal--){
-		var n_msg = all.stream_a.shift();
-		stream.history.push(n_msg);
+		//var n_msg = all.stream_a.shift();///try using pop here //
+		//var n_msg = all.stream_a.pop();
+		//stream.history.push(n_msg);//
+//we are going to need an array to follow up the text to indicate text properties so its gonna be
+//all.stream_a.push('some text', [20,'r','keep']);..no.
+//..all.stream_a.push({msg:'some text', cus:[20,'r',], mem:'keep'}).. set cus to undefined if not used. use mem to.. u know
+		var nm = all.stream_a.pop();
+		stream.newstory.push(nm);
+		
+			
 	}
 	//if up arrow, normalize and then decrease current_last , print and freeze
 	if(stream.up){
 		stream.up=false; 
-		if(stream.c_last==0){}else{stream.c_last--;}
+		if(stream.c_last==0){}else{stream.c_last--;}//stream.c_last--;
 		stream.freeze=true;
 		stream.left=false;
 	}
 	//if down arrow, normalize and then increase current_last but leave as is if on last already, print and freeze
 	if(stream.down){
 		stream.down=false;
-		if(stream.history.length==stream.c_last){}else{stream.c_last++;}
+		//if(stream.history.length==stream.c_last){}else{stream.c_last++;} //
+		if(stream.newstory.length==stream.c_last){}else{stream.c_last++;} //gotta be urturn
 		stream.freeze=true;
 		stream.left=false;
 	}
@@ -995,41 +1008,48 @@ all.screen_log = function(stream){ //we can pass a second parameter to let funct
 	//if left arrow, normalize and leave current as is , print and freeze
 	if(stream.left){
 		all.clear_stream(stream); return
-		//stream.left=false; stream.freeze=true;
+		//stream.left=false; stream.freeze=true;// ?
 	}
 
 //so if freeze.. then use current last
 	if(stream.freeze==true){var l = stream.c_last;}
 
 //if not freeze, use history last and update c_last
-	if(stream.freeze==false){var l = stream.history.length; stream.c_last=stream.history.length;}
+	if(stream.freeze==false){
+		//var l = stream.history.length; stream.c_last=stream.history.length;
+		var l = stream.newstory.length; stream.c_last=stream.newstory.length;
+	}
 
 //we just clear it. we always clear when screen_log is called...
 	all.clear_stream(stream); 
 
-//maybe we need l to be current_last. use this value to start printing. change this value to print from somewhere else.
-	//var l = stream.history.length; 
+//we need l to be current_last. use this value to start printing. change this value to print from somewhere else.
 	var i = stream.limit;
 	var spacer = 0;
 	while(l--){
 		if(i<=0){break}
-		var l_txt = stream.history[l];
+		//var l_txt = stream.history[l]; //history0 history1
+		var l_txt = stream.newstory[l];
 		var print = all.txt_s_new(stream.name+i);
+		if(l_txt.cus==undefined){print.txt=l_txt;}else{print.custom_a=l_txt.cus; print.display='custom'; print.txt=l_txt.msg;}
 		print.x=stream.x; print.y=stream.y;
 		print.r=stream.r; print.g=stream.g; print.b=stream.b; print.a=stream.a;
 		print.t=-1; print.size=stream.size;
 		var Font = stream.size+stream.font; print.font = Font; 
-		print.txt=l_txt; print.align=stream.align;
+		//print.txt=l_txt;
+		print.align=stream.align;
 		//tx and ty values need to match the inverse of current user translate position.
 		print.tx=-U.x; print.ty=-U.y; // !!!
 		//print.sx=window.scrollX; print.sy=window.scrollY;
 		print.is="txt"; 
 		print.y=print.y-spacer; //next line y position difference
+		//print.y=print.y+spacer; //next line y position difference
 //lol there is no display in here am actually not printing stream at every beat.. well we should because we want streams to vibrate
 //with custom_a system. custom with 1 item should be default, no need  for 'normal' display
-		print.display='normal'; //for now..
+		//print.display='normal'; //for now..
 		all.anim_a.push(print);
-	spacer = spacer-stream.spacer;
+	//spacer = spacer-stream.spacer;
+	spacer = spacer+stream.spacer;
 	i--;}
 
 //so we want to clear history when.. we load json data and when we print help messages.
@@ -1200,11 +1220,7 @@ all.imgd_s_new = function(ctx,name,w,h){
 */
 
 //A function to return an image sprite state. "img" activates, "c_img" checks
-//default values just show the image as is for now
-//consider the case window screen not being able to show the full image ..
-//img edit considers it
-//should be able to work without animation
-//as well.. et = -1
+//default values just show the image as is for now. should be able to work without animation as well.. et = -1
 all.ims_s_new = function(name, img_access){
 	var state = { 
 		name: name, img_access:img_access,  
@@ -1239,6 +1255,10 @@ all.txt_s_new = function(name){ //loop, st, sf, ctx
 		r:210, g:210, b:210, a:1, layer:2, //se: undefined, //subevent
 		t:-1, //wait:undefined, //nfreq: undefined,
 		s:"txt", //cursor tag and anim_func activator
+
+		t:-1, display:'normal',
+		custom_a:[],
+
 		u_d: []
 
 	};
@@ -1321,7 +1341,7 @@ all.transition = function(transition,stancefrom){ //,stanceto){ //transition, st
 			ctx0.translate((-U.x),(-U.y));//this should put user on 0
 			U.x=0; U.y=0;//update to 0
 			//now screen position center on husk
-			var chx = -hp.x+(window.innerWidth/2); var chy = hp.y-(window.innerHeight/2);
+			var chx = -hp.x+(window.innerWidth/2); var chy = hp.y-(window.innerHeight/2);//-(window.innerHeight) //try this
 			ctx0.translate(chx,chy);
 			U.x=chx; U.y=chy;
 
@@ -1696,32 +1716,13 @@ all.transition = function(transition,stancefrom){ //,stanceto){ //transition, st
 				elid1.se='white to fade';
 			//ask mode what to return. its on stance
 				if(stance.inner_mode){
-		/*
-					//back to normal idle
-					var vp = all.find_ting(all.anim_a, 'name', stance.vessel_date+'___vessel');
-					vp.custom_a=[];
-					vp.custom_a.push(
-						[220,"r",220,"g",220,"b"], //white
-						[176,"r",215,"g",235,"b"], //celeste
-						[91,"r",157,"g",237,"b"], //azure
-						[0,"r",4,"g",233,"b"], //blue
-						[97,"r",28,"g",188,"b"], //purple blue
-						[138,"r",12,"g",152,"b"], //purple
-						//[0,"r",0,"g",0,"b",0.7,"a"], //black
-						[255,"r",10,"g",6,"b"], //red
-						[255,"r",152,"g",1,"b"], //orange
-						[255,"r",221,"g",38,"b"], //yellow
-						[163,"r",238,"g",4,"b"], //green
-						[127,"r",224,"g",191,"b"] //calypso
-					);
-					vp.display='custom'; vp.t=-1; vp.inside='filled'; vp.is='c_circle';
-		*/
+
 					all.shadow_mode(stance);
 
 					var oes = all.find_ting(all.anim_a, 'name', stance.vessel_date+'___atfield');
 					oes.is='f';
 
-					//return 'run edits' //deprecat?
+					return 'run edits' 
 				}else{
 					var oes = all.find_ting(all.anim_a, 'name', stance.vessel_date+'___atfield');
 					//oes.se='atfield white idle'; //white idle?
@@ -1906,7 +1907,7 @@ all.shadow_mode = function(o){
 		//if stance is undefined, dont push white
 		var vp = all.find_ting(all.anim_a, 'name', o.vessel_date+'___vessel');
 		vp.custom_a=[];
-		if(stance==undefined){}else{vp.custom_a.push([255,"r",255,"g",255,"b"]);}
+		if(stance==undefined){}else{vp.custom_a.push(0,0,0,0,[220,"r",220,"g",220,"b"]);}
 		vp.custom_a.push(
 			//[255,"r",255,"g",255,"b"], //white
 			[176,"r",215,"g",235,"b"], //celeste
@@ -2025,22 +2026,13 @@ all.signify = function(sv){
 			r.value = number;
 			return r
 		}
-	/*
-//don rememebr what i was doing here exactly, but i was trying to create a synthx to express random values inside scripts
+//don rememebr what i was doing here exactly, but i was trying to create a synthx to express random values inside scripts.. works now?
 		if(sv_a[1][0]=='?'){
 			r.operation = '?';//random value
 			var v_a = sv_a[1].split('?');
-			var range = v_a[1].split('-');
-			
-			var num1 = parseFloat(range[0]);
-			r.min = num1;
-			var num2 = parseFloat(range[1]);
-			r.max = num2;
-			
-			r.value=undefined;
+			r.value='..'+v_a[1];
 			return r
 		}
-	*/
 
 		var number = parseFloat(sv_a[1]); 
 		r.value = number;
@@ -2276,7 +2268,8 @@ all.anim_func = function(){
 
 //FORMS UPDATE
 //we check for and semi automated logic forms. vessels independant logic structure, husk and waves
-//these use subevents (se) to manage animations flow.
+//these use subevents (se) to manage animations flow... kinda unnecesary for vessels and husks now since custom_a exist..
+//but maybe later will come handy to have these instances
 //VESSEL
 			if(s.form=='vessel'){all.vessel_up(s,l);}
 //HUSK	
@@ -2286,40 +2279,51 @@ all.anim_func = function(){
 
 
 //custom_a system for circles!
-//the custom_a items are simple strings with instructions. there are as many items as beats the txt animation has. instructions on each item
-//change all the states properties. these changes apply for each succesive beat until s.t reaches 0
-//so delta could be;  [20,'r',0.4,'a'] , alpha is set to 0.4, r is set to 20 and so on
+//the custom_a items are arrays with value:key pairs. there are as many items as beats the txt animation has. instructions on each item
+//change all the states properties. these changes apply for each succesive beat until s.t(number of items on custom_a) reaches 0
+//so delta(custom_a item) could be;  [20,'r',0.4,'a'] , 'a' is set to 0.4, 'r' is set to 20 and so on
 //we still need more control to be available from this array.
 //1 we can already replace an empty array with a 0 value this is probly good for performance. But it doesnt look good to have
 //so many elements in the array..hmm
 //2 We need to be able to control the animation flow and also their duration by calling se just once. custom_a really allows
 //us to just push any change we want straight into the frames so we might as well take advantage of this. we can push se and
 //duration as well. so states dont need to be so heavily managed from forms updates
-//If we could have custom system do thte same job as nfreq frames that would be ideal. . img edits whould be just a bit different
+//If we could have custom system do the same job as nfreq frames that would be ideal. . img edits whould be just a bit different
 //would require ANOTHER update oh my god  but i think this is the way
+
 			if(s.display=='custom'){
-				if(s.t<0){
-//so to consolidate animations, we can use a special value to act as a simple counter instead of being an empty array. so when the loop
-//encounters it , it keeps counting but makes no changes to the state.. a surprise.. you can already just use a 0 value and the
-//loop will ignore it and just keep counting. nice. I hope this is an improvement since we are procesing a 0 digit instead of an aray
-					var clr = s.custom_a.length-1;
-					s.t=clr;//s.custom_a.length-1;
-				}
+				if(s.t<0){s.t=s.custom_a.length-1;}
+					//var clr = s.custom_a.length-1;
+					//s.t=clr;//s.custom_a.length-1;
 				var delta = s.custom_a[s.t];
 				var lc = delta.length;
 				//if(lc){
 				while(lc--){
 					var p = delta[lc]; var v = delta[lc-1];
-			//i was trying to only pass on changes here...
+//i was trying to only pass on changes here... but probly we want to compute changes first and then just pass on results
 					//if(s.t==clr){s[p]=v;}else{s[p] = s[p]+v;}
-					s[p] = v;
+					var nv = v;
+					if(v.length==undefined){}else{
+						var dots = v.substr(0,2);
+						if(dots=='..'){
+							var cded = v.substr(2);
+							//console.log(cded,dots,nv);
+							var cdeda = cded.split("-");
+							var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
+							var n_rand = all.get_r_num(min,max);
+							nv = n_rand;
+						}
+					}
+
+					s[p] = nv;
+					//s[p] = v;
 				
-				lc--;}//we decrease again because its a parameter value pair in the array
+				lc--;}//we decrease again because its a parameter value pair in the array. must be, always
 				s.t--;
 				s.is='circle';
 			}//custom system
 
-//this system is clearer , more versatile and less poluted
+//this system is clearer , more versatile and less poluted than the old one
 			if(s.run==false){s.is="f";}
 			if(s.run==true){
 				//no more clears oh jeez
@@ -2529,8 +2533,26 @@ all.anim_func = function(){
 				var lc = delta.length;
 				while(lc--){
 					var p = delta[lc]; var v = delta[lc-1];
-					//if(s.t==clr){s[p]=v;}else{s[p] = s[p]+v;}
-					s[p] = v;
+//!!!!!!!!!!!!!!!!!!!!!!!
+//so NOW we could implement a way to randomize the value of the property. say we want to randomize a value in a property
+//custom_a.push('..12-230','r') //done
+					var nv = v;
+					//var isnum = Number.isInteger(v);
+					//if(isnum){}else{
+					//	console.log(nv, isnum);
+					if(v.length==undefined){}else{
+						var dots = v.substr(0,2);
+						if(dots=='..'){
+							var cded = v.substr(2);
+							//console.log(cded,dots,nv);
+							var cdeda = cded.split("-");
+							var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
+							var n_rand = all.get_r_num(min,max);
+							nv = n_rand;
+						}
+					}
+
+					s[p] = nv;
 				//we decrease again because its a parameter value pair in the array
 				lc--;}
 				s.t--;
@@ -3743,22 +3765,13 @@ all.orb_up = function(o){//takes orb structure
 				var tt = all.transition(uinit.transition, uinit.stancefrom);//, uinit.stanceto);
 				//if(tt=='set interface'){return}
 				if(tt=='all set'){uinit=false; return}
-//deprecat . 
 //at this point we also need to push init states of all animations with the running tag on 'TRUE'. except for scripts. scripts dont 'run',
-//scripts 'play', they work differently from 'edits'
-//so we run a loop to find all running edits and push their init states
-//but need to be timed with transition animation...
-/*
+//scripts 'play', they work differently from 'edits' .so we run a loop to find all running edits and push their init states
+//when transition returns 'run edits'. we do this when orb has running animations but user got in to edit some animation that
+//was running already, changed it and then went from edit mode into inner mode again. we want to see those changes so we simply restart
+//all animations.
 				if(tt=='run edits'){
-	//we need a boolean here to let us know if orb is running any animation . we can use this boolean to manage vessel prim and field
-	//custom display. instead of having to check for all animation boxes we just ask the boolean and set proper display
-	//we want almost transparent prims and fields when animations running. And these animations will keep running even
-	//when user is away... love this
-	//all we gotta do every time we run an animation or unrun is check for states whit "__r" in it and our orb name on it
-	//we dont event need to tt run edits now because animations will keep running over transitions. only radiant mode changes.
-	//but thats for another day... am tired
-
-
+//am seriusly thinking about removing circle and rect editors completely...
 		 			//circle
 					var el = o.circle.length;
 					while(el--){
@@ -3805,7 +3818,7 @@ all.orb_up = function(o){//takes orb structure
 						if(o.current_img_file.name==a[0].img_file_name){
 							var sr = all.ims_s_new(a[0].name+o.name+"__r", o.img_access);
 							sr.anim=a; //sr.ctx=ctx1;
-							//sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
+							sr.showcase=true;
 							sr.tx=ceX; sr.ty=ceY; sr.layer=1;//temporary
 							//new
 					 		var sret = all.getetv(a);
@@ -3831,18 +3844,17 @@ all.orb_up = function(o){//takes orb structure
 					var print = all.txt_s_new(l0.name+"_line"+i+o.name+'__r');
 			//when we call these user should be centered on the orb already... 
 					//var ceX=-U.x+window.innerWidth/2; var ceY=-U.y+window.innerHeight/2;
-
+					print.showcase=true; //
 					print.tx=ceX; print.ty=ceY;
 					print.x=l0.Gx; print.y=l0.Gy;
 					print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
-					print.font=l0.font;
+					print.font=l0.font; print.layer=l0.Glayer;
 					//print.tx=window.innerWidth/2; print.ty=window.innerHeight/2;
 					print.is="txt"; print.txt=lin.txt;
 					print.y=print.y+spacer; //next line y position difference
 					print.display=lin.display;
 					print.custom_a=lin.custom_a;
 					print.t=-1; //print.run=1;
-					print.layer=0; //!!!!!!! for now.temporary
 					all.anim_a.push(print);
 				spacer = spacer+l0.spacer;
 				i++;}
@@ -3857,7 +3869,7 @@ all.orb_up = function(o){//takes orb structure
 					return	
 
 				}//tt run edits
-*/
+
 				if(tt==undefined){return}
 
 			}//init inner mode
@@ -3966,18 +3978,21 @@ all.orb_up = function(o){//takes orb structure
 //control over specific parameters from here, we can make sound play on specific
 //conditions. so we can make playlists , control volume, see and change tracks
 //and so on..
-//EDIT
-	//just init kinda updated... but this needs revision
+	//
+//so now we can just showcase run audio . first we need to fix this a bit.. its been a while since i dont mess around here
+//we are going to need to refresh what we know and also implement other nodes avaiable. gotta study web api again now...
+//good night friend.. You got this.
+
+//EDIT AUDIO
 		if(o.edit_audio_mode==true){
 			if(uinit){
 				//var tt = all.transition(uinit);
-				var tt = all.transition(uinit.transition, uinit.stancefrom, uinit.stanceto);
+				var tt = all.transition(uinit.transition, uinit.stancefrom);
 				if(tt=='all set'){uinit=false; return}
 			
 				if(all.au){}else{all.au=all.audioser();} //safenet?
 
 //we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
-//.. i think we dont neccesarily need to remove these either...
 				var l = all.anim_a.length; 
 				while(l--){
 					var s = all.anim_a[l];
@@ -3986,31 +4001,19 @@ all.orb_up = function(o){//takes orb structure
 						all.anim_a.splice(l,1);
 					}
 				}
-				all.stream_a.push('Edit audio mode On'); all.screen_log();
-				return
+				//all.stream_a.push('Edit audio mode On'); all.screen_log();
+				//return
 			}
-//animation reference
+//audio animation reference
 			var a = o.audio[o.op1];
-//state refference
-			var a_s = all.find_ting(all.anim_a,"name", a.name+"_");
+//audio state refference
+			var a_s = all.find_ting(all.anim_a,"name", a.name+"__audio");
 
 			if(o.op3!=0){var delta = all.signify(o.op3);}
 			if(delta){
 				
 				if(delta.signal=='exit'){
-					o.inner_mode=true; o.edit_audio_mode = false;
-					var obg = all.circle_s_new('__obg');
-					obg.radius=900; obg.t=5;
-					obg.r=0; obg.g=0; obg.b=0; obg.a=0;
-					obg.inside="filled"; obg.is='circle';
-					obg.x=Math.floor(window.innerWidth/2);
-					obg.y=Math.floor(window.innerHeight/2);
-					obg.ctx=ctx0;
-					//if(o.inner_mode){obg.se='idle_pick';}
-					//if(o.radiant_mode){obg.se='expand_colors';}
-				//we need this now.. for now
-					if(o.inner_mode){obg.se='expand';}
-					all.anim_a.push(obg);
+					o.inner_mode=true; o.edit_audio_mode = false; uinit={transition:'orb edit',stancefrom:o}
 
 	//cant end and splice inmediately after, must disconnect now and then splice
 	//or send autoremove to animf.. animf should be able to self remove all kinds of
@@ -4022,10 +4025,7 @@ all.orb_up = function(o){//takes orb structure
 						all.anim_a.splice(index,1);
 					}
 					//clear data feedback stream
-					//var feed_stream = all.find_ting(o.stream, 'name', 'feed0');
-					//all.clear_stream(feed_stream);//just use all.user.estream
 					all.clear_stream(U.estream);//just use all.user.estream
-
 
 					//clear selected values
 					o.op1= 0; o.op5= 0; //var id = a.on_a[0];
@@ -4041,7 +4041,7 @@ all.orb_up = function(o){//takes orb structure
 						//a_s.end="fade"; //to end it
 						a_s.end="end";
 					}else{
-						var a_s = all.buffer_s(o.audio_access, all.au, a.name+"_", a);
+						var a_s = all.buffer_s(o.audio_access, all.au, a.name+"__audio", a);
 						a_s.src_node.loop = true; 
 						a_s.timer_start = all.au.currentTime;//
 				//we need to use update time as well in order to synch.. do we
@@ -4133,7 +4133,7 @@ all.orb_up = function(o){//takes orb structure
 //doing the timer thing but instead of calling update, i just change feed0 colors
 			o.op5++;
 			if(o.op5==15){
-				var s_0 = all.user.estream;
+				var s_0 = U.estream;
 				s_0.r=o_r; s_0.g=o_g; s_0.b=o_b;
 
 				o.op5=0;
@@ -4155,7 +4155,7 @@ all.orb_up = function(o){//takes orb structure
 //interface to show data from currently selected audio edit
 			if(up_sel){//should be update_interface
 				var a = o.audio[o.op1];
-				var a_s = all.find_ting(all.anim_a,"name", a.name+"_");
+				var a_s = all.find_ting(all.anim_a,"name", a.name+"__audio");
 				all.stream_a.push(
 					"Audio name: "+a.name,
 					"Gain: "+a.gain,
@@ -4382,14 +4382,19 @@ all.orb_up = function(o){//takes orb structure
 					o.op2 = 1; //always set selected line to 1
 					uinit=false;
 //we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'?
+//.. dont remove them, simply offs them... __r thing should ask also for orb name and should be on beginning
+				///*
 					var l = all.anim_a.length; 
 					while(l--){
 						var s = all.anim_a[l];
 						var namend = s.name.substr(-3, 3);
 						if(namend == '__r'){
+							//s.offs=true;
 							all.anim_a.splice(l,1);
 						}
 					}
+				//*/
+
 				}
 
 				if(tt==undefined){return}
@@ -4440,8 +4445,10 @@ all.orb_up = function(o){//takes orb structure
 									var name = s.name.substr(0, cl_pl);
 									if(name == l0.name+'_line'){
 										//s.is="rm"; 
-										var index = all.anim_a.indexOf(s); 
-										all.anim_a.splice(index,1);
+										if(s.showcase==undefined){
+											var index = all.anim_a.indexOf(s); 
+											all.anim_a.splice(index,1);
+										}
 									}
 								}
 							}//clear lines loop
@@ -4459,7 +4466,10 @@ all.orb_up = function(o){//takes orb structure
 					return
 				}
 			
-//we nee a command signal to change our txt animation layer i think......
+//we need a command signal to change our txt animation layer i think......
+				if(delta.signal=='layer'){
+					l0.Glayer=delta.value; var print =true;
+				}
 
 
 //a command to open a different txt to be edit3d simultaneously. open parameter
@@ -4713,6 +4723,7 @@ all.orb_up = function(o){//takes orb structure
 //work.. i l fix later this is weird.. its setting itself back to custom for some reason
 				if(delta.signal=='custom'){
 					var lc = delta.value;
+					if(a_line==undefined){}else{
 				/*
 					if(delta.value==-1){
 						a_line.display='normal'; var ok=true; lc=' zero'; a_line.custom_a=[];
@@ -4751,9 +4762,12 @@ all.orb_up = function(o){//takes orb structure
 							ori.push(l0.Gx,'x',lineY,'y',l0.Gr,'r',l0.Gg,'g',l0.Gb,'b',l0.Ga,'a');
 						}
 					//}//delta.value -1 , we set display to normal !!!!!!!!!! doesnt wurk!!!!!
+
 					all.stream_a.push('Total number of beats is '+lc);
 					all.screen_log();				
 					var print = true;
+
+					}//a_line safe
 				}//custom
 
 
@@ -4780,11 +4794,11 @@ all.orb_up = function(o){//takes orb structure
 //X will completely remove the selected line. probly could ask to confirm
 		//use op4 to let editor know when user want to enter input into a line 
 			if(o.op4 == 1){
-				if(o.op5==0){
 				//behavior by default
+				if(o.op5==0){
 					if(o.op2==1){
 						var new_line = {
-							Gx:a_line.Gx, Gy:a_line.Gy,
+							Gx:a_line.Gx, Gy:a_line.Gy, Glayer:l0.Glayer,
 							Gr:a_line.Gr, Gg:a_line.Gg, Gb:a_line.Gb, Ga:a_line.Ga,
 							name:a_line.name, //Gt:a_line.Gt,
 							display:a_line.display,
@@ -4826,9 +4840,11 @@ all.orb_up = function(o){//takes orb structure
 					if(s.name){
 						var name = s.name.substr(0, cl_pl);
 						if(name == l0.name+'_line'){ //so it removes all lines
-							//s.is="rm"; 
-							var index = all.anim_a.indexOf(s); 
-							all.anim_a.splice(index,1);
+							//s.is="rm";
+							if(s.showcase==undefined){
+								var index = all.anim_a.indexOf(s); 
+								all.anim_a.splice(index,1);
+							}
 						}
 					}
 				}//clears
@@ -4841,11 +4857,11 @@ all.orb_up = function(o){//takes orb structure
 					//here comes nothing. yup this is the way
 					print.tx=ceX; print.ty=ceY;
 					print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
-					print.font=l0.font;
+					print.font=l0.font; print.layer=l0.Glayer;
 				//use [] for selected line... this needs improve, the line number takes too much space
 				//better now but still a bit sneaky
 					if(o.op2==i){
-						print.txt=lin.txt+'   '+i+' <';
+						print.txt=lin.txt+'   '+i+'  <<';
 
 					}else{print.txt=lin.txt+'   '+i;}
 
@@ -4899,7 +4915,7 @@ all.orb_up = function(o){//takes orb structure
 					"current selected beat: "+o.op6,
 					"changes: "+batit,
 					"current selected line: "+seline,
-					"........"
+					"layer: "+l0.Glayer
 					);
 				all.screen_log('estream');//estream		
 			}else{all.clear_stream(U.estream);}
@@ -7088,17 +7104,21 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 		if(mc_a[1]=="help"){
 			if(mc_a[2]==undefined){
 				all.stream_a.push(//
-				'---------------------------------',
+				//{msg:'---------------------------------',cus:[0,0,0,0,0,[1,'a'],0,0,0,0,0,[0.1,'a']]},
+				'--1--',
 				'Press ENTER and type in:',
-				'.help.[keywords]',
+		{msg:'.help.[keywords]',cus:[0,0,0,0,0,[1,'a',20,'r',220,'g'],0,0,0,0,[34,'g'],0,0,0,0,[0.8,'a','..20-230','r']]},
+				//'.help.[keywords]',
 				'for more information on any specified [keywords] just bellow.',
-				'user , mainstream ,scroll, void , commands  , type , shortcuts',
+				'Example; .help.user',
+				'user , mainstream ,scroll, void , commands , key , type , shortcut',
 				'displace , wave , impulse , pulse , husk , vessel , orb',
 				'stance , inner mode , edit mode, estream, radiant mode,',
-				'edit , load , img , audio , txt , circle, rect, osc, signal, delta',
+				'edit , load , img , audio , txt , circle, rect , osc, signal, delta',
 				'act , perform , reform , broadcasting, help',
 				'touchscreen , button',
-				'---------------------------------'
+				//{msg:'---------------------------------',cus:[0,0,0,0,0,[1,'a'],0,0,0,0,0,[0.1,'a']]}
+				'--0--'
 				);
 			}else{
 				if(mc_a[2]=='user'){//
@@ -7174,10 +7194,22 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 					);
 				}
 
-				if(mc_a[2]=='displace'){
+				if(mc_a[2]=='key'){//
 					all.stream_a.push(
 				'----------------------------------------------------------------------------',
-				'We use Arrows to manage stream , to move trough the void, there is a command!',
+				'All keys and numbers on your keyboard can be configured to call any command you asign to them.',
+				'The possibilities are endless!',
+				'Unasigned keys combinations will simply print on your screen for a while. You can clear them fast using',
+				'Backspace. Using Backspace will also clear stream lines from the screen! But dont worry you can',
+				'always print them back using your Arrow Keys.',
+				'-----------------------------------------------------------------------------'
+					);
+				}
+
+				if(mc_a[2]=='displace'){//
+					all.stream_a.push(
+				'----------------------------------------------------------------------------',
+				'We use Arrows to manage stream...  to move trough the void, there is a command!',
 				'.displace.left:[number of pixels]',
 				'.displace.right:[number of pixels]',
 				'.displace.up:[number of pixels]',
@@ -7186,13 +7218,37 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 				//'.displace.grid:[x]:[y]',
 				'Beware of going too far into the void or you might get disoriented...',
 				'Unless you go straight into one direction only..',
-				'Its hard to tell where you siting if you havent created any memory yet.',
+				'Its hard to tell where you are siting if you havent created any memory yet.',
 				'In Sunya, we use Waves to create memories, and to destroy them as well.',
 				'.. not all memories need to stay alive in here for ever--',
 				'----entry incomplete---',
 				'-----------------------------------------------------------------------------'
 					);
 				}
+				if(mc_a[2]=='wave'){//
+					all.stream_a.push(
+				'_____________________________________________________________________________',
+				'A Wave is a depiction of an entity s intention in time.',
+				'Calling a wave takes more or less time acording to the strength we want to pump into it.',
+				'After pumping, the wave becomes an Impulse and starts traveling inwards to the center.',
+				'If strong enough, it implodes and becomes a Pulse that will carry the intention of its origin point.',
+				'The command to call forth a Wave requires 4 parameters:',
+				'.wave:x:y:radius:strength',
+				'X and Y are coordinates to place the wave center, radius is the initial size of the wave and',
+				'strength determines how long will it take to manifest and how much will it be able to travel',
+				'trough the void.',
+				'_____________________________________________________________________________'
+					);
+				}
+
+				if(mc_a[2]=='husk'){//
+					all.stream_a.push(
+				'_____________________________________________________________________________',
+
+				'_____________________________________________________________________________'
+					);
+				}
+
 			/*
 				if(mc_a[2]=='speed'){
 					all.stream_a.push(
@@ -7210,25 +7266,26 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 					all.stream_a.push(
 				'________________________________________________________________________________________',
 				'Orbs are conveniently structured js objects which can be described as; vessels for memories.',
-				'Orbs can be organized to hold images, animations, texts, graphic effects and even',
-				'instructions to perform, using all these things in all kinds of ways.',
-				'Users can create orbs using commands.',
-				'This command is available only when user is on void stance.',
-				'.orb:[new orb name]',
-				'Creates a default memory vessel (orb) with any name. One atempt.',
-				'Watch out for letting go memories with no names...they might get lost in the void..',
-				'And they might come back...',
-				'.orb.in:[orb in json]',
-				'Accepts an orb in json notation to be imported back into Sunya',
-				'.orb.[orb name].out', 
-				'Sends a json text containning orb data structure to input box so user can copy and paste',
-				'somewhere else... like in some text editor.',
-				'.orb.[orb name].control',
-				'User tries to take control of named orb. One atempt.',
-				'Some users have tried many times...',
-				'Sending a control wave may have different effects on different orbs.',
-				'.orb.[orb name].history.clear',
-				'.orb.[orb name].destroy',
+				'Orbs can hold instructions for animations using image files, animated texts, audio snipets,',
+				'oscilators, and instructions to perform using all these things together in all kinds of ways!',
+				'To form a vessel, users need to find or create a husk. A husk is a bubble in the void which can',
+				'be infused with memories.',
+				'This command is available only when user is inside a husk.',
+				'.name:[new orb name]',
+				//'Creates a default memory vessel (orb) with any name. One atempt.',
+				//'Watch out for letting go memories with no names...they might get lost in the void..',
+				//'And they might come back...',
+				//'.orb.in:[orb in json]',
+				//'Accepts an orb in json notation to be imported back into Sunya',
+				//'.orb.[orb name].out', 
+				//'Sends a json text containning orb data structure to input box so user can copy and paste',
+				//'somewhere else... like in some text editor.',
+				//'.orb.[orb name].control',
+				//'User tries to take control of named orb. One atempt.',
+				//'Some users have tried many times...',
+				//'Sending a control wave may have different effects on different orbs.',
+				//'.orb.[orb name].history.clear',
+				//'.orb.[orb name].destroy',
 				'----entry incomplete---',
 				'_________________________________________________________________________________________'
 					);
@@ -7255,42 +7312,43 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 				'_____________________________________________________________________________',
 				'Use arrows on keyboard to scroll or hide the stream.',
 				'Left arrow shuts down the stream, Right arrow scrolls to last message.',
-				'Up and Down shows stream history.',
+				'Up and Down detachces and shows stream history.',
 				'_____________________________________________________________________________'
 					);
 				}
-				if(mc_a[2]=='type'){
+				if(mc_a[2]=='type'){//
 					all.stream_a.push(
 				'____________________________________________________________________________________',
 				'Sunya is always waiting for you to type in something.',
-				'Keys and numbers are maped in a special way. You can clear up the keys on the screen using',
+				'Keys and numbers are maped in a special way. Clear up fast the keys on the screen using',
 				'BACKSPACE',
 				'You can press Enter to type in normally as well, in a normal html input box.',
-				'Press Enter again to send your text to the mainstream. Or ESC if you want to go away in silence.',
-				'While on input box, you can press ESC to exit without sending the text.',
+				'Press Enter again to send your text to the mainstream. Or ESC if you want to go away in silence!',
+				'Yes, while on input box, you can press ESC to exit input box without sending the text.',
 				'Only void entities can see what you stream while on void stance. If you choose to broadcast',
 				'other entities online might see your stream of words as well.',
 				'.type:[text]',
 				'A special command that only takes one parameter which is a string that can',
-				'contain "." and ":" without having an effect on the instruction. We use it like this;',
+				'contain "." and ":" without having an effect on the command. We use it like this;',
 				'.type:[a string to appear on input] and gets instant focus. Try it out!',
 				'This command is useful to create specific shortcuts. Gotta go fast!',
 				'This command also is available from any stance and mode.',
-				'Type in .help.shortcuts to learn about the command shortcuts system.',
+				'Type in .help.shortcut to learn about the command shortcuts system.',
 				'____________________________________________________________________________________'
 					);
 				}
-				if(mc_a[2]=='shortcuts'){
+				if(mc_a[2]=='shortcut'){//
 					all.stream_a.push(
 				'___________________________________________________________________________________________________',
 				'Type in some key combination and then use the SPACEBAR key to freeze it.',
 				'You can now press ENTER to go into input box and type in a command and press ENTER again',
 				'Your key combination is now linked to the command.',
-				'Now press the key combination again. Congratulations, you just used a shorcut.',
+				'Now press the key combination again. Congratulations!, you just used a shorcut.',
 				'So keys can run commands. No need to type in the whole command ever again... unless--',
 				'You can do; .type:Something you want to see on input box instantly,', 
-				'and link that to a key. Have fun.',
+				'and link that to a key. Have fun!',
 				'To release a previously linked key, just press SPACEBAR , and then enter the key combination.',
+				'How cool is that?',
 				'You can also manage your buttons using the .button command macro. .help.button for more..',
 				'____________________________________________________________________________________________________'
 					);
@@ -8017,13 +8075,20 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 				//print out orb in json
 							var orb = all.find_ting(all.fleet_a, 'name', mc_a[2]);
 				//but first empty current img and audio files... problem here is i need to put these back again lol
-							//orb.current_img_file={}
-							//orb.current_audio_file={}
-							
+				//yeah this works
+							var c_i_f = orb.current_img_file;
+							var c_a_f = orb.current_audio_file;
+							orb.current_img_file={}
+							orb.current_audio_file={}
+
 							var txt = JSON.stringify(orb);
 							all.chat_on = true; chat_in.focus();
 							chat_in.style.display="inLine";
 							chat_in.value = txt;
+
+							orb.current_img_file=c_i_f;
+							orb.current_audio_file=c_a_f;
+
 							break
 							
 						case 'control':
@@ -8155,9 +8220,6 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 
 
 
-
-				//a command to place an Orb into a node core to become a scene orb ..? deprecat
-
 				//a command to send an Orb to another user? .. hmm maybe not... this doesnt sound right.
 				//orbs probly need to be a unique part of users and void entities.. we can already share so much, sharing
 				//whole orbs simply doesnt sound right nor neccesary.. it actually sounds wrong lol
@@ -8262,7 +8324,6 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 
 //EDIT animations using forms, texts  or files.
 
-/*
 //needs revision....
 //AUDIO , EDIT
 //.audio 
@@ -8276,9 +8337,9 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 					if(mc_a[2]!=undefined){
 						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
 						//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
-						var l = c_orb.audio.length;
+						var l = c_o.audio.length;
 						while(l--){
-							var a = c_orb.audio[l];
+							var a = c_o.audio[l];
 							if(a.name==mc_a[2]){
 								if(mc_a[3]=='out'){
 									var txt = JSON.stringify(a);
@@ -8288,8 +8349,8 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 									break
 								}
 								if(mc_a[3]=='delete'){
-									var index = c_orb.audio.indexOf(a);
-									c_orb.audio.splice(index,1);
+									var index = c_o.audio.indexOf(a);
+									c_o.audio.splice(index,1);
 					all.stream_a.push(a.name+" has been deleted"); all.screen_log();
 									break
 								}
@@ -8302,22 +8363,22 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 					}
 					//ask here if there is no audio file loaded. 
 					//dont allow audio edit if there isnt
-					if(mcp_a[1]!=undefined&&c_orb.audio_access.length==undefined){
+					if(mcp_a[1]!=undefined&&c_o.audio_access.length==undefined){
 						var noaccess = true;
 					}
-					if(mcp_a[1]!=undefined&&c_orb.audio_access.length!=undefined){
+					if(mcp_a[1]!=undefined&&c_o.audio_access.length!=undefined){
 						var proceed = true;
 					}
 					if(purge){
-						c_orb.audio= [];
+						c_o.audio= [];
 						all.stream_a.push('audio edits container has been cleared..');
 						all.screen_log();
 					}
 					if(list){
 					//list audio anims and a brief description, which event is tied to etc
-						var l = c_orb.audio.length;
+						var l = c_o.audio.length;
 						while(l--){
-							//var aud = c_orb.audio[l];
+							//var aud = c_o.audio[l];
 							//all.stream_a.push(aud.name+" .. audio snip... ");
 							//all.screen_log();
 						}			
@@ -8327,33 +8388,34 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 						all.screen_log();
 					}
 					if(noaccess){
-						all.stream_a.push("Cant animate audio without an audio file loaded");
+						all.stream_a.push("Cant create audio snipet without an audio file loaded");
 						all.screen_log();
 					}
 					if(proceed){
 						//var name_ok = all.c_unl(mcp_a[1],'audio');
 						//if(name_ok){}else{}
-						c_orb.inner_mode=false; c_orb.edit_audio_mode = true;  all.user.init = true;
+						c_o.inner_mode=false; c_o.edit_audio_mode = true;  
+						uinit = {transition:'orb edit',stancefrom:c_o};
+
 		//this works because audio anim is just an object not an array
-						var named_aud = all.find_ting(c_orb.audio, "name", mcp_a[1]);
+						var named_aud = all.find_ting(c_o.audio, "name", mcp_a[1]);
 						if(named_aud){
-							c_orb.op1 = c_orb.audio.indexOf(named_aud); 
+							c_o.op1 = c_o.audio.indexOf(named_aud); 
 							all.stream_a.push("Recalling...   " + mcp_a[1]);
 							all.screen_log();
 						}else{	
 							var a = {};
 							a.name = mcp_a[1];
-							a.audio_file_name= c_orb.current_audio_file.name;
+							a.audio_file_name= c_o.current_audio_file.name;
 							a.gain=0.07; a.fade=0.3;
-							a.start = 0; a.end = c_orb.audio_access.duration;
-							c_orb.audio.push(a);
+							a.start = 0; a.end = c_o.audio_access.duration;
+							c_o.audio.push(a);
 							
-							c_orb.op1 = c_orb.audio.length-1;
+							c_o.op1 = c_o.audio.length-1;
 							all.stream_a.push("Editing...audio..  " +mcp_a[1]); all.screen_log();
 						}
 					}
 				}//audio
-*/
 
 //IMG, EDIT
 //.img
@@ -8569,11 +8631,13 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 						var lin = a[(i-1)];
 						//var l_txt = a[(i-1)].txt;
 						var print = all.txt_s_new(l0.name+"_line"+i+c_o.name+'__r');
+						//var print = all.txt_s_new(c_o.name+'__r'+l0.name+"_line"+i);
 						//var ceX=-U.x+window.innerWidth/2; var ceY=-U.y+window.innerHeight/2;//grid zero
+						print.showcase=true; //
 						print.tx=ceX; print.ty=ceY;
 						print.x=l0.Gx; print.y=l0.Gy;
 						print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
-						print.font=l0.font;
+						print.font=l0.font; print.layer=l0.Glayer;
 						print.is="c_txt"; print.txt=lin.txt;
 						print.y=print.y+spacer; //next line y position difference
 						print.display=lin.display;
@@ -8591,11 +8655,14 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 						var s = all.anim_a[al];
 						if(s.name){
 							var name = s.name.substr(0, cl_pl);
+							//var name = s.name.substr(-cl_pl);
 					//this will fail someday..
 							if(name == l0.name+'_line'){ //so it removes all lines
 								//s.is="rm"; 
-								var index = all.anim_a.indexOf(s); 
-								all.anim_a.splice(index,1);
+								if(s.showcase){
+									var index = all.anim_a.indexOf(s); 
+									all.anim_a.splice(index,1);
+								}
 							}
 						}
 					}//clears
@@ -8632,13 +8699,13 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 					if(list){
 						//list texts and a brief description. number of lines, which event is tied to etc
 						var l = c_o.txt.length;
-						all.stream_a.push("_________________________","TXT EDITS");
+						all.stream_a.push("-----------------------------","TXT EDITS");
 						while(l--){
 							var anim = c_o.txt[l];
 							all.stream_a.push(anim[0].name+" .. and some other data... ");
 							//all.screen_log();
 						}			
-						all.stream_a.push("_____________________________");
+						all.stream_a.push("-----------------------------");
 						all.screen_log();
 					}
 					if(noname){all.stream_a.push("Please asign a name for this text."); all.screen_log();}
@@ -8672,9 +8739,10 @@ all.c_com = function(c_o){ //the parameter we have is an orb or a husk or undefi
 							//var ceX=-U.x+window.innerWidth/2; var ceY=-U.y+window.innerHeight/2;//grid zero
 //ok we are removing "Global" parameters , and we are removing 'normal'?... ehhhhh not so sure about that
 							an.Gx=0; an.Gy=0;
-							an.Gr=200; an.Gg=200; an.Gb=200; an.Ga=1; an.Gt=-1;
+							an.Gr=200; an.Gg=200; an.Gb=200; an.Ga=1; an.Gt=-1;//Gt?
+							an.Glayer=2;
 							an.name=mcp_a[1];
-							an.spacer=15; an.font='10px Courier New';
+							an.spacer=15; an.font='15px Courier New';
 							an.open=true;
 							an.running='FALSE';
 							an.display='normal';
@@ -9363,6 +9431,7 @@ interacting should not be displayed on user screen.
 //helpful to allow instances to clear up context and
 //create a new one once and then so it doesnt carry gigantic numbers to create
 //timestamps. might be good for optimization
+//this should not be a function..
 all.audioser = function(){
 	var a_ctx = new AudioContext();
 	return a_ctx
@@ -10636,7 +10705,9 @@ function update(){
 
 //checks states inside anim_a .animation func comes after logic updates
 	//one clear. always clear the part of the canvas the user is looking
+	if(kaoz){}else{
 	ctx0.clearRect((-U.x),(-U.y),window.innerWidth, window.innerHeight);
+	}
 	all.anim_func();
 }//updates
 
@@ -10704,7 +10775,6 @@ all.sunya_init = function(device, tutorial){
 	}//touch interface
 
 
-
 	//here goes for all devices. we are sending kdown and kup on phones as well for now
 	window.addEventListener('keydown', kdown);
 	window.addEventListener('keyup', kup);
@@ -10725,6 +10795,1159 @@ all.sunya_init = function(device, tutorial){
 	kfeed.r=220; kfeed.g=220; kfeed.b=220; kfeed.a=0.8; kfeed.display='normal';
 
 	all.anim_a.push(pupil, elid2, elid1, kfeed);
+
+//if tutorial..
+//For now, i l just create Tools here because i dont want to load it every time i work on it..
+//Create a vessel for Tools first memory
+//vessel
+ 	var id = Date.now();
+	var fv =
+{ 
+	is: "c_circle", name: id+'___vessel', x: 500, y: 200, radius: 70, inside: "filled", tx: 0, ty: 0,
+	r: 0, g: 4, b: 233, a: 0.7, layer: 0, loop: false, run: true, s: "circle", rt: -1, t: -1, display: "custom",
+	creator: "Kaozzai", imp_date: id, charge: 90, chargeq: 57, se: "inward", form: "vessel",
+	husk_date: id, intensity: 1, limitrad: 334, vessel_date: id , u_d: [], 
+	custom_a: [
+		[ 255, "r", 255, "g", 255, "b" ],
+		[ 176, "r", 215, "g", 235, "b" ],
+		[ 91, "r", 157, "g", 237, "b" ],
+		[ 0, "r", 4, "g", 233, "b" ],
+		[ 97, "r", 28, "g", 188, "b" ],
+		[ 138, "r", 12, "g", 152, "b", 0.7, "a" ],
+		[ 255, "r", 10, "g", 6, "b" ],
+		[ 255, "r", 152, "g", 1, "b" ],
+		[ 255, "r", 221, "g", 38, "b" ],
+		[ 163, "r", 238, "g", 4, "b" ],
+		[ 127, "r", 224, "g", 191, "b" ]
+	]
+}
+	all.anim_a.push(fv);
+
+//field
+	var ff =
+{
+	is: "f", name: id+"___atfield", x: 500, y: 200, radius: 364, inside: "empty", tx: 0,
+	ty: 0, r: 220, g: 220, b: 220, a: 1, layer: 0, loop: false, run: true, s: "circle", rt: -1,
+	t: -1, display: "normal",
+	custom_a: [
+	[176,"r",215,"g",235,"b"],[91,"r",157,"g",237,"b"],[0,"r",4,"g",233,"b"],
+	[97,"r",28,"g",188,"b"],[138,"r",12,"g",152,"b"],[255,"r",10,"g",6,"b"],[255,"r",152,"g",1,"b"],
+	[255,"r",221,"g",38,"b"],[163,"r",238,"g",4,"b"],[127,"r",224,"g",191,"b"]
+	],
+	u_d: [],
+	limitrad: 364, se: "grow", vessel_date: id
+}
+	all.anim_a.push(ff);
+
+//orb
+	var fo = 
+{
+	birth_date: 1689991205056, name: "Tools", form: "vessel", primY: 200, primX: 500,
+	limitrad: 356, limitdis: 656, imp_date: id, husk_date: id, vessel_date: id,
+	img_access: {}, current_img_file: {},
+	inner_mode: true, radiant_mode: false, edit_img_mode: false, edit_txt_mode: false, edit_circle_mode: false,
+	edit_rect_mode: false, edit_audio_mode: false, edit_osc_mode: false, vox_mode: false,
+	op1: 0, op2: 0, op3: 0, op4: 0, op5: 0, op6: 0,
+	C: {},
+	img: [],
+	txt: [
+        [
+            {
+                Gx: -661,
+                Gy: -170,
+                Gr: 200,
+                Gg: 200,
+                Gb: 200,
+                Ga: 1,
+                Gt: -1,
+                name: "Main",
+                spacer: 17,
+                font: "12px Courier New",
+                open: false,
+                running: "FALSE",
+                display: "normal",
+                custom_a: [],
+                t: -1,
+                s: "txt",
+                txt: "/resource"
+            },
+            {
+                txt: "/link//img(veg01)(ballz)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/logic(switchdown)(0)(OFFk)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/logic(switchup)(1)(ONk)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/logic(button)(0)(bk)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/logic(neutral)(2)(nk)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/stream",
+                display: "normal",
+                custom_a: []
+            }
+        ],
+        [
+            {
+                Gx: -360,
+                Gy: -170,
+                Gr: 200,
+                Gg: 200,
+                Gb: 200,
+                Ga: 1,
+                Gt: -1,
+                name: "streamscript",
+                spacer: 17,
+                font: "12px Courier New",
+                open: false,
+                running: "FALSE",
+                display: "normal",
+                custom_a: [],
+                t: -1,
+                s: "txt",
+                txt: "/listen"
+            },
+            {
+                txt: "[R]//name=#Main{main}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{main}[R]//cast(human)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/act",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(bk)(switch)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//stream(changer)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[changer]//streams>>[switch]//num",
+                display: "normal",
+                custom_a: []
+            }
+        ],
+        [
+            {
+                Gx: -90,
+                Gy: -165,
+                Gr: 200,
+                Gg: 200,
+                Gb: 200,
+                Ga: 1,
+                Gt: -1,
+                name: "nothing",
+                spacer: 17,
+                font: "12px Courier New",
+                open: false,
+                running: "FALSE",
+                display: "normal",
+                custom_a: [],
+                t: -1,
+                s: "txt",
+                txt: "/listen"
+            },
+            {
+                txt: "[R]//name=#Main{main}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{main}[R]//cast(human)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/act",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(OFFk)(OFF)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[]",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/end",
+                display: "normal",
+                custom_a: []
+            }
+        ],
+        [
+            {
+                Gx: 211,
+                Gy: -155,
+                Gr: 200,
+                Gg: 200,
+                Gb: 200,
+                Ga: 1,
+                Gt: -1,
+                name: "MainL",
+                spacer: 17,
+                font: "12px Courier New",
+                open: false,
+                running: "FALSE",
+                display: "normal",
+                custom_a: [],
+                t: -1,
+                s: "txt",
+                txt: "/listen"
+            },
+            {
+                txt: "[R]//name=#Main{main}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{main}[R]//cast(human)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/act",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(ONk)(ON)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(OFFk)(OFF)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(bk)(switch)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(nk)(init)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//link(ballz)(vege)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[switch]//num=[ON]//num{v1}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[switch]//num=[OFF]//num{v0}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[switch]//num=[init]//num{v2}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{v1}[vege]//runon",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{v0}[vege]//runoff",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{v2}[OFF]//num>>[vege]//time",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{v2}[ON]//num>>[switch]//num",
+                display: "normal",
+                custom_a: []
+            }
+        ],
+        [
+            {
+                Gx: -660,
+                Gy: 22,
+                Gr: 200,
+                Gg: 200,
+                Gb: 200,
+                Ga: 1,
+                Gt: -1,
+                name: "sON",
+                spacer: 19,
+                font: "14px Courier New",
+                open: false,
+                running: "FALSE",
+                display: "normal",
+                custom_a: [],
+                t: -1,
+                s: "txt",
+                txt: "/listen"
+            },
+            {
+                txt: "[R]//name=#Main{main}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{main}[R]//cast(human)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/act",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(bk)(switch)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(ONk)(ON)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[ON]//num>>[switch]//num",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/end",
+                display: "normal",
+                custom_a: []
+            }
+        ],
+        [
+            {
+                Gx: -360,
+                Gy: 27,
+                Gr: 200,
+                Gg: 200,
+                Gb: 200,
+                Ga: 1,
+                Gt: -1,
+                name: "sOFF",
+                spacer: 17,
+                font: "12px Courier New",
+                open: false,
+                running: "FALSE",
+                display: "normal",
+                custom_a: [],
+                t: -1,
+                s: "txt",
+                txt: "/listen"
+            },
+            {
+                txt: "[R]//name=#Main{main}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{main}[R]//cast(human)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/act",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(bk)(switch)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(OFFk)(OFF)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[OFF]//num>>[switch]//num",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/end",
+                display: "normal",
+                custom_a: []
+            }
+        ],
+        [
+            {
+                Gx: -99,
+                Gy: 29,
+                Gr: 200,
+                Gg: 200,
+                Gb: 200,
+                Ga: 1,
+                Gt: -1,
+                name: "sinit",
+                spacer: 17,
+                font: "12px Courier New",
+                open: false,
+                running: "FALSE",
+                display: "normal",
+                custom_a: [],
+                t: -1,
+                s: "txt",
+                txt: "/listen"
+            },
+            {
+                txt: "[R]//name=#Main{main}",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "{main}[R]//cast(human)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/act",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(bk)(switch)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[human]//logic(nk)(init)",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "[init]//num>>[switch]//num",
+                display: "normal",
+                custom_a: []
+            },
+            {
+                txt: "/end",
+                display: "normal",
+                custom_a: []
+            }
+        ]
+    ],
+    audio: [],
+    rect: [],
+    circle: [],
+    osc: [
+        {
+            name: "osc1",
+            freq: 579,
+            gain: 0.07,
+            type: "sine",
+            fade: 0.3,
+            on_a: [
+                3.541333333333333
+            ]
+        },
+        {
+            name: "osc2",
+            freq: 1478,
+            gain: 0.05,
+            type: "sine",
+            fade: 0.3,
+            on_a: [
+                4.181333333333333
+            ]
+        },
+        {
+            name: "osc3",
+            freq: 406,
+            gain: 0.08,
+            type: "sine",
+            fade: 0.3,
+            on_a: [
+                4.693333333333333
+            ]
+        },
+        {
+            name: "osc4",
+            freq: 435,
+            gain: 0.07,
+            type: "sine",
+            fade: 0.3,
+            "on_a": []
+        }
+    ],
+    rec: [
+        "off"
+    ],
+    records: [],
+    inner_ks: [
+        {
+            name: "dis up",
+            key: "W",
+            com1: ".displace.up:100"
+        },
+        {
+            name: "dis left",
+            key: "A",
+            com1: ".displace.left:100"
+        },
+        {
+            name: "dis down",
+            key: "S",
+            com1: ".displace.down:100"
+        },
+        {
+            name: "dis right",
+            key: "D",
+            com1: ".displace.right:100"
+        },
+        {
+            name: "load img",
+            com1: ".load.img",
+            com2: ".type:",
+            X: 195,
+            Y: 35,
+            persist: "desist",
+            key: "UPI"
+        },
+        {
+            name: "img",
+            key:"IMG",
+            com1: ".type:.img",
+            com2: ".type:",
+            X: 238,
+            Y: 58,
+            persist: "desist"
+        },
+        {
+            name: "txt",
+            key:"TXT",
+            com1: ".type:.txt",
+            com2: ".txt.list",
+            X: 375,
+            Y: 50,
+            persist: "desist"
+        },
+        {
+            name: "osc",
+            key:"OSC",
+            com1: ".type:.osc",
+            com2: ".osc.list",
+            X: 232,
+            Y: 134,
+            persist: "desist"
+        },
+        {
+            name: "exit",
+            com1: ".signal:exit",
+            com2: ".type:",
+            X: 32,
+            Y: 28,
+            persist: "desist",
+            key: "Q"
+        },
+        {
+            name: "load audio",
+            key:"UPA",
+            com1: ".load.audio",
+            com2: ".type:",
+            X: 65,
+            Y: 107,
+            persist: "desist"
+        },
+        {
+            name: "audio",
+            key:"AUD",
+            com1: ".type:.audio",
+            com2: ".type:",
+            X: 105,
+            Y: 136,
+            persist: "desist"
+        },
+        {
+            name: "perform",
+            com1: ".perform",
+            com2: ".type:",
+            X: 507,
+            Y: 27,
+            persist: "desist",
+            key: "PERFORM"
+        }
+    ],
+    radiant_ks: [
+        {
+            name: "PLAY",
+            key: "P",
+            com1: ".type:.play:"
+        }
+    ],
+    img_ks: [
+        {
+            name: "dis up",
+            key: "LLW",
+            com1: ".displace.up:200"
+        },
+        {
+            name: "dis left",
+            key: "LLA",
+            com1: ".displace.left:600"
+        },
+        {
+            name: "dis down",
+            key: "LLS",
+            com1: ".displace.down:200"
+        },
+        {
+            name: "dis right",
+            key: "LLD",
+            com1: ".displace.right:600"
+        },
+        {
+            name: "+",
+            com1: ".signal:center",
+            com2: ".type:",
+            X: 300,
+            Y: 143,
+            persist: "persist",
+            key: "Z"
+        },
+        {
+            name: ">",
+            com1: ".signal:next",
+            com2: ".type:",
+            X: 111,
+            Y: 241,
+            persist: "persist",
+            key: "N"
+        },
+        {
+            name: "<",
+            com1: ".signal:back",
+            com2: ".type:",
+            X: 43,
+            Y: 239,
+            persist: "persist",
+            key: "B"
+        },
+        {
+            name: "RUN",
+            com1: ".signal:run",
+            com2: ".type:",
+            X: 258,
+            Y: 250,
+            persist: "desist",
+            key: "R"
+        },
+        {
+            name: "N",
+            com1: ".signal:up_1",
+            com2: ".type:.signal:up_",
+            X: 86,
+            Y: 80,
+            persist: "persist",
+            key: "W"
+        },
+        {
+            name: "S",
+            com1: ".signal:down_1",
+            com2: ".type:.signal:down_",
+            X: 90,
+            Y: 164,
+            persist: "persist",
+            key: "S"
+        },
+        {
+            name: "E",
+            com1: ".signal:left_1",
+            com2: ".type:.signal:left_",
+            X: 51,
+            Y: 123,
+            persist: "persist",
+            key: "A"
+        },
+        {
+            name: "W",
+            com1: ".signal:right_1",
+            com2: ".type:.signal:right_",
+            X: 130,
+            Y: 123,
+            persist: "persist",
+            key: "D"
+        },
+        {
+            name: "C",
+            com1: ".signal:capture",
+            com2: ".type:",
+            X: 170,
+            Y: 215,
+            persist: "desist",
+            key: "C"
+        },
+        {
+            name: "V",
+            com1: ".signal:define",
+            com2: ".type:",
+            X: 206,
+            Y: 246,
+            persist: "desist",
+            key: "V"
+        },
+        {
+            name: "TIME",
+            com1: ".type:.signal:time_",
+            com2: ".type:",
+            X: 222,
+            Y: 44,
+            persist: "desist",
+            key: "T"
+        },
+        {
+            name: "EXIT",
+            com1: ".signal:exit",
+            com2: ".type:",
+            X: 28,
+            Y: 23,
+            persist: "desist",
+            key: "Q"
+        },
+        {
+            name: "W+",
+            com1: ".signal:width_+1",
+            com2: ".type:.signal:width_+",
+            X: 489,
+            Y: 82,
+            persist: "persist",
+            key: "O"
+        },
+        {
+            name: "W-",
+            com1: ".signal:width_-1",
+            com2: ".type:.signal:width_-",
+            X: 418,
+            Y: 79,
+            persist: "persist",
+            key: "K"
+        },
+        {
+            name: "H+",
+            com1: ".signal:height_+1",
+            com2: ".type:.signal:height_+",
+            X: 449,
+            Y: 123,
+            persist: "persist",
+            key: "I"
+        },
+        {
+            name: "H-",
+            com1: ".signal:height_-1",
+            com2: ".type:.signal:height_-",
+            X: 456,
+            Y: 40,
+            persist: "persist",
+            key: "J"
+        },
+        {
+            key: "LD",
+            com1: ".signal:right_100"
+        },
+        {
+            key: "LA",
+            com1: ".signal:left_100"
+        },
+        {
+            key: "LS",
+            com1: ".signal:down_100"
+        },
+        {
+            key: "LW",
+            com1: ".signal:up_100"
+        }
+    ],
+    txt_ks: [
+        {
+            name: "next",
+            com1: ".signal:next",
+            com2: ".type:",
+            X: 205,
+            Y: 230,
+            persist: "persist",
+            key: "N"
+        },
+        {
+            name: "back",
+            com1: ".signal:back",
+            com2: ".type:",
+            X: 178,
+            Y: 168,
+            persist: "persist",
+            key: "B"
+        },
+        {
+            name: "size up",
+            com1: ".signal:size_+",
+            com2: ".type:",
+            X: 522,
+            Y: 58,
+            persist: "persist",
+            key: "O"
+        },
+        {
+            name: "size down",
+            com1: ".signal:size_-",
+            com2: ".type:",
+            X: 490,
+            Y: 116,
+            persist: "persist",
+            key: "K"
+        },
+        {
+            name: "change",
+            com1: ".signal:change",
+            com2: ".type:",
+            X: 327,
+            Y: 206,
+            persist: "desist",
+            key: "C"
+        },
+        {
+            name: "remove",
+            com1: ".signal:remove",
+            com2: ".type:",
+            X: 381,
+            Y: 242,
+            persist: "persist",
+            key: "X"
+        },
+        {
+            name: "exit",
+            com1: ".signal:exit",
+            com2: ".type:",
+            X: 17,
+            Y: 21,
+            persist: "desist",
+            key: "Q"
+        },
+        {
+            name: "red",
+            com1: ".type:.signal:r_",
+            com2: ".type:",
+            X: 340,
+            Y: 36,
+            persist: "desist",
+            key: "LR"
+        },
+        {
+            name: "green",
+            com1: ".type:.signal:g_",
+            com2: ".type:",
+            X: 386,
+            Y: 53,
+            persist: "desist",
+            key: "LG"
+        },
+        {
+            name: "blue",
+            com1: ".type:.signal:b_",
+            com2: ".type:",
+            X: 436,
+            Y: 79,
+            persist: "desist",
+            key: "LB"
+        },
+        {
+            name: "up",
+            com1: ".signal:up_1",
+            com2: ".type:.signal:up_",
+            X: 80,
+            Y: 46,
+            persist: "persist",
+            key: "W"
+        },
+        {
+            name: "down",
+            com1: ".signal:down_1",
+            com2: ".type:.signal:down_",
+            X: 72,
+            Y: 137,
+            persist: "persist",
+            key: "S"
+        },
+        {
+            name: "left",
+            com1: ".signal:left_1",
+            com2: ".type:.signal:left_",
+            X: 40,
+            Y: 94,
+            persist: "persist",
+            key: "A"
+        },
+        {
+            name: "right",
+            com1: ".signal:right_1",
+            com2: ".type:.signal:right_",
+            X: 121,
+            Y: 97,
+            persist: "persist",
+            key: "D"
+        },
+        {
+            name: "next txt",
+            com1: ".signal:e_+",
+            com2: ".type:",
+            X: 499,
+            Y: 220,
+            persist: "persist",
+            key: "M"
+        },
+        {
+            name: "prev txt",
+            com1: ".signal:e_-",
+            com2: ".type:",
+            X: 71,
+            Y: 216,
+            persist: "persist",
+            key: "Z"
+        },
+        {
+            name: "LW",
+            key: "LW",
+            com1: ".signal:up_30"
+        },
+        {
+            name: "LA",
+            key: "LA",
+            com1: ".signal:left_30"
+        },
+        {
+            name: "LS",
+            key: "LS",
+            com1: ".signal:down_30"
+        },
+        {
+            name: "LD",
+            key: "LD",
+            com1: ".signal:right_30"
+        },
+        {
+            name: "I",
+            key: "I",
+            com1: ".type:.signal:a_"
+        },
+        {
+            name: "T",
+            key: "T",
+            com1: ".type:.signal:custom_"
+        },
+        {
+            name: "Y",
+            key: "Y",
+            com1: ".type:.signal:beat_"
+        }
+    ],
+    osc_ks: [
+        {
+            key: "R",
+            name: "run",
+            com1: ".signal:run",
+            com2: ".type:",
+            X: 184,
+            Y: 230,
+            persist: "persist"
+        },
+        {
+            key: "I",
+            name: "hz up",
+            com1: ".signal:hz up_1",
+            com2: ".type:.signal:hz up_",
+            X: 140,
+            Y: 37,
+            persist: "persist"
+        },
+        {
+            key: "J",
+            name: "hz down",
+            com1: ".signal:hz down_1",
+            com2: ".type:.signal:hz down_",
+            X: 139,
+            Y: 89,
+            persist: "persist"
+        },
+        {
+            name: "square",
+            com1: ".signal:square",
+            com2: ".type:",
+            X: 463,
+            Y: 112,
+            persist: "persist"
+        },
+        {
+            name: "sine",
+            com1: ".signal:sine",
+            com2: ".type:",
+            X: 420,
+            Y: 82,
+            persist: "persist"
+        },
+        {
+            name: "gain up",
+            com1: ".signal:gain_+",
+            com2: ".type:",
+            X: 351,
+            Y: 204,
+            persist: "persist"
+        },
+        {
+            name: "gain down",
+            com1: ".signal:gain_-",
+            com2: ".type:",
+            X: 351,
+            Y: 255,
+            persist: "persist"
+        },
+        {
+            name: "exit",
+            com1: ".signal:exit",
+            com2: ".type:",
+            X: 20,
+            Y: 20,
+            persist: "desist"
+        },
+        {
+            name: "next",
+            com1: ".signal:next",
+            com2: ".type:",
+            X: 543,
+            Y: 79,
+            persist: "persist"
+        },
+        {
+            name: "back",
+            com1: ".signal:back",
+            com2: ".type:",
+            X: 30,
+            Y: 89,
+            persist: "persist"
+        }
+    ],
+    vox_ks: [
+        {
+            name: "01",
+            com1: ".type:",
+            com2: ".type:",
+            X: 199,
+            Y: 110,
+            persist: "desist",
+            asigned_osc: "osc1"
+        },
+        {
+            name: "02",
+            com1: ".type:",
+            com2: ".type:",
+            X: 368,
+            Y: 83,
+            persist: "desist",
+            asigned_osc: "osc2"
+        },
+        {
+            name: "exit",
+            com1: ".signal:exit",
+            com2: ".type:",
+            X: 38,
+            Y: 31,
+            persist: "desist"
+        },
+        {
+            name: "03",
+            com1: ".type:",
+            com2: ".type:",
+            X: 469,
+            Y: 131,
+            persist: "persist",
+            asigned_osc: "osc3"
+        }
+    ],
+    audio_ks: [
+        {
+            name: "run",
+            com1: ".signal:run",
+            com2: ".type:",
+            X: 370,
+            Y: 116,
+            persist: "desist"
+        },
+        {
+            name: "exit",
+            key: "Q",
+            com1: ".signal:exit",
+            com2: ".type:",
+            X: 34,
+            Y: 27,
+            persist: "desist"
+        }
+    ],
+    audio_access: {},
+    actors: [],
+    current_audio_file: {},
+    stream: {
+        name: "__default",
+        r: 220,
+        g: 220,
+        b: 220,
+        a: 0.6,
+        x: 6,
+        y: 366,
+        limit: 15,
+        font: "px Courier New",
+        size: 14,
+        spacer: -15,
+        align: "left",
+        freeze: false,
+        up: false,
+        down: false,
+        left: false,
+        right: false,
+        c_last: 33,
+        history: []
+    }
+
+}
+	all.fleet_a.push(fo);
 
 //users should be able to ask for audio files from server on demand. the shared
 //folder allows for easy access. just use url as source
