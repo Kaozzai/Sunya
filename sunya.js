@@ -72,7 +72,6 @@ var disMode = 'grid';	 //'wheel'							// /disMode
 //local files
 var LImg = []; //an array to hold all buffered images					// /files
 var LAudio = []; //holds all local loaded audio
-var Skeys = [];										// /skeys
 var VoidID = Date.now();//sunya initialization time					//
 //....so maybe just make one const U and make all these the entity properties
 //var dB = -1; //data beat								// /dB
@@ -97,22 +96,16 @@ var dfont = 'px Courier New';								// /font
 var dfontSize = 18;
 
 //Entity shortcuts. backspace memory interface needs update.
-const EkeyS = [
+var EkeyS = [										// /keys
 	//some temporal shorts for developing..
 
-//its too easy to repeat commands with 1 key. might be a feature... but its repeating also on 2 symbols combination too easily
-//as well. Its bad we dont want that
-/*
-orb1
-~/orbs>>$/text,$/text/current
-*/
-	{name:"o1", key:"o1", com1:"@Roy,Roy/name>>~/stance"},
+	{name:"o1", key:"o1", com1:"@Roy<>Roy/name>>~/stance"},
 	{name:"o2", key:"o2", com1:"@Carl"},
 	{name:"o3", key:"o3", com1:"@Jupiter"},
 //so iw as thinkin Jupiter, maybe you dont want to do text and thats cool babe. xD . Jupiter you are not real btw 
 
-	{name:"m", key:"m", com1:"+>>~/stance,~/stance>>Carl/text"},//'+>>oO/text/cn,oO/text/current>>~/stance'
-	{name:"z", key:"z", com1:"->>~/stance,~/stance>>Carl/text"},
+	{name:"m", key:"m", com1:"+>>~/stance<>~/stance>>Carl/text"},//'+>>oO/text/cn,oO/text/current>>~/stance'
+	{name:"z", key:"z", com1:"->>~/stance<>~/stance>>Carl/text"},
 
 	{name:"s1", key:"s1", com1:'Jupiter/text/1>>~/gspeed'},
 	{name:"s2", key:"s2", com1:'Jupiter/text/2>>~/gspeed'},
@@ -125,10 +118,14 @@ orb1
 //Also , the sleep command. idle.. sleep[number] . maybe another symbol.. &? <<100  .12.12 .. what if ->>$/script/cn
 /*
 so we can create a script that listen to the names of new orbs created and when a specific name matches it processes it in a specific
-way 	
+way . embed circle form to Jin when created, and call run on a script to process Jin
+circleform>>Jin,#once>>JinProcess/script/run
+
+OK we need a command to delete an orb.. am strugling with this one.. because it doesnt feel right to be able to woosh an orb like that
+somehow.. 
 */
 
-	{name:"coml", key:"com1", com1:'$/text/current>>~/comline'},
+	{name:"coml", key:"coml", com1:'$/text/current>>~/comline'},
 	{name:"inl", key:"inl", com1:'$/text/current>>~/inline'},
 
 //!!!!!!!! interesting. Having caps keys allow the possibility to lock the key on repeat when we let go shift. To remove from key_d
@@ -618,15 +615,19 @@ const Mirror = function(rsout,sm,layer){
 
 // -- DATA CONTROL . SUNYA FUNCTIONS
 
-//PEAK
-//ANIMF
-//We need to build the escence of animf here so it can be called right here... wait no we dont call it here, we call on entity updates
-//and entity updates pushes the state into draw cue. so the state is far much more eficient now ok? 
-//So pretty much all Graphics can live anywhere we want we just need these to be objects to be iterated and asked to animF
+
 //
-//animF pretty much enlivens graphic states.. animFrames
-//we need a new function to enliven statements, data lines running. orb.lines. it needs to
-//count using /orb/L and /orb/run to determine what to do with lines . We also want to update lines beats since we are here..
+//
+const KLTObj = function(kpair){
+	var kobj = {};
+	for (var i = 0; i <= kpair.length-2; i+=2) {
+		var p = kpair[i]; var v = kpair[i+1];
+		kobj[p] = v;
+	}
+	console.log(kobj);
+	return kobj
+}
+
 
 //PEAK
 //BEAT UP
@@ -1450,7 +1451,9 @@ const kdown = function(ev){
 			if(all.key_d.length>1){}else{
 				//here, k is the problem. we need to specify that only 1 letter k should be able to be repeated
 				//!!!!!!!!!!!!!!!!! solved. nice. good for now
-				if(key_short.key.length>1){Entry=key_short.com1;}else{
+				if(key_short.key.length>1){//multi letter keys
+					Entry=key_short.com1;
+				}else{//single letter keys
 					all.key_d.push({k:ev.key , ins:'com', str:key_short.com1});
 				}
 			}
@@ -1804,6 +1807,7 @@ const comA = function(S,C){
 				var lit = RS[0].substr(1); var litn = parseFloat(lit);
 				var nan = isNaN(litn);
 				if(nan){RSout.push(lit);}else{RSout.push(litn);}
+				//console.log(RSout[0]);
 			}		
 
 //now we also want to check for key commands . commands that dont require to know stance. displacements, edit commands etc..
@@ -1875,8 +1879,8 @@ const comA = function(S,C){
 				if(o){
 					var RSout=[
 						o.name+'/name', o.name+'/gspeed', o.name+'/wspeed', o.name+'/in', 
-						o.name+'/out', o.name+'/x', o.name+'/y', o.name+'/angle',
-						o.name+'/elis'
+						o.name+'/out', o.name+'/x', o.name+'/y', o.name+'/angle'
+						//o.name+'/elis'
 					];
 					if(o.text){RSout.push(o.name+'/text');}
 					if(o.script){RSout.push(o.name+'/script');}
@@ -1898,8 +1902,6 @@ const comA = function(S,C){
 	}
 
 */
-
-
 
 		}//key commands with no '/' on left side
 
@@ -2538,7 +2540,7 @@ const swKEnt = function(k,po,op){
 					nba.push(rsob);
 				}
 				dsignat = nba;
-				return RSout;
+				return RSout;//?
 			}else{ 
 				var dsi = [];
 				for (var i = 0; i <= dsignat.length-1; i++) {
@@ -2548,6 +2550,38 @@ const swKEnt = function(k,po,op){
 				return dsi;
 			}
 			break
+		case 'keys':
+			if(op){
+//if op, use op[0] we expect a single line.. or a multi line.. so skeys just like other containers should be able to take conk to
+//ask for a specific line, or an option to add single liner without clearing all other keys. but this sinthax here SHOULD clear all
+//and just dump in what we are feeding it on op. we need to turn key lines into actual keys obj first.
+				//loop for op
+				//console.log(op);
+				EkeyS = [];
+				for (var i = 0; i <= op.length-1; i++) {
+					var sk = op[i];
+					//turn key lines into obj
+					var ska = sk.split(',');
+					var kobj = KLTObj(ska);
+					EkeyS.push(kobj);
+				}
+				o.o = op;
+				return op
+			}
+			var SkS = [];
+			//loop for EkeyS
+			for (var i = 0; i <= EkeyS.length-1; i++) {
+				var sk = EkeyS[i];
+				//turn each object key into kpair style format. so embed the key and use the value, then join with ','
+				var kpsf = [];
+				kpsf.push('name',sk.name,'key',sk.key,'com1',sk.com1);
+				var line = kpsf.join(',');
+				SkS.push(line);
+
+			}
+			return SkS //RSout is an array with key lines
+			break
+
 		//read only. use a file name to store on orb/image/file to use it
 		case 'limage':
 			var images = [];
@@ -9680,8 +9714,9 @@ function update(){ //PEAK
 //Eout is a returned value from Entry?
 	//
 //Entry
+//hashtag literals conflict here when we make literals with comas.... !!!!!!!
 	if(Entry==undefined){}else{//run entity command
-		var csplit = Entry.split(','); //comands split
+		var csplit = Entry.split('<>'); //comands split .. diamond symbol
 		for (var i = 0; i <= csplit.length-1; i++) {
 			var end = comA(stancE,csplit[i]);
 			if(end==undefined){}else{break}
@@ -9809,7 +9844,7 @@ function update(){ //PEAK
 					if(RL<=0){o.scB++; continue}else{continue}
 				}
 		*/
-				var csplit = RL.split(','); //comands split
+				var csplit = RL.split('<>'); //comands split
 				for (var i = 0; i <= csplit.length-1; i++) {
 
 					var end = comA(o.name,csplit[i]);
@@ -9823,7 +9858,7 @@ function update(){ //PEAK
 			if(o.scR=='loop'){ //run until o.L reaches end and then reinit and set run to 'off'
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
 			//script has text lines now, we dont need a text line structure anymore
-				var csplit = RL.split(','); //comands split
+				var csplit = RL.split('<>'); //comands split
 				for (var i = 0; i <= csplit.length-1; i++) {
 					var end = comA(o.name,csplit[i]);
 					if(end==undefined){}else{break}
@@ -9835,7 +9870,7 @@ function update(){ //PEAK
 			}
 			if(o.scR=='repeat'){ //run until o.L reaches end and then reinit and set run to 'off'
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
-				var csplit = RL.split(','); //comands split
+				var csplit = RL.split('<>'); //comands split
 				for (var i = 0; i <= csplit.length-1; i++) {
 					var end = comA(o.name,csplit[i]);
 					if(end==undefined){}else{break}
@@ -9853,8 +9888,9 @@ function update(){ //PEAK
 	//into Orbs.
 	//IF the entity or any orb creates an input or output signal, just push it into inout array were o.run signals will ask for what they
 	//are looking for
+//Are we really going to need this signal system or not?!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				var RL = o.com;//o.com? yes because its a signal
-				var csplit = RL.split(','); //comands split
+				var csplit = RL.split('<>'); //comands split
 				for (var i = 0; i <= csplit.length-1; i++) {
 					var end = comA(o.name,csplit[i]);
 					if(end==undefined){}else{break}
