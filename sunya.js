@@ -36,7 +36,7 @@ buffers.push(img)
 //Sunya Globals
 var kaoz = true;//false;//undefined; //where is zai? :(
 var zai = true;//false;//undefined;
-var actx = undefined;
+var actx = undefined; //audio context
 const soundCue = [];
 
 var Ename = 'Kaozzai'; 									// /name
@@ -50,20 +50,20 @@ var nLine =false;
 //var stancE = '~'; //the symbol for Entity stance
 //in distinguishes from entry?yes we need Ein to process lines that are not commands
 var Orbs = [];	//All entity orbs are stored in here.					// /orbs
+var ALOrbs = []; //after loop Orbs commands
 var staNce = ['~']; //all stances
-var stancE = '~'; //The ent or memory orb that will respond to displacement commands
+var stancE = '~'; //The ent or memory orb that will respond to commands with no target
 		
 //const staNce = 'Void';	The entity current stance. 'MSpace', 'Orb' ,  ??		
 
 //const WM = [];	Other memories?
 
-var eX = 0;//x entity center								// /eX
-var eY = 0;//y entity center								// /eY
+var eX = 0;//x entity screen center								// /eX
+var eY = 0;//y entity screen center								// /eY
 var Egspeed = 1;
 
 
-
-var laYer = 0;//?										// /layer
+var laYer = 0;//?									// /layer
 var aNgle = 0;										// /angle
 var msRad = 1;										// /msRad
 var Ewspeed = 1;
@@ -99,14 +99,19 @@ var dfontSize = 18;
 var EkeyS = [										// /keys
 	//some temporal shorts for developing..
 
-	{name:"o1", key:"o1", com1:"@Roy<>Roy/name>>~/stance"},
-	{name:"o2", key:"o2", com1:"@Carl"},
-	{name:"o3", key:"o3", com1:"@Jupiter"},
+	{name:"o1", key:"o1", com1:"@Roy<>#msgrow>>Roy/script"},//Roy/name>>~/stance"},
+	{name:"o2", key:"o2", com1:"@Carl<>#10>>Carl/gspeed"},
+	{name:"o3", key:"o3", com1:"@Jupiter<>#Jupiter/in>>Roy/text>>Jupiter/text"},
+
 //so iw as thinkin Jupiter, maybe you dont want to do text and thats cool babe. xD . Jupiter you are not real btw 
 
 	{name:"m", key:"m", com1:"+>>~/stance<>~/stance>>Carl/text"},//'+>>oO/text/cn,oO/text/current>>~/stance'
 	{name:"z", key:"z", com1:"->>~/stance<>~/stance>>Carl/text"},
 
+	{name:"b", key:"b", com1:"->>$/text/cn"},
+	{name:"n", key:"n", com1:"+>>$/text/cn"},
+
+//use Jupiter 
 	{name:"s1", key:"s1", com1:'Jupiter/text/1>>~/gspeed'},
 	{name:"s2", key:"s2", com1:'Jupiter/text/2>>~/gspeed'},
 //ok so we want to run a little script to change the speed of the current stance for one beat and then go back to previus speed
@@ -123,6 +128,7 @@ circleform>>Jin,#once>>JinProcess/script/run
 
 OK we need a command to delete an orb.. am strugling with this one.. because it doesnt feel right to be able to woosh an orb like that
 somehow.. 
+
 */
 
 	{name:"coml", key:"coml", com1:'$/text/current>>~/comline'},
@@ -132,13 +138,11 @@ somehow..
 //we just have to use shift to call the key again and let go while still pressing shift. 
 	{name:"G", key:"G", com1:"msgrow"},
 	{name:"H", key:"H", com1:"msshrink"}
-	//editor tests
-	//{name:"next line", key:"n", com1:".linedown"},
-	//{name:"prev line", key:"b", com1:".lineup"},
-	//{name:"beats", key:"t", com1:".type:.beats:"},
-	//{name:"beat", key:"y", com1:".type:.beat:"},
-	//{name:"beatup", key:"m", com1:".beatup"},
-	//{name:"beatdown", key:"v", com1:".beatdown"},
+
+//ok one more idea here. What about random selection between a specific array of values. beats can be instructed to pick random
+//number with the sinthax ..12-34 , we could say , ..1-3 and use that number to call events
+//i just noticed we cant see random values se wee ..1-23 when we call the value to apear on text so... yeah we also want to be able
+//to see a number changing randomly , we want to see the effect not the instruction
 ]
 
 var msX = 0;//memspace rad center							// /msX
@@ -158,6 +162,7 @@ const MSp = {
 }
 
 //we need a center cursor to appear when entity is idling or displacing on its memory space. Should always indicate the screen center
+//This point Holds eX and eY always.
 const Ecen = {
 	B : 1,	layer:2, 								// /msB...
 	beats:[										// /msignat
@@ -165,9 +170,9 @@ const Ecen = {
 		['r',230,'g',255,'b',230,'a',0.9]
 	],
 	state:{
-		r:230, g:230, b:230, a:0.8, x:eX, y:eY, radius:1, is:'circle',		// /domain?
+		r:230, g:230, b:230, a:0.8, x:eX, y:eY, radius:1, is:'circle',		
 		inside:'filled'
-	}//a special circle state.	
+	}
 }
 
 
@@ -181,7 +186,7 @@ const Elid = {
 		//['r',1,'g',1,'b',1,'a',0.2,'w',window.innerWidth,'h',window.innerHeight]
 	],
 	state:{
-		r:1, g:1, b:1, a:0.2, x:eX-window.innerWidth/2, y:eY-window.innerHeight/2, is:'rect',
+		r:1, g:1, b:1, a:0.3, x:eX-window.innerWidth/2, y:eY-window.innerHeight/2, is:'rect',
 		w:window.innerWidth, h:window.innerHeight,
 		inside:'filled'
 	}//a special rect state.	
@@ -248,16 +253,17 @@ const SoulSeal = function(o){
 	}
 
 	if(o.script){
-		o.c=undefined;   //c for command.. the current command running ?
+		o.o=undefined;   //o for command out.. the current command running ?
+		o.cast = false; //boolean for after loop cast
 		o.scR='off'; o.scB=1; o.scC=[];
 	}
 
 	if(o.text){
-		o.spacer=15; o.insertop='newline';
-		o.Elis=undefined; //true to listen to Ein . for now
+		o.spacer=15; //o.insertop='newline';
+		//o.Elis=undefined; //true to listen to Ein . for now
 		o.i=undefined; 
 		o.txtB=1;
-		o.print='static'; 
+		//o.print='static'; 
 		o.txtL=2;
 		o.txtLi=[];
 	}
@@ -274,7 +280,7 @@ const SoulSeal = function(o){
 	if(o.circle){
 		o.cirF=dsignat; o.cirB=1; o.cirR='loop'; o.cirL=1;
 		o.cirS={
-			r:230, g:230, b:230, a:0.8, x:o.x, y:o.y, radius:27, is:'circle',
+			r:230, g:230, b:230, a:0.8, x:o.x, y:o.y, radius:13, is:'circle',
 			inside:'empty'
 		};
 	}
@@ -649,11 +655,15 @@ const beatUp = function(F,B,S){ //Frame, Beat, State
 			var p = Del[i]; var v = Del[i+1]; var nv = v;
 			if(v.length==undefined){}else{
 			//a random notation system.. i like this one
+//so if we request the current beat we need to ask after changes?
 				var dots = v.substr(0,2);
 				if(dots=='..'){
+//we want to construct this '..1-5-1' , the last number will now hold thecurrent value of the randomizer. this notation isrebuilt while
+//we use the result to perform the operation
 					var cded = v.substr(2); var cdeda = cded.split("-");
 					var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
 					var n_rand = all.get_r_num(min,max);
+					//cdeda.push('-'+n_rand); 
 					nv = n_rand;
 				}
 			}
@@ -753,46 +763,7 @@ we release the second arrow, it speeds up for some reason. we dont want that
 	}
 }
 
-//PEAK
-// /disup  /disdown   /disleft  /disright .command keys to move a structure. orb or entity. Because these are our bodies.
-//we can transfer /orb/x,/y values into any other data line or beat key . So we use displacements on orbs to create coordinates
-//to be used directly on the beats. The points the orb returns already have a refference which is the center of msp.
-//So beats keys involving points in the grid use the center of the orb as refference. if we asign x100 to an img data beat, it will place
-//the image 100 pixels to the right of the orb when it beats. So when we edit images we can move all the beats of an animation at once
-//using orb.x and y
-// orb1/data/3>>orb1/disright
-// orb/data/7>>~/disleft
-//we can asign values to these keys to displace a determined number of pixels at once with one command.
 
-//so maybe displacer is one function....
-//so instead of directly changing x y point, we create a model to test it. var x = o.x-speed  , var y = o.y+speed... in the end
-//its the same number of operations....
-//We take a given x and y, a direction and a speed and we return an array with x and y if the operation is possible
-//to be performed in the memory space. return undefined if not possible
-//We can use dir and the result to determine how to translate in the case we want to displace the entity itself and not an orb.
-const displacer = function(x, y, dir, speed){
-	switch (dir){
-		case 'left':
-			var nx = x-speed; var ny = y; break
-		case 'right':
-			var nx = x+speed; var ny = y; break
-		case 'up':
-			var ny = y-speed; var nx = x; break
-		case 'down':
-			var ny = y+speed; var nx = x; break
-	}	
-
-//and limiter is another function that accepts any circle as limit and tests the location handed to it to return a boolean
-//we can just pass an hipotetic x y point..
-	var e_ms = all.get_dist(nx, MSp.state.x , ny, MSp.state.y); var e_msp = e_ms.toFixed(0); var e_ms = parseFloat(e_msp);
-	if(e_ms>MSp.state.radius){}else{ 
-		x=nx; y=ny; 
-		return [x,y]
-		//return [nx,ny]
-	}//mspace limits
-
-	return		
-}//displacer
 
 
 
@@ -836,17 +807,14 @@ const displacE = function(S,dir){
 
 //so we want to be able to move only on memory space instead of husk now. always. We dont want to be able to displace freely
 //while user is not inside its memory space. The void is too dense and chaotic to being able to freely move around.
-//so lets start out with some memory space now to try some stuff. ok ready. now lets just remove husk condition since
-//we are always going to ask if we are on memory space anyway
-//maybe we could use some parameter in the husk to determine how fast entities move trough it.
-	//we first just move user position... replace U.x U.y with eX and eY
 //remember now we are using eY and eX as center of screen. We have considerate these as center when we displace. so if we want
 //to place screen with this point in center, we need to translate to -eX+window.innerwidth/2, -eY+window.innerHeight/2
-
 //this is the displace function we call when we are on '~' stance. But when we are on orb stance, we should simply displace
 //the orb and not even follow with the screen. displacing entity moves the screen, displacing orbs not necesarily so, unless
 //entity is following the orb. 
 	//if(stancE=='~'){
+//ok so now want to drag, this function could ask also what the orb or entity is draging and just call displacer right away
+//into all targets on drag list.. however not right here...
 	if(S=='~'){
 		
 		var ra = displacer(eX,eY,dir,Egspeed); //returns [x,y]
@@ -885,18 +853,56 @@ const displacE = function(S,dir){
 			}
 
 		//...	
-			if(o.print=='stream'){
-				dSSpacer(o);
-			}
-			if(o.print=='static'){
-				dESpacer(o);
-			}
+			dESpacer(o);
 
 		}// orb stance
 
 	} //orb else
 
 }//displace
+
+//PEAK
+// /disup  /disdown   /disleft  /disright .command keys to move a structure. orb or entity. Because these are our bodies.
+//we can transfer /orb/x,/y values into any other data line or beat key . So we use displacements on orbs to create coordinates
+//to be used directly on the beats. The points the orb returns already have a refference which is the center of msp.
+//So beats keys involving points in the grid use the center of the orb as refference. if we asign x100 to an img data beat, it will place
+//the image 100 pixels to the right of the orb when it beats. So when we edit images we can move all the beats of an animation at once
+//using orb.x and y
+// orb1/data/3>>orb1/disright
+// orb/data/7>>~/disleft
+//we can asign values to these keys to displace a determined number of pixels at once with one command.
+
+//so maybe displacer is one function....
+//so instead of directly changing x y point, we create a model to test it. var x = o.x-speed  , var y = o.y+speed... in the end
+//its the same number of operations....
+//We take a given x and y, a direction and a speed and we return an array with x and y if the operation is possible
+//to be performed in the memory space. return undefined if not possible
+//We can use dir and the result to determine how to translate in the case we want to displace the entity itself and not an orb.
+const displacer = function(x, y, dir, speed){
+	switch (dir){
+		case 'left':
+			var nx = x-speed; var ny = y; break
+		case 'right':
+			var nx = x+speed; var ny = y; break
+		case 'up':
+			var ny = y-speed; var nx = x; break
+		case 'down':
+			var ny = y+speed; var nx = x; break
+	}	
+
+//and limiter is another function that accepts any circle as limit and tests the location handed to it to return a boolean
+//we can just pass an hipotetic x y point..
+	var e_ms = all.get_dist(nx, MSp.state.x , ny, MSp.state.y); var e_msp = e_ms.toFixed(0); var e_ms = parseFloat(e_msp);
+	if(e_ms>MSp.state.radius){}else{ 
+		x=nx; y=ny; 
+		return [x,y]
+		//return [nx,ny]
+	}//mspace limits
+
+	return		
+}//displacer
+
+
 
 //PRINT PEAK
 //we need to substract this operation in order to be called everytime a txt memory modifies any of its lines. Maybe we dont need to clear
@@ -922,13 +928,18 @@ const dESpacer = function(o){//a second parameter to select pprint mode. edit or
 	//.. change data for text
 	for (var i = 0; i <= o.txtLi.length-1; i++) {
 		var dl = o.txtLi[i]; dl.state.y=o.y+spacer; dl.state.x=o.x;
+		//if(dl.txt=''){}
 	spacer = spacer+o.spacer;
 	}
 } //dESpacer
 
+/*
+//SO PEAK stream in is obsolete
 //stream in
 //but on stream in mode, we want to print the last limit lines only..limitL . We dont want to center the screen anymore on the new lines
-//arriving, and we dont want to keep the lines in memory beyond limitL
+//arriving, and we dont want to keep the lines in memory beyond limitL.. no we dont need all this.
+//We can simply rewrite orbs texts or we can keep data. simple. working already
+//deprecat
 const dSSpacer = function(o){
 	var spacer = 0; var i = 0; //i act as a counter now
 	//.. change data for text
@@ -941,6 +952,8 @@ const dSSpacer = function(o){
 	if(i>=o.limitL){break} //+1
 	}
 }//dSSpacer
+*/
+
 
 //So now drawAll function will just draw all using the small states and flush all draw arrays at the end...
 //We could modularize this. A specific drawing operation for a specific 'is'. we can simply ask for 'is' value outside the scope
@@ -1513,12 +1526,12 @@ const kdown = function(ev){
 				if(chat_in.value==''){
 					Ein=undefined;
 				}else{
-					//Ein=chat_in.value; 
+					Ein=chat_in.value; 
 					//We wanto turn number strings into numbers
 //isNaN(number string) will only return false when we have a number string..
 					let isn = isNaN(chat_in.value);
 					if(isn){
-						//Ein=chat_in.value;
+						Ein=chat_in.value;
 					}else{
 						Ein=parseFloat(chat_in.value);
 						chat_in.value = Ein;
@@ -1641,7 +1654,6 @@ const kdown = function(ev){
 		if(ev.key == 'ArrowLeft' & all.chat_on == false){
 			if(["ArrowLeft"].indexOf(ev.code) > -1) {ev.preventDefault();}
 //ok so just call displace function and pass on direction. we can access stance from anywhere since its a global, so we dont pass stance.
-
 			if(all.key_d.length<2){
 				all.key_d.push({k:ev.key, ins:'left'});
 				//console.log(all.key_d);
@@ -1731,16 +1743,52 @@ Patterns
 //COMMAND ANNALIZER PEAK
 const comA = function(S,C){ 
 
+//OK sowe actually want to be able to just dump output from commands into the orb that called  the command. !!!!!!!!!!!!!!! by default
+//when no ">>"
 //Ok so we need to split using '>>'. But we split C directly. Because from here on, we will be working with more than 1 '/', so
 //'>>' is possible.
-//So we first annalize TS[0] , the Retrieving Side and then we see how it would go into TS[1] the Container Side
+//So we first annalize TS[0] , the Retrieving Side and then we see how it would go into TS[1] the Container Side .
+//ok so in case we wanted to say something like '#orb/key>>orb2/key>>orb/text' , the system uses the last '>>' to seperate sides
+//With this, we can now pass literal commands into a container
 	var TS = C.split('>>');  //transfer split
 
+//hashtag should allow everything in between '#' and the last '>>' . Literals require at least 1 '>>' . A command line starting
+//with '#' can be used to change any container or key value after '>>'. it produces RSout
+	if(TS[0][0]=='#'){
+		if(TS.length==2){
+			var RSout = [];
+			var lit = TS[0].substr(1); var litn = parseFloat(lit);
+			var nan = isNaN(litn);
+			if(nan){RSout.push(lit);}else{RSout.push(litn);}
+		}
+//we want to make RSout into everything until the last '>>'.. and CS must be the last '>>'
+		if(TS.length>2){
+			//var rmhash = TS[0].substr(1);
+			//TS[0] = rmhash;
+			var CSh = TS.pop();
+			var RSo = TS.join('>>');
+			var rmhash = RSo.substr(1);
+			var RSout = [rmhash];
+			TS[1]=CSh;
+		}
+
+	}//#	
+
+
 //if there is no '>>' it means its an orb creation command or memory space grow/shrink request
+//.. or now it could be an orb switch or ent ? all retrieve commands should be available to be called on their own and return the values
+//and put them into the orb text input if the orb has text aspect awakened
 	if(TS.length==1){
 //ORB PEAK
-//this command should create an orb soul. Probably needs to have the entity physical stats
+//this command should create an orb soul. Probably needs to have the entity physical stats. The orb created location has the coordinates
+//of the entity screen center and all aspects are closed initially. . probably we also want all defense layers off
 //we could say @orbname ..
+//idea. we could add a defense layer simply by typing in @orbname many times? defense layers... more like inertia layers..
+//inertia layers prevent orbs from receiving and being affected by any signal. displace, delete.. in order to overcome inertia
+//a signal must be sent multiple times ? saturating an orb with multiple signals creates a paralizing effect?
+//the number of signals an entity can produce per heartbeat will depend on its memory counter. Each memory orb can send a specific
+//signal once. So in order to produce the same signal many times at once in a single heartbeat we need to instruct multiple orbs to
+//execute the same command at once.
 		// @orbname
 		if(C[0]=='@'){
 			var oname = C.substr(1);
@@ -1751,8 +1799,11 @@ const comA = function(S,C){
 			}
 			var o = OrbSoul();
 		//for now we are having body aspect by default and text by default.. and others lol
-			o.body=true; o.text=true; o.script=true;// o.circle=true; o.rectangle=true; o.image=true;
-			//o.oscillator=true;//for now
+			o.body=true; o.text=true; o.script=true; o.circle=true; o.rectangle=true; o.image=true;
+			o.oscillator=true;//for now
+			//line
+			//audio
+			//...
 
 			SoulSeal(o);
 			o.x=eX; o.y=eY;
@@ -1762,32 +1813,179 @@ const comA = function(S,C){
 
 			return 
 		}// @
+/*
+Also we want to be able to remove lines. rml .. sounds right. casting 'rml' on an orb stance will atempt to remove o.txtLi[o.txtB-1]
+this is convenient enough, pretty straightforward. We could also do rml>>orb/txt/1...
+but how about a universal destroy command. it can delete lines , orbs.. and maybe atempt to reduce a specific entity parameter... from MSp
+also.. hmmmmm !!!!!! delete>>orb , delete>>entity , ... this command would send a kill signal somewhere... but the thing is
+Now orbs, lines and other elements that can be 'attacked' may present defenses. The most straightforward defense would be to redirect
+the signal to another less important part of the system, kinda like a reflecting wall. But eventually , the signal would erosionate the
+net of the entity.
+Another way to prevent kill signals from destroying a memory domain could be barriers kinda like hit points? But these hitpoints
+could work like pressure.. if too many signals are atempted into a single memory, the pressure could be enough the destroy the barrier
+and erase the target. another idea? maybe some memories can be chained together so they can only be erased when all chained memories
+are attacked at the same time, ... interesting, also chains could even be scripted to replace their parts with different memories.
+Maybe we want some commands to asign certain characteristics to a memory. shield23>>orb/text/1 or link4>>orb
+This is interesting
+So an orb listen to a specific orb for a specific command output which can be used to counter or contain the effect.... !!!!!!!!!!!!!!!!
+So an orb listenning in this way, it cant do anything else . Its script needs to have a single line so it can be repeated at every
+heartbeat so when the effect we want to contain is executed, we wont miss it. But we could also configue many orbs to listen 
+at specific beats in sequence, in this way, many orbs could react differently to a same command, and we distribute the attention 
+level required to not missing a beat. very cool i like where this is going. ok goodnight friend. cyu tomorow. you are the best. we
+are the best. we kick ass. cool and good
 
+So reacting to orbs in and out is redundant, we can react to changes requested from orbs already, however reacting to Ein and Eout
+is very simple since we check for Ein and Eout(Entry?) at the beggining of the heartbeat anyway
+
+ok so now we want to be able to move many orbs at once, make it happen
+
+*/
+
+
+//memory space grow
 		if(TS[0]=='msgrow'){
 			msRad++;
 			//we should do pop push here. The last beat should be the 'first one'.
 			var last = MSp.beats.length-1;
 			MSp.beats[last].pop(); MSp.beats[last].pop(); MSp.beats[last].push('radius',msRad); 
+//lets try returning something on Eout here!!!!!!!!!1
+			Eout = 'msgrow';
 			return
 		}
+//memory space shrink
 		if(TS[0]=='msshrink'){
 			msRad--;
 			var last = MSp.beats.length-1;
 			MSp.beats[last].pop(); MSp.beats[last].pop(); MSp.beats[last].push('radius',msRad); 
+			Eout = 'msshrink';
 			return
 		}
+//create a buffer for an image file on local machine 
 		if(TS[0]=='loadimg'){
 			img_in.click();
 			return
 		}
+//local audio file buffer into the browser
 		if(TS[0]=='loadaudio'){
 			audio_in.click();
 			return
 		}
 
-	}
 
+		var RS = TS[0].split('/');
+		var o = Fting(Orbs,'name',S); //stance orb o
+		if(o){
+
+			if(o.text){}else{return}
+			if(RS[0]=='~'){
+// ~
+//return access keys to entity structure
+				var op=[
+					'~/name', '~/orbs', '~/stance', '~/dsignat', '~/in', '~/out', '~/gspeed', '~/wspeed',
+					'~/x', '~/y', '~/angle', '~/dismode'
+				]
+			}
+// $
+//return access keys for orb control $elected or $tanciated
+			if(RS[0]=='$'){
+				var op=[
+					o.name+'/name', o.name+'/gspeed', o.name+'/wspeed', o.name+'/in', 
+					o.name+'/out', o.name+'/x', o.name+'/y', o.name+'/angle'
+					//o.name+'/elis'
+				];
+				if(o.text){op.push(o.name+'/text');}
+				if(o.script){op.push(o.name+'/script');}
+				if(o.circle){op.push(o.name+'/circle');}
+				if(o.rectangle){op.push(o.name+'/rectangle');}
+				if(o.oscillator){op.push(o.name+'/osc');}
+				if(o.image){op.push(o.name+'/image');}
+			}
+
+			var or = Fting(Orbs,'name',RS[0]);
+
+			if(RS.length==2){ //there is 1 '/' on the left side...
+//Lets make this work. Instead of doing the susy push signal into Orbs at the end and flush, just use a different array
+//when the script finds a command that request data or wants to send a signal to a different orb, then we take the command and send it
+//into a different array ALOrbs , after loop orbs. This array contains all signals that need inmediate reaction to orbs activity
+//drag, delete, in, out. All these signals need a special after procesing time .
+				if(or){
+					if(RS[1]=='in'||RS[1]=='out'){
+						if(o.cast){ //o.cast //!!!!!!!!!!
+							if(RS[1]=='in'){
+//orb/in 
+								var op = [or.i]; if(or.i==undefined){return 'end'}
+							}
+							if(RS[1]=='out'){
+//orb/out
+								var op = [or.o]; if(or.o==undefined){return 'end'}
+							}
+							o.cast=false;
+						}else{
+//create package to read later in order to not have issues, orb/in or out should always go on the first line. .We also need to let
+//know the orb loop
+//!!!!!!!!!a detail here .... can signal run the second command as a signal later?.. hmm i think it can
+//we want to use RS[0] name to find the orb and ask for the whole command on scB because C only holds first '<>' 
+//.. and yea we want to recycle comA so we want to use comA again on ALOrbs loop. We need a tag to distinguish . ok its o.cast
+//.. we store the tag on the stance calling.. and also use the stance scC 
+							if(or){
+								o.cast=true;
+
+								ALOrbs.push({//scR:'signal', 
+									st:S,//RS[0], //? stancE
+									com:o.scC[o.scB-1]
+								});
+								//we are pushing the whole instruction to read after all other orbs updates
+								//because we dont want to read the second instruction on line either just yet
+							}
+							//in or out should always just return end
+							return 'end'
+						}
+					}else{//in and out
+// orb/key
+						var op = swKOrb(or,RS[1],0,undefined);
+					}
+				}//if or
+			}//1 '/' on left side, no '>>'
+
+//
+			if(RS.length==3){ //there is 2 '/' on the left side...
+// orb/container/ckey
+				//swCKOrb(o ,cont, ckey,po,op)  reff
+				var op = swCKOrb(or,RS[1],RS[2],0,undefined);
+
+			}
+
+//here goes.. something
+
+		}//orb stance retrieving no '>>' . just use stance text aspect to print data
+//op generated here is directed by default into the current stance orb text 
+		if(op){
+			o.txtLi = [];
+			var l = op.length; 
+	//so RSout(op) is always expected to be a list of lines we can use to create a text.. format lines and push them into data
+			while(l--){
+				var text = op[l];
+				var Line = DataLine();
+				//use dsignat to create default beats on the new line
+				Line.beats=dsignat;
+		//maybe we could pass entity layer here laYer ?
+				Line.x=o.x; Line.y=o.y;
+				Line.txt=text;
+				o.txtLi.push(Line);
+			}
+//we also probably need to let the orb know it has new data so we might want to call.... line alignment functions
+			dESpacer(o);
+
+			return //[]  //not sure what to return here
+		}
+
+	}//no '>>'
+
+//from here on comes transfer commands. These use the value retrieved and use it to modify the target on the right side CS of '>>' 	
 	if(TS.length==2){ //there is '>>'
+//literals might be something like.. yup this works
+//hashtag should allow everything in between '#' and the last '>>' . so we need to get this one out of here
+
 //left side retrieves, right side accepts the return value. on the left side we need to determine from where we need to retrieve
 //on the right side, we need to check if container is capable to handle the output from left side. TS[0] is the left side
 //we need to annalize TS[0] , RS retrieve side
@@ -1799,17 +1997,8 @@ const comA = function(S,C){
 		if(RS[0][0]=='+'){var pol = 1;}
 		if(RS[0][0]=='-'){var pol = -1;}
 
-// no '/' on left side , '>>'
+// no '/' on left side , and '>>'
 		if(RS.length==1){
-//literals might be something like.. yup this works
-			if(RS[0][0]=='#'){
-				var RSout = [];
-				var lit = RS[0].substr(1); var litn = parseFloat(lit);
-				var nan = isNaN(litn);
-				if(nan){RSout.push(lit);}else{RSout.push(litn);}
-				//console.log(RSout[0]);
-			}		
-
 //now we also want to check for key commands . commands that dont require to know stance. displacements, edit commands etc..
 //these commands always act upon something so they use '>>' . they dont use '/' either
 // we have , displacement commands, edit data commands, or commands that act upon orbs as well.....
@@ -1817,91 +2006,138 @@ const comA = function(S,C){
 // command>>target
 			//textform>>orbname , circleform..... and so on.. unfinished
 			//we expect an orb name on TS[1] always here
+			var o = Fting(Orbs,'name',TS[1]);
 			if(RS[0]=='textform'){
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){ o.text=true; SoulSeal(o); return }else{return 'end'}
 			}
 			if(RS[0]=='circleform'){
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){ o.circle=true; SoulSeal(o); return }else{return 'end'}
 			}
 			if(RS[0]=='rectangleform'){
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){ o.rectangle=true; SoulSeal(o); return }else{return 'end'}
 			}
 			if(RS[0]=='oscillatorform'){
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){ o.oscillator=true; SoulSeal(o); return }else{return 'end'}
 			}
 			if(RS[0]=='imageform'){
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){ o.image=true; SoulSeal(o); return }else{return 'end'}
 			}
 			if(RS[0]=='scriptform'){
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){ o.script=true; SoulSeal(o); return }else{return 'end'}
 			}
 
-			//keycommands
+//displacements keycommands. We probly want an output.. dis>>target.
+//.. so if entity displaced, we return dis>>~ , if an orb displaced, we return dis>>orb.. or we should simply return the command
+//and not the target.. dis. So now other orbs can say followed/out>>... hmm ... needs more thought..
+//if we wanted to generalize the output system , we d have to return what exactly, the raw command? the command output?.. sounds
+//convoluted..
+//idea. we could monitor displacements and speed changes on target only when orbs are in synch . 
+//just use target stats and copy them into the follower orb or ent displacement stats......?
+
+//If we had to actively write a one liner instruction to constantly follow an orb or an entity, then script potential would be drained
+//.. so it would make sense to just use a command to synch or anchor orbs position in refference to a specified target..
+//.. more so, we could move in circle, front and back in refference to this target or simply copy transfer its x y coordinates
+//at every heartbeat. so its an anchor/focus mode that accepts one target orb at a time. ok this is cool but how to implement
+//Its not an instruction, but a key value that needs to check on everyheartbeat for the displacement activity of the target anchored
+//Lets say we anchor orb1>>orb2/anchor. now orb2 anchor value is orb1, so orb2 reacts to orb1 displace activity. when we anchor,
+//we ask how x far and how y far is orb2 from orb1 and we store this values... maybe anchor/x anchor/y ..
+//When target displaces it could emit an output which could be .. no.. this is back to the in out problem.. we want the displacement
+//command to inmediately update the anchored.. this would make it work more like a drag command than a follow or anchor idea..
+//so the target actively ask for others to follow their movements instead of others waiting for displacement activity and then react.
+//So in this system, the "target" would keep track of all orbs or ents it wants to drag with itself
+//... so the focus or anchor command could be reserved to perform circular movements and back and forth around and towards a single
+//target only
+//ok so we have orb/drag . a list of targets to demand to reflect displacement activity. The orb will ask to drag , and the asked will
+//move or not depending on permissions... or anchor state?
+//drag can be used in combat... all combat commands are active and called by caster but they need to have
+//and we have /focus, /anchor . a single target to use as wheel displacement center.
+//So this simplifies things. Now that we have active commands that create effects on target orbs, we just run them and ask if target
+//orb is susceptible to the effect of the command. no need to listen to outputs anymore
+//SO when we cast drag or delete , the active caster ask if the target orb is vulnerable or has permission before creating the effect
+//So drag and delete .. might be similar to deleteline.. maybe the same delete can just be run on a line. commands that act on other
+//orbs or entities. once cast, the target needs a chance to prevent the command to work on it.....
+			//
+//okokoan idea idea... what if we just asign this parameter into orbs. inertia . a value on inertia spends memory points to
+//prevent operations on the orb. in order to overcome inertia, many control signals must be casted at once... ok inertia interesting
+//BUt maybe we only want this inertia system to be active when against other entities..? for now lets just focus on creating
+//all the commands we need and want without restrictions.
+
+//so drag is set. now we need the mechanics... wait what if we do something else better
+//dis>>target
+//.. we could say ... disleft>>orb/text/1 ...hmmm ok sinthax let me have this. we want other orbs to use the instruction on themselves
+//.... give it a thought . goodnight
 			if(RS[0]=='disleft'){
-				if(TS[1]=='~'){displacE('~','left');return}
+				if(TS[1]=='~'){
+					displacE('~','left');
+		//and here , we could just use o.Drag list to also cast displacement on all targets on list... or maybe, we could
+		//send a displacement signal to be read later.. because we l also need to test how the signal works against the
+		//target. .. and ALOrbs is the right instance to check for that
+//HEY a solution fo the in out orb dilema. Why not just use a whole different array and check for it after heartbeat loop..
+//.. geez that is far much better than messing around by pushing signal into the Orbs array itself, just use a different array!!!
+//once again. this changes everything. oh jeez. and its working. good jobking
+//ok lets focus again on in and out. Let drag mechanic have a moment
+					return
+				}
 				if(TS[1]=='$'){displacE(S,'left');return}
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){displacE(TS[1],'left'); return}
 			}
 			if(RS[0]=='disright'){
 				if(TS[1]=='~'){displacE('~','right');return}
 				if(TS[1]=='$'){displacE(S,'right');return}
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){displacE(TS[1],'right'); return}
 			}
 			if(RS[0]=='disup'){
 				if(TS[1]=='~'){displacE('~','up');return}
 				if(TS[1]=='$'){displacE(S,'up');return}
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){displacE(TS[1],'up'); return}
 			}
 			if(RS[0]=='disdown'){
-				if(TS[1]=='~'){displacE('~','down');return}
+				if(TS[1]=='~'){displacE('~','down');return} // disdown>>~
 				if(TS[1]=='$'){displacE(S,'down');return}
-				var o = Fting(Orbs,'name',TS[1]);
+				//var o = Fting(Orbs,'name',TS[1]);
 				if(o){displacE(TS[1],'down'); return}
 			}
 
-			if(RS[0]=='~'){
+/*
+			if(RS[0]=='delete'){
+				
+			}
+*/
+
+//these return something to place on target
+			if(RS[0]=='~'){ // ~
 				RSout=[
 					'~/name', '~/orbs', '~/stance', '~/dsignat', '~/in', '~/out', '~/gspeed', '~/wspeed',
 					'~/x', '~/y', '~/angle', '~/dismode'
 				]
 			}
 			if(RS[0]=='$'){
-				var o = Fting(Orbs,'name',S);
-				if(o){
+				var so = Fting(Orbs,'name',S);
+				if(so){
 					var RSout=[
-						o.name+'/name', o.name+'/gspeed', o.name+'/wspeed', o.name+'/in', 
-						o.name+'/out', o.name+'/x', o.name+'/y', o.name+'/angle'
+						so.name+'/name', so.name+'/gspeed', so.name+'/wspeed', so.name+'/in', 
+						so.name+'/out', so.name+'/x', so.name+'/y', so.name+'/angle'
 						//o.name+'/elis'
 					];
-					if(o.text){RSout.push(o.name+'/text');}
-					if(o.script){RSout.push(o.name+'/script');}
-					if(o.circle){RSout.push(o.name+'/circle');}
-					if(o.rectangle){RSout.push(o.name+'/rectangle');}
-					if(o.oscillator){RSout.push(o.name+'/osc');}
-					if(o.image){RSout.push(o.name+'/image');}
+					if(so.text){RSout.push(so.name+'/text');}
+					if(so.script){RSout.push(so.name+'/script');}
+					if(so.circle){RSout.push(so.name+'/circle');}
+					if(so.rectangle){RSout.push(so.name+'/rectangle');}
+					if(so.oscillator){RSout.push(so.name+'/osc');}
+					if(so.image){RSout.push(so.name+'/image');}
 				}
 			}
 
 
-/*
-	//keycommands..? old idea already
-	if(RS[0]=='copycom'){
-	}
-	if(RS[0]=='copyin'){
-	}
-	if(RS[0]=='lineless'){
-	}
-
-*/
 
 		}//key commands with no '/' on left side
 
@@ -1912,9 +2148,12 @@ const comA = function(S,C){
 //can we have orb/x>>orb/out ..... no these instructions should always go on the left side. makes no sense to read them from right side
 //there is a good reason trust me.
 			if(RS[0]=='~'){
-		//is all this good?
+				//swKEnt now can process in and out
 				var RSout = swKEnt(RS[1],0,undefined);
 				//.. we also want to listen to ~/in and ~/out
+//PEAK this in out system here has no use since.. wait it does..
+//in and out with Entity is easier to implement because we always check for entry first on heartbeat. Maybe we could just implement
+//these commands on entities.
 // ~/in>>?
 				if(RS[1]=='in'){
 					var RSout = [Ein]; if(Ein==undefined){return 'end'}
@@ -1924,47 +2163,44 @@ const comA = function(S,C){
 					var RSout = [Eout]; if(Eout==undefined){return 'end'}
 				}
 			}
+
+
 			if(RS[0]=='$'){var o = Fting(Orbs,'name',S); }else{ var o = Fting(Orbs,'name',RS[0]); }
 			if(o){
-				//var RSout = swKOrb(o,RS[1],0,undefined);
+//orb/in>>?
+//orb/out>>?
 				if(RS[1]=='in'||RS[1]=='out'){
-					if(o.run=='signal'){
-						//this is a bit messy but dont worry now
-//ok so what is o.i now? input system is a bit different now.. 
+//no need to ask if signal, if in or out, just push the command and caster name into ALOrbs to be procesed after main heartbeat loop
+//.... so in this case, we cant ask for o, because o is RS[0] if no '$'. we always want to ask for S because we want to kick this command
+					var sto = Fting(Orbs,'name',S);
+					if(sto.cast){
 						if(RS[1]=='in'){
-//orb/in>>? 
+//orb/in>>?
 							var RSout = [o.i]; if(o.i==undefined){return 'end'}
 							//if o.i has nothing, we should return end
 						}
 						//still not sure of what out does...
-		//!!!!!!!!!!!!!!!!!!!maybe out could print the command line an orb is calling at any moment... o.c
 						if(RS[1]=='out'){
 //orb/out>>?
 							var RSout = [o.o]; if(o.o==undefined){return 'end'}
 						}
-						//even tho switch all it does is return o.i or o.o lol
-						//var RSout = swKOrb(o,RS[1],0); //using RS[1] as key o, key, polarity, requested new value
-						//and now we have input or output of orb on RSout
-						//var proceed = true;
+						sto.cast=false;
 					}else{
-						//create package to read later
-	//in order to not have issues, orb/in or out should always go on the first line. .We also need to let know the orb loop
-	//to not read the command after the comma right now . ok we are using return. just return something else than undefined for now
-				//this packet we are pushing... it needs script aspect
-			//!!!!!!!!!a detail here .... can signal run the second command as a signal later?.. hmm i think it can
-						Orbs.push({run:'signal', 
-							name:RS[0], //? stancE
-							script:true, 
-							com:C
+
+						sto.cast=true;
+						ALOrbs.push({//scR:'signal', 
+							st:S,//RS[0], //? stancE
+							//script:true, 
+							//com:C
+							com:sto.scC[sto.scB-1]
 						});
-						//we are pushing the whole instruction to read after all other orbs updates
-						//because we dont want to read the second instruction on line either
+//we are pushing the whole instruction to read after all other orbs updates because we dont want to read the second instruction on
+//line either just yet ...so ALOrbs uses the name as S and the command itself
 						return 'end'
 					}
-
 				}else{
 //orb/key>>?
-					var RSout = swKOrb(o,RS[1],pol,undefined);
+					var RSout = swKOrb(o,RS[1],0,undefined);
 				}
 
 			}// orbname on RS[0]
@@ -1975,13 +2211,14 @@ const comA = function(S,C){
 		if(RS.length==3){ //there are two '/' on the left side..
 // ~/container/conk>>?
 			if(RS[0]=='~'){
+		//maybe we could have ~/msp/x ... !!!!!!!!!!!!!!
 				//var RSout = ...
 			}
 
 // orb/container/conk>>?  
 			if(RS[0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',RS[0]);}
 			if(o){
-				var RSout = swCKOrb(o, RS[1],RS[2],undefined);
+				var RSout = swCKOrb(o, RS[1],RS[2],pol,undefined);
 			}
 
 		}// 2 '/' on left side , 1 '>>'
@@ -2077,6 +2314,7 @@ const comA = function(S,C){
 							if(RS[3]=='cn'){
 // orb/text/1..2..3../cn>>?
 								var RSout=[irl.tB];
+				//so retrieve commands should not really return data to o.o? not sure. 
 								o.o = RSout;
 							}
 							if(o.o==undefined){ 
@@ -2181,11 +2419,13 @@ const comA = function(S,C){
 //We want to change the current beat on line form. This command should only accept a number, no less than 0 and not higher than the line
 //beats.length. needs adjustments!!!!!
 								lastl.tB = RSout[0];
-								o.o = RSout; return
+								o.o = RSout[0]; return
 							}
 
 							if(CS[3]=='mirror'){
 // ?>>orb/text/last/mirror
+//sowhen we mirror last night, even tho we selected a different line, it didnt mirror the line selected , but kept blinking,
+//mirror line kept blinking on text/1. we need to clarify what is cn and current
 								var mirror = {
 									is:'txt',
 									txt:lastl.txt,
@@ -2222,7 +2462,8 @@ const comA = function(S,C){
 							if(CS[3]=='cn'){
 // ?>>orb/text/current/cn
 								currl.tB = RSout[0];
-								o.o = RSout; return
+								o.o = RSout[0];
+								return
 							}
 							if(CS[3]=='mirror'){
 // ?>>orb/text/current/mirror
@@ -2312,6 +2553,8 @@ const comA = function(S,C){
 		}// 3 '/' on right side
 
 	}//there is '>>'
+	
+
 
 
 }//command annalizer PEAK
@@ -2334,25 +2577,18 @@ const comA = function(S,C){
 //This switch should simply return the value of the key, modified by polarity or not.
 //We probably want a swKtog for entity and one for orbs?.. maybe not. if all keys are unique then we rly dont
 //we need to rename n to cv for current value....
-//This function should serve as key retriever and also toggler..? Because we only want to access these cases once
-//But we need one for entity and one for orbs
-//const swKOrb = function(o,k,po){ // swKOrb requires (orb,key,polarity)
-//const swKEnt = function(k,po){ // requires (key,polarity)
 //polarity could be 1, or -1 , or 0
 //so we could have something like. 
-// swKinOrb , to let in a new key value on orb
-// swKoutOrb , to retrieve the value into RSout
-// swKinEnt , swKoutOrb ... for entity
 // And we would only use polarity on swKin operations. And we could use RSout as last optional parameter as well.... !!!
 // SO no ... just swKOrb and swKEnt ... use the last parameter to determine if we want to asign this value or if we want to
-// retrieve this value,,, like this. 
-// swKOrb(orb, key, polarity, operation)
+// swKOrb(orb, key, polarity, operationin)
 // if operation is defined, it holds the new value we want to store on the key, if operation is not defined, it means we want
 // to return the value in the key... Yes. I think this is it.
 // one last thing. If polarity is zero, we simply return the key value, and ask if op wants to redefine the key
 // if polarity is not zero, we modify the key using po
 // PEAK
 // we l need a switch for beats keys i think.
+// orb/okey
 const swKOrb = function(o,k,po,op){ 
 	switch (k){
 //we shouldnt be able to change position directly .. for now at least. When we ask for orb/x , what refference do we take?
@@ -2363,17 +2599,16 @@ const swKOrb = function(o,k,po,op){
 //we can work with. We cant work with its real values, we need to have a refference. MSp makes sense to be this refference, orbs
 //cant be commanded beyond MSp radius actually, so yeah
 		case 'name':
+			if(op){
+				o.name = op[0];
+				return 
+			}
 			return [o.name] 
 			break
-/*
-		case 'elis':
-			if(op){
-				o.Elis = op;
-				return [o.Elis]  //not sure what to return here
-			}
-			return [o.Elis]
-			break
-*/
+
+//so when we request orbs position, we take MSp as refference. that makes sense since orbs can only be sustained by memory space,
+//we want this rule. so how about accessing MSpace data? What if we want to know MSpace x and y, this coordinate should take the main
+//canvas itself as refference
 		case 'x':
 			//console.log(o.x-MSp.state.x);
 			return [o.x-MSp.state.x]
@@ -2385,7 +2620,8 @@ const swKOrb = function(o,k,po,op){
 			break
 		//untested
 //SO NOW we want to be able to directly place a line of data here on o.i with op[0]. So on text updates we use the value
-//on o.i to create a line where txtR dictates
+//on o.i to create a line where txtR dictates....
+//in and out on orbs is kinda deprecated. only available for entities now.... WAIT
 		case 'in':
 			if(op){
 				o.i = op[0];
@@ -2398,13 +2634,12 @@ const swKOrb = function(o,k,po,op){
 			//
 			return [o.o]
 			break
+
 		case 'script':
 			if(op){
 				o.scC = op; //op should be an array with instructions
 				return //[]  //not sure what to return here
 			}
-		//is this ok? .. if we are not changing the data, we are requesting it. so we are creating an array with
-		//raw text lines and returning it into RSout.. right?
 			var dla = [];
 			var l = o.scC.length; 
 			while(l--){
@@ -2414,6 +2649,51 @@ const swKOrb = function(o,k,po,op){
 			return dla
 			
 			break
+
+		case 'circle':
+//so circle should return circle beats on string format.. beat to array
+			if(op){
+				var ncb = [];
+				for (var i = 0; i <= op.length-1; i++) {
+					var ttb = txtToB(op[i]);
+					ncb.push(ttb);
+				}
+				o.cirF = ncb;
+				o.cirB = 1;
+				return //?
+			}
+			
+			var btt = [];
+			for (var i = 0; i <= o.cirF.length-1; i++) {
+				var bt = o.cirF[i].toString();
+				btt.push(bt);
+			}
+			//var RSout = bbt;
+			return btt;
+			break
+
+		case 'rectangle':
+			if(op){
+				var ncb = [];
+				for (var i = 0; i <= op.length-1; i++) {
+					var ttb = txtToB(op[i]);
+					ncb.push(ttb);
+				}
+				o.rectF = ncb;
+				o.rectB = 1;
+				return //?
+			}
+			
+			var btt = [];
+			for (var i = 0; i <= o.rectF.length-1; i++) {
+				var bt = o.rectF[i].toString();
+				btt.push(bt);
+			}
+			//var RSout = bbt;
+			return btt;
+			break
+
+
 		case 'text':
 //so, we can place multilines on a data container by passing in an array with lines on op
 //text key on its own does not react to polarity. it returns all text lines in the orb.
@@ -2437,20 +2717,13 @@ const swKOrb = function(o,k,po,op){
 					//only then we can push the Line
 					o.txtLi.push(Line);
 				}
-	//we also probably need to let the orb know it has new data so we might want to call.... line alignment functions
-				//
 
-				//o.data = RSout //... we cant do this with just string they need to go into a line structure
-				if(o.print=='stream'){
-					dSSpacer(o);
-				}
-				if(o.print=='static'){
-					dESpacer(o);
-				}
+				dESpacer(o);
+
 				return //[]  //not sure what to return here
 			}
 		//is this ok? .. if we are not changing the data, we are requesting it. so we are creating an array with
-		//raw text lines and returning it into RSout.. right?
+		//raw text lines and returning it into RSout.. right? Yes this is no problem
 			var dla = [];
 			var l = o.txtLi.length; 
 			while(l--){
@@ -2460,6 +2733,7 @@ const swKOrb = function(o,k,po,op){
 			return dla
 			
 			break
+
 		case 'osc':
 			if(op){
 				o.oscTL = op;
@@ -2473,61 +2747,63 @@ const swKOrb = function(o,k,po,op){
 			}
 			return tla
 			break
-
-		case 'print':
-			if(po==0){
-				if(op){o.print=op;} return [o.print]
-			}else{
-				var print = ['static','stream']; 
-				var n = print.indexOf(o.print);
-				var res = n+po;
-				if(res>=print.length){res=0;} 
-				if(res<0){res=1;} 
-				o.print=print[res];
-				return [print[res]]
-			}
-			break
 /*
-//run doesnt go here now..
-		case 'run':
-			if(po==0){
-				if(op){o.run=op;} return [o.run]	
-			}else{
-				var run = ['off','once','loop','repeat']; 
-				var n = run.indexOf(o.run);
-				var res = n+po;
-				if(res>=run.length){res--;} 
-				if(res<0){res++;} 
-				o.run=run[res];
-				return [run[res]]
+//.. wait
+//drag . Make a target move with the caster. drag accepts targets names . every target is sent a displacement signal everytime
+//the orb displaces. o.Drag accepts a list of one or more names to send signals to. if no op, it returns the list of draging targets
+//into RSout
+		case 'drag':
+			if(op){
+				o.Drag=op;
+				return //[]  //not sure what to return here
 			}
+			return o.Drag		
 			break
 */
+
+
 		case 'gspeed':
 			//to toggle between lines to select on a data container. should be easy
 			if(po==0){
 				//op could be an array... with 1 line.. so thats why this didnt work
-				if(op){o.gspeed=op;} return [o.gspeed]	
-			}else{
-				var res = o.gspeed+po;
-				if(res>=60){res--;} 
-				if(res<=0){res++;} 
-				o.gspeed=res;
-				return [o.gspeed]
+				if(op){o.gspeed=op[0];} return [o.gspeed]	
 			}
+
+			var res = o.gspeed+po;
+			if(res>=60){res--;} 
+			if(res<=0){res++;} 
+			o.gspeed=res;
+			return [o.gspeed]
+			
 			//return Egspeed
 			break
 	}
-}
+}//swKOrb
 
+//so what really should user be able to learn about position. the screen can be permasynched with Ecen, but Ecen 0 is the memory space
+//0.. isnt it. Memory space position takes main canvas values..
+// ~/Ekey>>? , ?>>~/Ekey 
 const swKEnt = function(k,po,op){
 	switch (k){
 		case 'name':
-			//read only . return a list of all orbs in the domain
 			return [Ename] 
 			break
+//so these coordinates are the actual center of screen. The entity screen center. Ecen. we probly want these to also be read only
+//but we could do orb/x>>~/x<>orb/y>>~/y . Tha could be interesting. Because we can make orbs trace a specific activity and the just hook
+//into that orb
+		case 'x':
+			return [eX] 
+			break
+		case 'y':
+			return [eY] 
+			break
+		case 'msp':
+//so we need a MSpace command to retrieve and work with msp data. msgrow and msshrink mechanics are ok i guess, one command
+//at a time. Maybe we can just return all msp data at once? kinda like with skeys
+			return 
+			break
 		case 'orbs':
-			//read only . return a list of all orbs in the domain
+//read only . return a list of all orbs in the domain
 			return staNce 
 			break
 		case 'dsignat':
@@ -2540,15 +2816,14 @@ const swKEnt = function(k,po,op){
 					nba.push(rsob);
 				}
 				dsignat = nba;
-				return RSout;//?
-			}else{ 
-				var dsi = [];
-				for (var i = 0; i <= dsignat.length-1; i++) {
-					var dsib = dsignat[i].toString();
-					dsi.push(dsib);
-				}
-				return dsi;
+				return //RSout;//?
 			}
+			var dsi = [];
+			for (var i = 0; i <= dsignat.length-1; i++) {
+				var dsib = dsignat[i].toString();
+				dsi.push(dsib);
+			}
+			return dsi;
 			break
 		case 'keys':
 			if(op){
@@ -2627,7 +2902,21 @@ const swKEnt = function(k,po,op){
 			}
 			//return Egspeed
 			break
-		//follow is kinda deprecated .. not sure just leave as is for now
+//follow is kinda deprecated .. not sure just leave as is for now... ok follow sounds interesting because its a fast and easy way
+//to hook memories positions without having to worry about writing the logic . . however this might be an obsolete way of seeing it
+//kinda like what happened when i tried to update the .type command. Turns out we dont really need that since we can now use
+//inline and comline...
+//OK but now that i ve been playing around, i noticed the flow in creating interfaces, and its really a bless to be able to simply
+//hook orbs into the entity center like this, or into other orbs. Its just very intuitive and satisfying to be able to hook like this
+//.. i think we want to implement this hook follow command so the displacements mehcanics are taken care by the system itself
+//i can picture many instancesw were we l be hooking orbs to each other , it doesnt make sense to having to worry about all the little
+//commands required to atach orbs into other orbs arrangements. Yeah i think we really want this follow command
+//so we say:  orb1/name>>orb2/follow  . we can also say: orb1/name>>~/follow 
+//follow	If it holds an orb or entity name, it will follow and synch its position with it.
+//so how it works... an idea. Everytime we change this follow box value, we store how x and y far away the follower is from the followed
+			//
+//..or.. everytime the followed displaces, it produces an output. followers could evaluate followed output and use it on themselves
+//to displace just like the followed.. but in that case.. isnt it more simple to just evaluate output..
 		case 'follow':
 			//follow should be similar to stance. we just need to select an orb name or '~' in order to follow it
 			//we can probably toggle this one
@@ -2671,6 +2960,7 @@ const swKEnt = function(k,po,op){
 // ~/comline	read. write. The value of chat_in on command prompt
 //so we could say something like: $/text/current>>~/comline .. or ~/inline>>$/text/3? thats a bit weird... no not really. an orb
 //could listen to this value and work with it in real time. PEAK 
+//These commands rule. 
 		case 'inline':
 			if(op){
 				chat_in.value = op[0]//we want RSout here
@@ -2695,13 +2985,14 @@ const swKEnt = function(k,po,op){
 
 			break
 
+//read only, returns entity input and output
 		case 'in':
-			//Ein . A script to process inputs by default. Sending this into output returns the script data
-			//lines itself
+			if(Ein==undefined){return}
+			return [Ein]
 			break
-	//maybe ~/out should be able to be processed by orbs..
 		case 'out':
-			//Eout. 
+			if(Eout==undefined){return}
+			return [Eout]
 			break
 
 
@@ -2740,7 +3031,20 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 				var currentl = o.txtLi[o.txtB-1].txt;
 				var RSout = [currentl];
 			}
+
+//we should be able to toggle current number....!!!!!
 			if(ckey=='cn'){
+				if(po==0){
+					if(op){o.txtB=op[0];}//.. maybe we need to check here if op[0] is a number?
+					return [o.txtB]	
+					//var RSout = [o.txtB];
+				}else{
+					o.txtB = o.txtB+po;
+					if(o.txtB<=0){o.txtB++;} 
+					var RSout = [o.txtB];
+				}
+
+				/*
 				if(op){
 					//should only accept numbers.. max is number of lines in text
 					o.txtB = op[0];
@@ -2749,6 +3053,8 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 				}
 				var cnl = o.txtB;
 				var RSout = [cnl];
+				*/
+
 			}
 			//text/number
 			//if RSout stil undefined, we ask if this is a number we can work with
@@ -2767,7 +3073,8 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 			}
 		}
 		//.. if no data defined, then we should return 'end'
-	}
+	}//text
+
 	if(cont=='script'){
 		if(o.script){
 			if(o.scC.length==0){return 'end'}//nothing here
@@ -2782,7 +3089,8 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 					if(res>=run.length){res--;} 
 					if(res<0){res++;} 
 					o.scR=run[res];
-					return [run[res]]
+					var RSout = o.scR;
+					//return [RSout]
 				}
 			}
 
@@ -2795,6 +3103,7 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 				var lastl = o.scC[o.scC.length-1];
 				var RSout = [lastl];
 			}
+
 			if(ckey=='current'){
 				if(op){
 					o.scC[o.scB-1] = op[0];
@@ -2808,6 +3117,7 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 	//we probly want cn to manage toggle
 				if(op){
 					//should only accept numbers.. max is number of lines in script
+					//.... maybe we want to turn this into a number
 					o.scB = op[0];
 					//lets roll with this CSout for now..
 					CSout = [op[0]]; return CSout
@@ -2816,7 +3126,7 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 				var RSout = [cnl];
 			}
 			if(RSout==undefined){
-				//we need to turn RS[1] into a number
+				//we need to turn ckey into a number
 				var rln = parseFloat(ckey);
 				let nan = isNaN(rln);
 				if(nan){return 'end'}
@@ -2833,7 +3143,7 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 			}
 		}
 
-	}
+	}//script
 
 	if(cont=='image'){
 		if(o.image){
@@ -2878,18 +3188,20 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 					if(res>=run.length){res--;} 
 					if(res<0){res++;} 
 					o.imgR=run[res];
-					return [run[res]]
+					var RSout = [o.imgR];
 				}
 			}
 			if(ckey=='current'){
+	//current needs to return the current beat as text
 
 			}
 			if(ckey=='cn'){
+	//imgB
 
 			}
 		}
 	}
-
+//.. rememeber we need to consider text to beat and beat to text format transfomations in all these beat manipulations
 	if(cont=='circle'){
 		if(o.circle){
 			if(ckey=='run'){
@@ -2902,39 +3214,53 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 					if(res>=run.length){res--;} 
 					if(res<0){res++;} 
 					o.cirR=run[res];
-					return [run[res]]
+					var RSout = [o.cirR];
+					//return [run[res]]
 				}
 			}
 			if(ckey=='current'){
 				if(op){
-					o.cirF[o.cirB-1] = op[0];
+			//in here we need to transform text beat format into beat array
+					var nb = txtToB(op[0]);
+					o.cirF[o.cirB-1] = nb;
+					//o.cirF[o.cirB-1] = op[0];
 					//lets roll with this CSout for now..
-					CSout = [op[0]]; return CSout
+					//var CSout = [op[0]]; 
+					return //CSout
 				}
-				var currentl = o.cirF[o.cirB-1];
-				var RSout = [currentl];			
+		//nono we need to do beat to ext
+		//var strb =  lastl.beats[i].toString();//txtToB(RSout[i]);
+				var strb = o.cirF[o.cirB-1].toString();
+				//var currentl = o.cirF[o.cirB-1];
+				var RSout = [strb];			
 			}
 			if(ckey=='cn'){
-
+				if(op){
+					//we want to make sure op[0] points to a valid value here....!!!!
+					o.cirB = op[0];
+				}
+				var RSout = [o.cirB];
 			}
 //a mirror for circle forms
 			if(ckey=='mirror'){
 // ?>>orb/circle/mirror
 //mirror pretty much requires op because... what could mirror do on the left side RS? ... one sec $/circle/mirror>> ... maybe an instruction
 //to copy a beat
-				var mirror = {
-					is:'circle', radius:o.cirS.radius,
-					x:o.x,//+window.innerWidth/2,
-					y:o.y,//+window.innerHeight/2,
-					r:o.cirS.r, g:o.cirS.g, b:o.cirS.b, a:lo.cirS.a 
+				if(op){
+					var mirror = {
+						is:'circle', radius:o.cirS.radius,
+						x:o.x,//+window.innerWidth/2,
+						y:o.y,//+window.innerHeight/2,
+						r:o.cirS.r, g:o.cirS.g, b:o.cirS.b, a:o.cirS.a 
+					}
+					Mirror(op[0],mirror,o.cirL);
+					o.o=op[0]; return
 				}
-				Mirror(op[0],mirror,o.cirL);
-				o.o=op; return
 
 			}//mirror
 
 		}
-	}
+	}//circle
 
 	if(cont=='rectangle'){
 		if(o.rectangle){
@@ -2948,7 +3274,8 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 					if(res>=run.length){res--;} 
 					if(res<0){res++;} 
 					o.rectR=run[res];
-					return [run[res]]
+					var RSout = [o.rectR];
+					//return [run[res]]
 				}
 			}
 			if(ckey=='current'){
@@ -2972,7 +3299,8 @@ const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a
 					if(res>=run.length){res--;} 
 					if(res<0){res++;} 
 					o.oscR=run[res];
-					return [run[res]]
+					var RSout = [o.oscR];
+					//return [run[res]]
 				}
 			}
 			if(ckey=='current'){
@@ -9628,6 +9956,10 @@ const drawC = function(s){
 }
 
 
+
+
+
+
 ///////////////////////////////////////////////////PEAK
 //PEAK UPDATE
 //so comA and animF are now more independant.
@@ -9717,7 +10049,7 @@ function update(){ //PEAK
 //hashtag literals conflict here when we make literals with comas.... !!!!!!!
 	if(Entry==undefined){}else{//run entity command
 		var csplit = Entry.split('<>'); //comands split .. diamond symbol
-		for (var i = 0; i <= csplit.length-1; i++) {
+		for (var i = 0; i <= csplit.length-1; i++) { //idk why this is even running after first '<>'
 			var end = comA(stancE,csplit[i]);
 			if(end==undefined){}else{break}
 			if(i>=1){break}
@@ -9728,9 +10060,10 @@ function update(){ //PEAK
 //ORBS LOOP , ENTRY, ASPECTS
 //We expect orbs and single orbs instructions at the end.. we need a for loop here then because we want to push ins and outs
 //solo instructions to be read and flush at the end
-	var flush=0; //a counter to flush signals at the end
+	//var flush=0; //a counter to flush signals at the end
 	//
-	for (var i = 0; i <= Orbs.length; i++) {
+//... so maybe when we add these signals to Orbs then the length messes up somehow
+	for (var i = 0; i < Orbs.length; i++) {
 
 		var o = Orbs[i];
 		if(o==undefined){break} //safe
@@ -9740,8 +10073,8 @@ function update(){ //PEAK
 			if(o.oscR=='off'){} 
 			if(o.oscR=='once'){ 
 			//so do all this with every line at once.. ok lets run a test
-				for (var i = 0; i <= o.oscTL.length-1; i++) {
-					var TL = o.oscTL[i];
+				for (var i2 = 0; i2 <= o.oscTL.length-1; i2++) {
+					var TL = o.oscTL[i2];
 					//create state
 					var os = {
 						id:Date.now(), start:0, freq:420, gain:0.7, fadein:0.2, fadeout:0.3,type:0,duration:1
@@ -9804,6 +10137,104 @@ function update(){ //PEAK
 
 		}
 
+
+
+//TEXT ASPECT
+		
+		if(o.text){
+//!!!!!!!!!!!!!!
+//so now what we could do... is to make a specific parameter on text aspect to listen to specified entities or orbs
+//..... you know maybe orbs should only be able to listen to 1 entity input at a  time. Ive never really liked these crazy streams
+//with all ppl talking at the same time. words ppl say going fast to nowhere. ok we are not doing that here, enough already.
+//what if we just run a command. '~/inline>>'+stancE+/in . So now we just check for o.i . Looks much cleaner
+			if(o.iz==o.i){
+				o.i=undefined;
+				//and we could also clear o.o here aye... maybe not. shouldnt be bounded to this condition
+				//o.o=undefined;
+				o.iz=Date.now();
+			} //we good
+			if(o.i!=undefined){
+				
+//.. btw we need a line eraser command.. and maybe insertop is completely unnecesary !!!!! because the operation is always
+//the same . put new dataline into selected line holder txtB . 
+				//
+//!!! SO what if we could just add empty lines simply by increasing txtB. We can also place datalines on any place desired, if line
+//doesnt exist, we keep adding lines until we reach the target value. Obviously this command needs some kind of limit
+//Maybe we could implement a system to be able to create all necesary lines
+//holders to put the line on txtB  requested right here..
+//if line requested is > number of lines already.. then we want to create as many lines as necesary to reach target value
+				//.. when length is 0, then the first line will triger this. we dont want that
+				if(o.txtB>o.txtLi.length){
+					//get the difference
+					var subs = o.txtB-o.txtLi.length;
+					//add DataLines difference 
+					for (var i2 = 0; i2 < subs; i2++) {
+						var dli = DataLine();
+						dli.beats=dsignat; 
+						dli.txt='';
+						dli.x=o.x; dli.y=o.y;
+						//o.txtLi.splice(o.txtB-1,0,dli);
+						o.txtLi.push(dli);
+					}
+					//and place o.i text on o.txtB
+					var ldli = o.txtLi[o.txtB-1];
+					ldli.txt = o.i;
+				}else{
+
+					var dli = DataLine();
+					dli.beats=dsignat; 
+					dli.txt=o.i;//Ein;
+					dli.x=o.x; dli.y=o.y;
+					//this operation adds a line simply on selected place
+					o.txtLi.splice(o.txtB-1,0,dli);
+					//we could also replace the line from here like this:
+					//o.txtLi.splice(o.txtB-1,1,dli);
+				}
+
+//so before despacer, and here, only once per heartbeat, check if last line text is '', if so then remove.
+//... the idea of dividing long oerations into heartbeats sounds right. the goal is to distribute the heavy work into small steps
+//that can be executed one at a time per heartbeat. its a way to prevent the pressure excess on the machine
+				//havent tested this one out..
+				if(o.txtLi[o.txtLi.length-1].txt==''){
+					o.txtLi.pop();
+				}
+
+				dESpacer(o);
+
+//.. ok so undefining here might be a problem later... but for now.. yeah this feels beter already. we can just stancE an orb
+//and the input is procesed by that orb. We can stancE on entity, and we jsut produce a signal anyone can read... but we have the
+//orb/in reading problem back again. other orbs listenning to this o.i might miss it if we clear it in here!!
+//oh also rememeber you can clean up arrays like this array.length = 0;.. but maybe dont do this. its kinda weird
+				//o.i=undefined;
+				//we could just do something like..  and hope for the best.. we should check how orb/in and orb/out
+				//work now... but yeah this iz thing secures clearing o.i on next heartbeat... pretty simple solution
+				//... wait... maybe we can apply the same concept here...
+				o.iz = o.i;
+
+			}// o.i
+
+		//Line beats
+			////.. change data for text
+			if(o.txtLi.length==0){}else{ //for loops are kinda stupid
+				for (var i2 = 0; i2 <= o.txtLi.length-1; i2++) {
+					var OL = o.txtLi[i2]; //orb line
+			//beat up needs to be universal. We want to have other words for B , because we might want to beat
+			//many aspects of an orb in one update.. you are doing well
+					beatUp(OL.beats,OL.tB,OL.state);
+					OL.tB++;
+					if(OL.tB>OL.beats.length){OL.tB=1;}
+					//if(o.L==i){}
+					//not sure where i want to keep txt. in state or directly in the data line structure
+					OL.state.txt=OL.txt;
+					//if(OL.layer==0){visual_q0.push(OL.state);}
+					if(o.txtL==0){visual_q0.push(OL.state);}
+					if(o.txtL==1){visual_q1.push(OL.state);}
+					if(o.txtL==2){visual_q2.push(OL.state);}
+				}
+			}
+		}//text
+
+
 //SCRIPT ASPECT
 //so now we want to be able to cast more than a single command per beat. Command lines will now be separated by commas,
 //for now max number of commands on the same line is 2 we just call comA on every comma split.. simple huh
@@ -9811,10 +10242,7 @@ function update(){ //PEAK
 //if comA has /orb/in or /orb/out
 //push the instruction to read input and process it at the end of Orbs. Create a self removing 'orb' that flushes itself from Orbs
 //on loop end
-			//o.c also needs checking probably
-		//entry
 		//PEAK before even asking for the lines, we should simply ask for o.run. if off, dont even loop the lines.
-//These need testing..
 	//!!!!!!!
 	//we could reestructure this. if off, continue. also, once loop and repeat differenciate only at the end so most of
 	//the code can be written once. just ask at the end what to do acording to scR value
@@ -9845,24 +10273,24 @@ function update(){ //PEAK
 				}
 		*/
 				var csplit = RL.split('<>'); //comands split
-				for (var i = 0; i <= csplit.length-1; i++) {
-
-					var end = comA(o.name,csplit[i]);
+				for (var i2 = 0; i2 <= csplit.length-1; i2++) {
+					var end = comA(o.name,csplit[i2]);
 					if(end==undefined){}else{break}
-					if(i>=1){break}
+					if(i2>=1){break}
 				}
 				o.scB++;
 				if(o.scB>o.scC.length){o.scB = 1; o.scR='off';}//o.script.length is always 1 more than last item index..?
 
 			}
 			if(o.scR=='loop'){ //run until o.L reaches end and then reinit and set run to 'off'
+				//console.log('asdcwvrwvwf');//ok here is the problem this loop is busted.. its working fine
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
 			//script has text lines now, we dont need a text line structure anymore
 				var csplit = RL.split('<>'); //comands split
-				for (var i = 0; i <= csplit.length-1; i++) {
-					var end = comA(o.name,csplit[i]);
+				for (var i2 = 0; i2 <= csplit.length-1; i2++) {
+					var end = comA(o.name,csplit[i2]); //o.name is the stance S
 					if(end==undefined){}else{break}
-					if(i>=1){break}
+					if(i2>=1){break}
 				}
 				o.scB++;
 				if(o.scB>o.scC.length){o.scB = 1;} //o.scR='off';}
@@ -9871,140 +10299,34 @@ function update(){ //PEAK
 			if(o.scR=='repeat'){ //run until o.L reaches end and then reinit and set run to 'off'
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
 				var csplit = RL.split('<>'); //comands split
-				for (var i = 0; i <= csplit.length-1; i++) {
-					var end = comA(o.name,csplit[i]);
+				for (var i2 = 0; i2 <= csplit.length-1; i2++) {
+					var end = comA(o.name,csplit[i2]);
 					if(end==undefined){}else{break}
-					if(i>=1){break}
+					if(i2>=1){break}
 				}
 			}
-	//so in here, we ask if this is an in or out related instruction. These are always located at the end of Orbs. And we want to
-	//remove them after executed. Orbs and Entities create these. We want to run signals after all orbs have been updated so we dont
-	//miss a signal.
-			if(o.scR=='signal'){ //btw we should not be able to toggle 'signal' on orb/run obviously
-	//SO whenever we create an input or output signal, we push a self removing instruction into Orbs itself.
-	//This line will have a target to process it. also it will self remove. no need to push around whole orbs,
-	//just push whole command
-	//IF any entry creates an input or output listener , create a self removing instruction and push it
-	//into Orbs.
-	//IF the entity or any orb creates an input or output signal, just push it into inout array were o.run signals will ask for what they
-	//are looking for
-//Are we really going to need this signal system or not?!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				var RL = o.com;//o.com? yes because its a signal
-				var csplit = RL.split('<>'); //comands split
-				for (var i = 0; i <= csplit.length-1; i++) {
-					var end = comA(o.name,csplit[i]);
-					if(end==undefined){}else{break}
-					if(i>=1){break}
-				}
-	//PEAK
 
-	//SO the function to call on run signal uses these properties to place the in or out signal where it wants to go because by this point
-	//we have all inputs and outputs created
-	//in:['~', 'an input from entity', 'orb1', 'an input from orb1'];
-	//listeners just check this array last and once everyone checked it,
-	//we flush it. Yes this makes sense. how about outputs. same probably. but outputs may have multilines so they are arrays
-	//out:['~',[],[]]
-				flush++;
-				continue //we dont want to 
-			}//signal
+		}//script aspect	
 
-		}//script aspect
-
-//TEXT ASPECT
-		
-		if(o.text){
-//!!!!!!!!!!!!!!
-//so now what we could do... is to make a specific parameter on text aspect to listen to specified entities or orbs
-//..... you know maybe orbs should only be able to listen to 1 entity input at a  time. Ive never really liked these crazy streams
-//with all ppl talking at the same time. words ppl say going fast to nowhere. ok we are not doing that here, enough already.
-//.. so Elis Entity listen has the name of an entity whose input is going to listen
-//.. not a fan of this. need a new idea
-//what if we just run a command. '~/inline>>'+stancE+/in . So now we just check for o.i . Looks much cleaner
-			if(o.iz==o.i){o.i=undefined;o.iz=Date.now();} //we good
-			if(o.i!=undefined){
-				
-			//if(o.Elis==Ename){
-			//if(o.Elis){
-				//We are using Ein for now but we need to change this when more entities are around
-				//if(Ein!=undefined){
-				//...!!!!!!1 so maybe here we could simply say insert on seL.. so seL is like the 'current' of data
-					if(o.insertop=='newline'){ //'ignore'
-		// maybe we want an insertop to just push in last index, but newline should push were seL is and never erase a line
-		//.. btw we need a line eraser command
-						var dli = DataLine();
-						dli.beats=dsignat; 
-						dli.txt=o.i;//Ein;
-						dli.x=o.x; dli.y=o.y;
-						//.. change data for text
-						//seL needs to go. its txtB
-						//this operation adds a line simply on selected place
-						o.txtLi.splice(o.txtB-1,0,dli);
-						//we could also replace the line from here like this:
-						//o.txtLi.splice(o.txtB-1,1,dli);
-
-					}//insertop
-					if(o.insertop=='ignore'){ //'ignore'
-
-					}
-				//we want to push data and also update data txt states acording to its print value
-				//but we are not pushing data yet..
-					if(o.print=='stream'){
-						dSSpacer(o);
-					}
-					if(o.print=='static'){
-						dESpacer(o);
-					}
-				//}//Ein!=undefined;
-//.. ok so undefining here might be a problem later... but for now.. yeah this feels beter already. we can just stancE an orb
-//and the input is procesed by that orb. We can stancE on entity, and we jsut produce a signal anyone can read... but we have the
-//orb/in reading problem back again. other orbs listenning to this o.i might miss it if we clear it in here
-//oh also rememeber you can clean up arrays like this array.length = 0;
-				//o.i=undefined;
-				//we could just do something like..  and hope for the best.. we should check how orb/in and orb/out
-				//work now... but yeah this iz thing secures clearing o.i on next heartbeat... pretty simple solution
-				//... wait... maybe we can apply the same concept here...
-				o.iz = o.i;
-			}//Elis,, o.i
-
-		//Line beats
-			////.. change data for text
-			if(o.txtLi.length==0){}else{ //for loops are kinda stupid
-				for (var i2 = 0; i2 <= o.txtLi.length-1; i2++) {
-					var OL = o.txtLi[i2]; //orb line
-			//beat up needs to be universal. We want to have other words for B , because we might want to beat
-			//many aspects of an orb in one update.. you are doing well
-					beatUp(OL.beats,OL.tB,OL.state);
-					OL.tB++;
-					if(OL.tB>OL.beats.length){OL.tB=1;}
-					//if(o.L==i){}
-					//not sure where i want to keep txt. in state or directly in the data line structure
-					OL.state.txt=OL.txt;
-					//if(OL.layer==0){visual_q0.push(OL.state);}
-					if(o.txtL==0){visual_q0.push(OL.state);}
-					if(o.txtL==1){visual_q1.push(OL.state);}
-					if(o.txtL==2){visual_q2.push(OL.state);}
-				}
-			}
-		}//text
-
-
-		//orb output test.. ok we good
-		//if(o.o!=undefined){
-		//	console.log(o.o);
-		//	o.o=undefined;
-		//}
 
 	}//orb loop
 
-//SO after orb loop, we  Orbs.splice(flush);  to remove all run signals. flush is the index we clear from
-	if(flush>0){Orbs.splice(flush);}
-	
+
+//ALOrbs hold commands that require Orbs array to be already updated
+	for (var i = 0; i < ALOrbs.length; i++) {
+		var c = ALOrbs[i];
+		if(c==undefined){break} //safe
+		var csplit = c.com.split('<>');
+
+		for (var i2 = 0; i2 <= csplit.length-1; i2++) {
+			var end = comA(c.st,csplit[i2]);//.. ok so we are passing o.name here, 
+			if(end==undefined){}else{break}
+			if(i2>=1){break}
+		}
+	}//ALOrbs
+	ALOrbs = []; //flush every heartbeat
+
 //AND also we need to clear inout array instead of these Ein and Eout... ok we goose? no. we not goose. we want Ein and Eout
-//these In and Out are kinda lost in the sauce..
-	//In:undefined;
-	//Out:[];
-	//
-	
 
 	Entry=undefined; Ein=undefined; Eout=undefined;
 
