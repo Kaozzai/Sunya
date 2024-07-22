@@ -18,20 +18,8 @@ ____
 */
 
 
-//ALL
-// Instead of 'all', it should be 'conciousness' .but i need a better word
-//for 'conciousness'
-//EFFICIENCY
-//What if we made most functions const global variables and most arrays the same.
-//would it run faster?
-//How about just keeping all buffers like this aswell. we would now simply have
-//to let orbs remember what buffer they need to run its animations
-/*
-const buffers = []
-var img = {n:'img name', b:img buffer}
-buffers.push(img)
 
-*/
+
 //PEAK GLOBALS
 //Sunya Globals
 var kaoz = true;//false;//undefined; //where is zai? :(
@@ -206,7 +194,7 @@ const Elid = {
 
 
 //kfeed need to be an object just like MSp
-var Kfeed = {
+const Kfeed = {
 	B : 0,	layer:2, font:"30px Courier New", align:'center',
 	beats:[
 		['a',0.8]
@@ -427,7 +415,71 @@ all.c_audio_compressor = function(){
 							a.start = 0; a.end = c_o.audio_access.duration;
 							c_o.audio.push(a);
 
+
+
+
+
+//this buffer should be located on an audio source node. create a source using all.au.createBufferSource
+//use param1 now to randomize buffer channels
+//.. let param1 be an instruction to return a type of buffer ?
+//.. needs params to control buffer size. . .
+//a function to return an empty audio buffer source. Users should be able to fill in buffer manually to create their own waves
+//also, sunya can call these buffers to create white noise and other sound effects
+all.c_custom_buffer = function(w_n){ 
+	//the type of buffer will change acording to param..
+	var a_buffer = all.au.createBuffer(2, all.au.sampleRate * 3, all.au.sampleRate);//these params control the size of the buffer
+
+	if(w_n == "w_n"){
+		//randomize channels to create white noise
+		for (let channel = 0; channel < a_buffer.numberOfChannels; channel++) {
+		  //This gives us the actual ArrayBuffer that contains the data
+			const nowBuffering = a_buffer.getChannelData(channel);
+			for (let i = 0; i < a_buffer.length; i++) {
+  		 	 // Math.random() is in [0; 1.0]
+  			 // audio needs to be in [-1.0; 1.0]
+			nowBuffering[i] = Math.random() * 2 - 1;
+			}
+		}
+	}
+	return a_buffer
+}
+
+//a function to load an audio file from server into an orb.. it delivers an audio buffer
+//Maybe orbs should be able to hold multiple audio files.....
+//so to load audio from server static directory
+all.url_audio = function(url){
+	var audio_buffer = new Audio(url);
+	//var media_src = all.au.createMediaElementSource(audio_buffer);
+	return audio_buffer
+}
+	//
+//return an audio file state. accepts a previously buffed media audio file as param
+all.media_s = function(url_audio, destination){
+	var s = {};
+	var src_node = all.au.createMediaElementSource(url_audio);	
+	s.src_node = src_node;
+	s.src_node.connect(destination);
+	return s
+}
+//now we can affect the audio using Web Audio API but we keep using url_audio.play(), url_audio.pause()
+//currentTime = number , a property that allows us to instantly start playing from number
+//duration  , A read-only double-precision floating-point value indicating the total duration of the media in seconds.
+//ended , Returns a boolean that indicates whether the media element has finished playing
+//loop ,  boolean that reflects the loop HTML attribute, which indicates whether the media element should start over when
+//it reaches the end.
+//preservesPitch , A boolean value that determines if the pitch of the sound will be preserved. If set to false, 
+//the pitch will adjust to the speed of the audio
+//volume , A double indicating the audio volume, from 0.0 (silent) to 1.0 (
+//other methods from the audio element
+//This media element source can be connected to other nodes to change audio wave
+//before reaching audio context destination
+//hence, the second param can accept any other audio node destination besides
+//all.au.destination
+
+
+
 */
+
 	}
 
 	if(o.oscillator){
@@ -502,7 +554,7 @@ const timeUp = function(osc,TL){
 			if(dots=='..'){
 				var cded = v.substr(2); var cdeda = cded.split("-");
 				var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
-				var n_rand = all.get_r_num(min,max);
+				var n_rand = getRandom(min,max);
 				nv = n_rand;
 			}
 		}
@@ -517,7 +569,7 @@ const timeUp = function(osc,TL){
 //var COsc = function(start,freq,gain,fadein,fadeout,type,duration){
 //
 //use updated os to create osc nodes
-var COsc = function(os){
+const COsc = function(os){
 	if(os.type==0){os.type='sine';}if(os.type==1){os.type='square';} //.. and so on
 	var osc = {}
 	//oscillator node
@@ -656,7 +708,7 @@ const Mirror = function(rsout,sm,layer){
 				if(dots=='..'){
 					var cded = v.substr(2); var cdeda = cded.split("-");
 					var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
-					var n_rand = all.get_r_num(min,max);
+					var n_rand = getRandom(min,max);
 					nv = n_rand;
 				}
 			}
@@ -675,7 +727,6 @@ const Mirror = function(rsout,sm,layer){
 // -- DATA CONTROL . SUNYA FUNCTIONS
 
 
-//
 //
 const KLTObj = function(kpair){
 	var kobj = {};
@@ -713,7 +764,7 @@ const beatUp = function(F,B,S){ //Frame, Beat, State
 				if(dots=='..'){
 					var cded = v.substr(2); var cdeda = cded.split("-");
 					var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
-					var n_rand = all.get_r_num(min,max);
+					var n_rand = getRandom(min,max);
 //we want to construct this '..1-5-1' , the last number will now hold thecurrent value of the randomizer. this notation isrebuilt while
 //we use the result to perform the operation. ok works perfectly
 					var nn = '..'+cdeda[0]+'-'+cdeda[1]+'-'+n_rand; 
@@ -722,15 +773,12 @@ const beatUp = function(F,B,S){ //Frame, Beat, State
 				}
 			}
 			S[p] = nv;
-			//console.log(nv); //.... this seems to be working
 		}
 	}
-	//even layer selecting should not be done here!!!!
-	//not sure if we have to add the beat counter here... but sure why not. dont
-}
+}//beatUp
 
 
-//PEAK?
+//PEAK
 //REPEAT
 //repeat system
 //if there are items in this array, we check for them. we check for the key, if there is no keyup signal, then run the asociated function
@@ -738,40 +786,28 @@ const beatUp = function(F,B,S){ //Frame, Beat, State
 //.. so this function is probly the best time to ask if there is a repeated command, if so we need to prevent execution and inmediately
 //flush it
 const repeatSys = function(){
-	if(all.key_d.length!=0){
-		var l = all.key_d.length;
+	if(keyD.length!=0){
+		var l = keyD.length;
 		while(l--){
-			var kd = all.key_d[l];
+			var kd = keyD[l];
 		//this solves it. works perfectly fine.. maybe we can expand some more but this already works.
 			if(l==1){//its because there is 0..
 				//so compare with 0
-				kd0 = all.key_d[0];
+				kd0 = keyD[0];
 				if(kd.ins==kd0.ins){
-					all.key_d.splice(0,1);
+					keyD.splice(0,1);
 				}
 			}
 			switch (kd.ins){
-//we probably want to displace faster.. maybe shift Arrows could increase speed of displacement
-//.. before adding more stuff here i need to test this well. i think its doing something funny. we can process 2 commands
-//also, when displacing up and right or down and left, the test is in husk is not working at all. am really burned out here
-//its been a solid 2 days since am stuck in this. am really pissed.
-			//ok since these are special cases we could just use a const... or
+
 //run a script to readjust what arrows do by changing comA first parameter... so this script can simply change a parameter and we
 //asociate this script into any key.
-//SO since comA first parameter will not be stance anymore, it may still be used to ... ok no .
 //lets keep stance. however we will not be using stance as we were using it. Now stance will simply go into the first argument
 //of coma here, and this will affect Comand keys .. ehh
 				//
 //OK new idea. we want to be able to asign a number after displacement commands left23 to specify speed . if no number, then
-//use orb or entity speed. 
-/*
-left>>
-right>>
-up>>
-down>> 
+//use orb or entity speed. done
 
-
-*/
 				case 'left':
 					///var cline='left'+Egspeed+'>>'+stancE
 					//var cline = 'disleft>>'+stancE;
@@ -805,7 +841,7 @@ down>>
 					//comA('~',kd.str);
 					//displacE('~','down');
 					break
-//all.key_d.push({ins:'com', str:key_short.com1});
+//keyD.push({ins:'com', str:key_short.com1});
 			//we can now fast repeat any command... but one a t a time... this is not bad but... arrows could be an exception
 //because we want arows to be able to run together
 				case 'com':
@@ -841,7 +877,7 @@ const diff = (a, b) => {return Math.abs(a - b);}
 
 //a function to calculate theta using 2 points
 const getTheta = function(casterX,casterY,targetX,targetY){
-	var a = Diff(casterY,targetY); var c = all.get_dist(casterX,targetX,casterY,targetY); var sin = a/c;
+	var a = Diff(casterY,targetY); var c = getDist(casterX,targetX,casterY,targetY); var sin = a/c;
 	var thet = Math.asin(sin); //returns angle in radians..
 	var theta = parseFloat(thet.toFixed(2));
 	return theta
@@ -874,7 +910,8 @@ const getTheta = function(casterX,casterY,targetX,targetY){
 //we want the caster to start moving in a circular pattern around the target but from the current position.
 //So we first need to calculate the current angle.. a straight line from current position to target center, this is the starting angle
 //theta. Every time target or caster moves, we need to getTheta() as long as caster/focus holds the name of a memory or an entity
-//We can then 
+//We can then calculate the distance from caster and target and calculate the point by increasing or decreasing the angle
+//
 //
 
 const strifE = function(caster,dir,aspect,speed,target){
@@ -912,7 +949,6 @@ const strifE = function(caster,dir,aspect,speed,target){
 
 
 
-
 const displacE = function(S,dir,aspect,speed){
 		
 //so we want to be able to move only on memory space instead of husk now. always. We dont want to be able to displace freely
@@ -940,13 +976,13 @@ const displacE = function(S,dir,aspect,speed){
 //in response when a signal arrives? 
 	////displacE(o.name,'left',aspect,speed)
 	if(S=='~'){
-		if(speed==undefined){var gspeed = Egspeed;}
-		var ra = displacer(eX,eY,dir,gspeed); //returns [x,y]
+		//if(speed==undefined){var gspeed = Egspeed;}
+		var ra = displacer(eX,eY,dir,speed); //returns [x,y]
 		if(ra!=undefined){
-			if(dir=='left'){eX=ra[0]; ctx0.translate(gspeed,0);} //only moving entity translates
-			if(dir=='right'){eX=ra[0]; ctx0.translate(-gspeed,0);}
-			if(dir=='up'){eY=ra[1]; ctx0.translate(0,gspeed);}
-			if(dir=='down'){eY=ra[1]; ctx0.translate(0,-gspeed);}
+			if(dir=='left'){eX=ra[0]; ctx0.translate(speed,0);} //only moving entity translates
+			if(dir=='right'){eX=ra[0]; ctx0.translate(-speed,0);}
+			if(dir=='up'){eY=ra[1]; ctx0.translate(0,speed);}
+			if(dir=='down'){eY=ra[1]; ctx0.translate(0,-speed);}
 //PEAK TRANSLATE FUNCTION
 //a function to move all elements concerning user screen should be at hand. translate, move Ecen and Elid all at once
 			//Ecen up
@@ -968,14 +1004,14 @@ const displacE = function(S,dir,aspect,speed){
 	//beats and data states beats. not even on entity... Because the thing is: We cant expect users to asign precise coordinates
 	//into structures, its by far much more simpler to move a determined number of pixels on a direction i think.
 	// 
-			if(speed==undefined){var gspeed = o.gspeed;}else{var gspeed=speed;}
+			//if(speed==undefined){var gspeed = o.gspeed;}else{var gspeed=speed;}
 //now we want to use aspect to determine what form we are requesting to move... maybe we can use a switch
 //btw what aspect will be affected when user on stance uses arrows then?  if aspect is undefined, use o.cursor
 			if(aspect==undefined){var aspect = o.cursor;}
 			switch (aspect){
 				case 'circle':
 					if(o.circle){
-						var ra = displacer(o.cirS.x,o.cirS.y,dir,gspeed); //returns [x,y]
+						var ra = displacer(o.cirS.x,o.cirS.y,dir,speed); //returns [x,y]
 						if(ra!=undefined){
 							if(dir=='left'){o.cirS.x=ra[0];} 
 							if(dir=='right'){o.cirS.x=ra[0];} 
@@ -986,7 +1022,7 @@ const displacE = function(S,dir,aspect,speed){
 					break
 				case 'rectangle':
 					if(o.rectangle){
-						var ra = displacer(o.rectS.x,o.rectS.y,dir,gspeed); //returns [x,y]
+						var ra = displacer(o.rectS.x,o.rectS.y,dir,speed); //returns [x,y]
 						if(ra!=undefined){
 							if(dir=='left'){o.rectS.x=ra[0];} 
 							if(dir=='right'){o.rectS.x=ra[0];} 
@@ -997,7 +1033,7 @@ const displacE = function(S,dir,aspect,speed){
 					break
 				case 'text':
 					if(o.text){
-						var ra = displacer(o.txtX,o.txtY,dir,gspeed); //returns [x,y]
+						var ra = displacer(o.txtX,o.txtY,dir,speed); //returns [x,y]
 						if(ra!=undefined){
 							if(dir=='left'){o.txtX=ra[0];} 
 							if(dir=='right'){o.txtX=ra[0];} 
@@ -1017,7 +1053,7 @@ const displacE = function(S,dir,aspect,speed){
 
 	} //orb else
 
-}//displace
+}//displacE
 
 //PEAK
 // /disup  /disdown   /disleft  /disright .command keys to move a structure. orb or entity. Because these are our bodies.
@@ -1050,7 +1086,7 @@ const displacer = function(x, y, dir, speed){
 
 //and limiter is another function that accepts any circle as limit and tests the location handed to it to return a boolean
 //we can just pass an hipotetic x y point..
-	var e_ms = all.get_dist(nx, MSp.state.x , ny, MSp.state.y); var e_msp = e_ms.toFixed(0); var e_ms = parseFloat(e_msp);
+	var e_ms = getDist(nx, MSp.state.x , ny, MSp.state.y); var e_msp = e_ms.toFixed(0); var e_ms = parseFloat(e_msp);
 	if(e_ms>MSp.state.radius){}else{ 
 		x=nx; y=ny; 
 		return [x,y]
@@ -1253,8 +1289,8 @@ const drawAll = function(s){
 //GLOBAL OLD
 const all = {};//will contain everything for now
 //const unl = []; // unique names list.. kinda deprecated. not very smart system
-all.gameStart = Date.now();//sunya initialization time
-all.heartbeat = undefined;//becomes hold return for heartbeat interval
+var gameStart = Date.now();//sunya initialization time
+var heartBeat = undefined;//becomes hold return for heartbeat interval
 
 //orb escence. a different color on each beat
 //.. i could run random range once, then substract 60 to create a second value, and add 60 to create third value, always between
@@ -1263,15 +1299,18 @@ all.heartbeat = undefined;//becomes hold return for heartbeat interval
 //var a_v =0;
 
 
-all.sstr = ' ';//contains symbols as a single string
-all.sstr_l = ' ';//to compare on draw text system
-all.sstr_t = 0;//timer for symbols to dissapear on their own
-all.sstr_font ="30px Courier New"; //string symbols size and font
-all.sstr_x=window.innerWidth/2;//+window.scrollX;
-all.sstr_y=window.innerHeight/2;//+window.scrollY-100;//update this to center
-all.sstr_r=220; all.sstr_g=220; all.sstr_b=220; all.sstr_a=0.8;
+var Sstr = ' ';//contains symbols as a single string
+var SstrL = ' ';//to compare on draw text system
+var SstrT = 0;//timer for symbols to dissapear on their own
+//Sstr_font ="30px Courier New"; //string symbols size and font
+//Sstr_x=window.innerWidth/2;//+window.scrollX;
+//Sstr_y=window.innerHeight/2;//+window.scrollY-100;//update this to center
+var SstrRed=220;
+var SstrGreen=220;
+var SstrBlue=220;
+var SstrAlpha=0.8;
 //all.k_feed=undefined;//a state to print keys feedback
-all.wait_com_key=false; //key mem system flag
+var waitCK=false; //key mem system flag
 
 //all.orb_track_l = undefined; //for prims wheel updates on new orb arrival
 
@@ -1279,38 +1318,25 @@ all.wait_com_key=false; //key mem system flag
 //many timers
 //all.timer_base = 0;
 
-//all.stat = {};//may contain the status of the player avatar
-//all.mouse = {x:undefined, y:undefined, str:undefined}
-//all.mouse_str = undefined;
-//all.touch_xy = undefined;
-//
-all.chat_on = false;//boolean for chat input activation
-all.c_input = ''; //holds input before sending
-all.c_out =[]; //holds output data
+
+var chatOn = false;//boolean for chat input activation
+var chatIn = ''; //holds input before sending
+//all.c_out =[]; //holds output data
 
 
 //ARRAY containers
 
-all.key_d=[];//contains keys on repeat
+var keyD = [];//contains keys on repeat
 
 var visual_q0 = [];//layer 0
 var visual_q1 = [];//later 1
 var visual_q2 = [];//layer 2
 
-//all.com_a = undefined;//[];//commands container
-
-//deprecats
-//all.res_acts = [];//stores act resources
-//all.perform = [];//stores temporary acces to act resources
 
 //TOUCH
 //all.touches_a = []; //holds touches
-all.ges_seq = []; //gesture sequence ? am i using thiis
-all.bt_alr = false; //for touch button system
-
-//deprecat
-//all.stream_a = [];//contains txt lines as items to be streamed
-
+var gesSeq = []; //gesture sequence ? am i using thiis
+var btAlr = false; //for touch button system
 
 
 ///////////////////////////////////////////////////////////////////////////////HTML
@@ -1473,7 +1499,7 @@ const audio_in = document.getElementById('input_audio');
 //INTERFACE,  COMMAND INPUT, KEYBOARD, EVENT, LISTENERS
 
 //KEYS feedback interface
-//prints keys from all.sstr on screen
+//prints keys from Sstr on screen
 //.. ok so new system will simply hold symbols as they come. We will be able to asign commands just as we do now, but every
 //symbol will be usable, we wont map into caps anymore. 
 //Get enterless keys input, place it on k_feed txt, and print with beats to last for 20 heartbeats? and evaluate. If another
@@ -1482,19 +1508,19 @@ const audio_in = document.getElementById('input_audio');
 
 //we need to modify keys feed now..instead of acting on kfeed, we need to modify Kfeed.state
 all.keys_feed = function(){
-	all.sstr_t++;	//timer count should run before clearing and before logic updates
-	if(all.wait_com_key==true){all.sstr_t--;}//wait for command to save on key_s a lock
-	if(all.sstr_t > 20){ //time limit for command feedback 
-		all.sstr_t = 0;	//reinitialization
+	SstrT++;	//timer count should run before clearing and before logic updates
+	if(waitCK==true){SstrT--;}//wait for command to save on key_s a lock
+	if(SstrT > 20){ //time limit for command feedback 
+		SstrT = 0;	//reinitialization
 		//self cleans. we set the txt to undefined
 		//kfeed.is='c_txt'; //Kfeed.state.is=undefined?
 		//kfeed.display='ignore';//just dont push this state.!!!!!!!!!
 		//kfeed.txt=undefined; //Kfeed.state.txt=undefined;?
 		//we clean symbols here thats ok
-		all.sstr = ' '; all.sstr_l = '';//cleaning string symbols here ..?
+		Sstr = ' '; SstrL = '';//cleaning string symbols here ..?
 		return;
 	}
-	if(all.sstr == all.sstr_l){	
+	if(Sstr == SstrL){	
 		//check if text is the same
 		//if txt is the same then just push to print
 		//We probably need to update beats and push here. So call beatUp.. i think beatUp pushes... but we should separate
@@ -1503,20 +1529,20 @@ all.keys_feed = function(){
 		//kfeed.is='c_txt';
 		//kfeed.display='normal';//Kfeed.state
 	}else{
-		all.sstr_l = all.sstr;	//keep track of text for check
+		SstrL = Sstr;	//keep track of text for check
 		
 		//PEAK
 		Kfeed.state.x=eX; Kfeed.state.y=eY; 
-		Kfeed.state.txt=all.sstr_l;
-		Kfeed.state.r=all.sstr_r; Kfeed.state.g=all.sstr_g; Kfeed.state.b=all.sstr_b; Kfeed.state.a=all.sstr_a;
+		Kfeed.state.txt=SstrL;
+		Kfeed.state.r=SstrRed; Kfeed.state.g=SstrGreen; Kfeed.state.b=SstrBlue; Kfeed.state.a=SstrAlpha;
 		//var KF = Kfeed.state;
 		visual_q2.push(Kfeed.state);
 		
-		//kfeed.r=all.sstr_r; kfeed.g=all.sstr_g; kfeed.b=all.sstr_b; kfeed.a=all.sstr_a;
+		//kfeed.r=SstrRed; kfeed.g=SstrGreen; kfeed.b=SstrBlue; kfeed.a=SstrAlpha;
 		//kfeed.x=eX;//-window.innerWidth/2;
 		//kfeed.y=eY;//-window.innerHeight/2; 
 
-		//kfeed.txt=all.sstr_l; 
+		//kfeed.txt=SstrL; 
 		//kfeed.is='c_txt';
 		//kfeed.display='normal';
 	}
@@ -1551,21 +1577,21 @@ const kdown = function(ev){
 	if (ev.key == ' ' && ev.target == document.body) { //spacebar
 		ev.preventDefault();//prevents space to scroll document.. idfk how but it works
 		//console.log('space');
-		if(all.sstr==' '){
+		if(Sstr==' '){
 			//here goes ting to clean key memory
-			all.wait_com_key_forget = true;
+			waitCKforget = true;
 			//all.stream_a.push("Enter key to break command line asociated");
 			//all.screen_log();
 			//console.log("Enter key to break command line asociated");
 
 		}else{
 			//wait com key lock
-			all.wait_com_key = true; 
-			//all.sstr_g=30; all.sstr_r=20;
+			waitCK = true; 
+			//SstrGreen=30; SstrRed=20;
 			//kfeed.g=30; kfeed.r=20;
 
-			//all.stream_a.push(all.sstr + " key ready to be linked","Type a command for this key"); all.screen_log();
-			//console.log(all.sstr + " key ready to be linked");
+			//all.stream_a.push(Sstr + " key ready to be linked","Type a command for this key"); all.screen_log();
+			//console.log(Sstr + " key ready to be linked");
 
 		}
 		return
@@ -1584,11 +1610,11 @@ const kdown = function(ev){
 //phone users have no way to interact with kfeeds from other entities.
 //So kfeed really is a user feedback to manage commands shortcuts, no need to worry about kfeed form or anything. kfeed
 //is not a txt memory either
-	if(ev.key.length==1&&all.chat_on == false){
+	if(ev.key.length==1&&chatOn == false){
 		//key combination to k_feed
-		all.sstr=all.sstr_l+ev.key; all.sstr_t = 0;//by default , at every key stroke, timer should be reset
+		Sstr=SstrL+ev.key; SstrT = 0;//by default , at every key stroke, timer should be reset
 		//console.log(ev.key+'_____'+ev.timeStamp);
-		//console.log(all.sstr_l);
+		//console.log(SstrL);
 
 	//ask for asigned key short
 //while on void , ask for user keyshorts
@@ -1596,7 +1622,7 @@ const kdown = function(ev){
 		var i = ksa.length;
 		//checks for key
 		while(i--){
-			if(ksa[i].key==all.sstr){
+			if(ksa[i].key==Sstr){
 				var key_short = ksa[i];
 				//console.log(key_short);
 				break
@@ -1604,32 +1630,32 @@ const kdown = function(ev){
 		}
 
 		if(key_short){
-			//splice key short if all.wait_com_key_forget is true
-			if(all.wait_com_key_forget){
+			//splice key short if waitCKforget is true
+			if(waitCKforget){
 		//splice from user if we are on void, splice from orb if we are in orb stance.. its the same ksa
 				var key_index = ksa.indexOf(key_short); ksa.splice(key_index, 1);
 				//all.stream_a.push("Key liberated."); all.screen_log();
-				all.wait_com_key_forget = false;
+				waitCKforget = false;
 				var dont_send_com = true;
 			}
 			if(dont_send_com){}else{
 			//send command asocited with key
 			//all.com_a = {str:key_short.com1}//is_a:"c",}
 //so nowinstead of directly sending the command, we send a request to key_d so it keep sending the command as long as button is pressed
-//here is the problem.... all.key_d is repeating the command send even tho its a combination..the problem is here somewhere on
+//here is the problem.... keyD is repeating the command send even tho its a combination..the problem is here somewhere on
 //repeat system...
-			//all.key_d.push({k:ev.key, ins:'left'});
-			if(all.key_d.length>1){}else{
+			//keyD.push({k:ev.key, ins:'left'});
+			if(keyD.length>1){}else{
 				//here, k is the problem. we need to specify that only 1 letter k should be able to be repeated
 				//!!!!!!!!!!!!!!!!! solved. nice. good for now
 				if(key_short.key.length>1){//multi letter keys
 					Entry=key_short.com1;
 				}else{//single letter keys
-					all.key_d.push({k:ev.key , ins:'com', str:key_short.com1});
+					keyD.push({k:ev.key , ins:'com', str:key_short.com1});
 				}
 			}
 			//all.com_a=command;//.push(command);
-			all.sstr_t = 20; all.sstr =' '; all.sstr_l =''; /// this fixed the thing?
+			SstrT = 20; Sstr =' '; SstrL =''; /// this fixed the thing?
 			}
 		}
 	return
@@ -1646,34 +1672,34 @@ const kdown = function(ev){
 //keys literally
 	if(ev.key.length>1){
 		//console.log(ev.key+'special key'+ev.timeStamp);
-		if (ev.key == 'Backspace' && all.chat_on == false){ //backspace
+		if (ev.key == 'Backspace' && chatOn == false){ //backspace
 
-			all.sstr = ' '; all.sstr_l = ''; all.wait_com_key = false;
+			Sstr = ' '; SstrL = ''; waitCK = false;
 		//PEAK ..not implemented!!!!!!!!!!!!!!!!!!!
 		//let KF = Kfeed.state;
-		//KF.x=eX; KF.y=eY; KF.txt=all.sstr_l;
-		//KF.r=all.sstr.r; KF.g=all.sstr.g; KF.b=all.sstr.b; KF.a=all.sstr.a;
+		//KF.x=eX; KF.y=eY; KF.txt=SstrL;
+		//KF.r=Sstr.r; KF.g=Sstr.g; KF.b=Sstr.b; KF.a=Sstr.a;
 		//visual_q2.push(KF);
 			//we want to change the color of the state
 			//
 			//kfeed.is='c_txt'; kfeed.txt=undefined;
 			Kfeed.state.g=220; Kfeed.state.r=220; //kfeed.display='ignore';
-			all.wait_com_key_forget = false; //clear forget key lock also
+			waitCKforget = false; //clear forget key lock also
 	//and also, just clear active stream?
 	//ok if user is on radiant mode, we have to clear the orb stream
 		}//backspace
 
 //ENTER, CHAT TXT MEMORY CREATOR
 //input system to chat ,send strings to server and enter commands
-//if enter, check if all.chat_on is true or false, if true, then send data and chat_on
+//if enter, check if chatOn is true or false, if true, then send data and chat_on
 //to false, or just set chat_on to false if there is no data to send
-//if enter, and chat_on is false, then activate system and set all.chat_on to true
+//if enter, and chat_on is false, then activate system and set chatOn to true
 //when system is activated, allow only e 13 , and focus on chat_in
-//once value is ready, enter sends value to all.c_input so proper filter and
+//once value is ready, enter sends value to chatIn so proper filter and
 //respective emitter send the data to wherever neccesary and set chat_on false
 //and allow other symbols of command interface
 //!!!!!!!!!!!!!!!
-//SO if its a command, we say all.command = chat_in.value;  , if its not, we say all.c_input = chat_in.value..... simple. 
+//SO if its a command, we say all.command = chat_in.value;  , if its not, we say chatIn = chat_in.value..... simple. 
 		if (ev.key == 'Enter'){ //press enter to focus on input html tag
 			//event.Default();
 
@@ -1703,7 +1729,7 @@ const kdown = function(ev){
 					//console.log(Ein);
 				}
 
-				chat_in.value = ""; all.chat_on = false;
+				chat_in.value = ""; chatOn = false;
 				chat_in.blur(); chat_in.style.display="none";
 
 				nLine=false;
@@ -1711,7 +1737,7 @@ const kdown = function(ev){
 
 			}//nLine
 
-			if(all.chat_on == true){
+			if(chatOn == true){
 //PEAK	
 //let normal enter become a command prompt
 //to create an new input, press enter again. phones can simply use a button to enter commands prompt and another button to enter
@@ -1734,23 +1760,23 @@ const kdown = function(ev){
 	/*
 //!!!!!!!!!!!! We need to eimplement wait com system again..
 					//key memory system
-				if(all.wait_com_key==true){
+				if(waitCK==true){
 					var mbox =EkeyS; //U.void_ks;
 					var lm = mbox.length;
 					while(lm--){
 						var ksalr = mbox[lm];
 						if(ksalr.com1==chat_in.value){
-							ksalr.key=all.sstr;
+							ksalr.key=Sstr;
 							var kready = true;
 							break
 						}
 					}
-					if(kready){}else{mbox.push({name:all.sstr, key:all.sstr, com1:chat_in.value});}
-					all.wait_com_key = false;
+					if(kready){}else{mbox.push({name:Sstr, key:Sstr, com1:chat_in.value});}
+					waitCK = false;
 	//PEAK UNIMPLEMENTED!!!!!!!!!!!!!
 					let KF = Kfeed.state;
-	//KF.x=eX; KF.y=eY; KF.txt=all.sstr_l;
-	//KF.r=all.sstr.r; KF.g=all.sstr.g; KF.b=all.sstr.b; KF.a=all.sstr.a;
+	//KF.x=eX; KF.y=eY; KF.txt=SstrL;
+	//KF.r=Sstr.r; KF.g=Sstr.g; KF.b=Sstr.b; KF.a=Sstr.a;
 					KF.g=220; KF.r=220;
 					visual_q2.push(KF);
 				}else{//memory key lock
@@ -1761,13 +1787,13 @@ const kdown = function(ev){
 	*/
 				//
 				chat_in.value = "";
-				all.chat_on = false;
+				chatOn = false;
 				chat_in.blur();
 				chat_in.style.display="none";
 				
 			}else{//if chat_on is false, then activate
 	//this line calls the input. i should probly use a diferent variable  and i need input box to be bigger.
-				chat_in.style.display="inLine"; all.chat_on = true; chat_in.focus();
+				chat_in.style.display="inLine"; chatOn = true; chat_in.focus();
 			}//chat on
 	//chat_in.focus(); bring focus to html input. chat_in.blur(); remove focus
 	//chat_in.value; return text value 
@@ -1793,14 +1819,14 @@ const kdown = function(ev){
 //ESC
 //We will now use Esc to leave a memory in stance at any moment. Not sure what could happen when we are already on Void....
 //but lets say we are editing a memory and press Esc. then we should go to the Husk, Fire or Void stance inmediately
-		if(ev.key == 'Escape' && all.chat_on == false){
+		if(ev.key == 'Escape' && chatOn == false){
 			ev.preventDefault();
 			//same as tab
 		}//esc
 
 //while chat is on, Esc takes us out and doesnt print anything. Fast out
-		if(ev.key == 'Escape' && all.chat_on == true){
-			chat_in.value = ""; all.chat_on=false; chat_in.blur(); chat_in.style.display="none";
+		if(ev.key == 'Escape' && chatOn == true){
+			chat_in.value = ""; chatOn=false; chat_in.blur(); chat_in.style.display="none";
 			nLine=false; //PEAK
 		}//esc on input box
 
@@ -1809,34 +1835,34 @@ const kdown = function(ev){
 //repeatSys . Works like a charm
 //!!!!!!!!!!!!111PEAK
 //let arrows and all special keys to call specific commands. .. just asign a command line to these keys
-		if(ev.key == 'ArrowLeft' & all.chat_on == false){
+		if(ev.key == 'ArrowLeft' & chatOn == false){
 			if(["ArrowLeft"].indexOf(ev.code) > -1) {ev.preventDefault();}
 //ok so just call displace function and pass on direction. we can access stance from anywhere since its a global, so we dont pass stance.
-			if(all.key_d.length<2){
-				all.key_d.push({k:ev.key, ins:'left'});
-				//console.log(all.key_d);
+			if(keyD.length<2){
+				keyD.push({k:ev.key, ins:'left'});
+				//console.log(keyD);
 			}
 		}//left arrow
 
-		if(ev.key == 'ArrowRight' & all.chat_on == false){
+		if(ev.key == 'ArrowRight' & chatOn == false){
 			if(["ArrowRight"].indexOf(ev.code) > -1) {ev.preventDefault();}
-			if(all.key_d.length<2){
-				all.key_d.push({k:ev.key, ins:'right'});
+			if(keyD.length<2){
+				keyD.push({k:ev.key, ins:'right'});
 			}
 		}//right arow
 
-		if(ev.key == 'ArrowUp' & all.chat_on == false){
+		if(ev.key == 'ArrowUp' & chatOn == false){
 			if(["ArrowUp"].indexOf(ev.code) > -1) {ev.preventDefault();}
-			if(all.key_d.length<2){
-				all.key_d.push({k:ev.key, ins:'up'});
+			if(keyD.length<2){
+				keyD.push({k:ev.key, ins:'up'});
 			}
 		}//up arow
 
-		if(ev.key == 'ArrowDown' & all.chat_on == false){
+		if(ev.key == 'ArrowDown' & chatOn == false){
 			//if(["ArrowDown"].indexOf(ev.code) > -1) {ev.preventDefault();}
 			//ev.preventDefault();
-			if(all.key_d.length<2){
-				all.key_d.push({k:ev.key, ins:'down'});
+			if(keyD.length<2){
+				keyD.push({k:ev.key, ins:'down'});
 			}
 		}//down arow
 
@@ -1853,12 +1879,12 @@ const kdown = function(ev){
 //ok so we could complicate this a bit, but i think it might be interesting to try something a bit complex. lets hope is not
 //too expensive to perform this operation everytime we release a 1 key command like this
 const kup = function(ev){
-	var l = all.key_d.length;
+	var l = keyD.length;
 	while(l--){
-		var kd = all.key_d[l];
+		var kd = keyD[l];
 		if(kd.k==ev.key){
-			all.key_d.splice(l,1); //this gives the speed up glitch
-			//all.key_d.length=0; return //this gives even more glitches lol
+			keyD.splice(l,1); //this gives the speed up glitch
+			//keyD.length=0; return //this gives even more glitches lol
 //ok since we are looping here already we are going to take the command key value and store it on another array. we do this with all commands.
 //..
 		}
@@ -1952,7 +1978,7 @@ const getCom = function(C){
 
 
 //return undefined on success, return 'end' otherwise
-const comRiTarget = function(signal,target){
+const comRiTarget = function(signal,target,St){
 // command>>target
 //annalize target on right side
 	var aspect = undefined; var speed = undefined; //let aspect, speed
@@ -1963,8 +1989,9 @@ const comRiTarget = function(signal,target){
 	if(CCS.length==2){
 		var o = Fting(Orbs,'name',CCS[0]); var aspect = CCS[1];
 	} //is a specific aspect target on the orb
+
 	if(CCS.length==1){
-		if(target[0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',target);}
+		if(target[0]=='$'){var o = Fting(Orbs,'name',St);}else{var o = Fting(Orbs,'name',target);}
 	} //its just an orb name as target
 
 //displacements
@@ -1972,21 +1999,22 @@ const comRiTarget = function(signal,target){
 	var dc = signal.substr(0,2);
 	
 	if(dc=='le'){ // left
-//if no speed is specified, we use gspeed of target
-		var dcn = signal.substr(4); if(dcn!=''){var speed = parseFloat(dcn);}
-
+		var dcn = signal.substr(4);
 		if(ent){
 // left>>~
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
 			displacE('~','left',aspect,speed);
 			if(Drag.length>0){
 				for (var i3 = 0; i3 < Drag.length; i3++) {
-					displacE(Drag[i3],'left',aspect,speed);
+					var to = Drag[i3].split('/');
+					displacE(to[0],'left',to[1],speed);
 				}
 			}
 			return
 		}
 		if(o){
 //left>>orb ,  /aspect
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
 			displacE(o.name,'left',aspect,speed);
 //o drag is working but am still not sure if we want to really implement orb drag
 	/*
@@ -2001,55 +2029,71 @@ const comRiTarget = function(signal,target){
 		}
 	}
 
-	if(dc=='ri'){ // left
-		var dcn = signal.substr(5); if(dcn!=''){var speed = parseFloat(dcn);}
+	if(dc=='ri'){//right
+		var dcn = signal.substr(5); //if(dcn!=''){var speed = parseFloat(dcn);}
 		if(ent){
 // right>>~
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
 			displacE('~','right',aspect,speed);
 			if(Drag.length>0){
 				for (var i3 = 0; i3 < Drag.length; i3++) {
-					displacE(Drag[i3],'right',aspect,speed);
+					var to = Drag[i3].split('/');
+					displacE(to[0],'right',to[1],speed);
 				}
 			}
 			return
 		}
 // right>>orb  ,/aspect
-		if(o){displacE(o.name,'right',aspect,speed); return}
+		if(o){
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
+			displacE(o.name,'right',aspect,speed); return
+		}
 	}
 
-	if(dc=='up'){ // left
-		var dcn = signal.substr(2); if(dcn!=''){var speed = parseFloat(dcn);}
+	if(dc=='up'){ // up
+		var dcn = signal.substr(2); //if(dcn!=''){var speed = parseFloat(dcn);}
 		if(ent){
 // up>>~
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
 			displacE('~','up',aspect,speed);
 			if(Drag.length>0){
 				for (var i3 = 0; i3 < Drag.length; i3++) {
-					displacE(Drag[i3],'up',aspect,speed);
+					var to = Drag[i3].split('/');
+					displacE(to[0],'up',to[1],speed);
 				}
 			}
 			return
 		}
 // up>>orb , /aspect
-		if(o){displacE(o.name,'up',aspect,speed); return}
+		if(o){
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
+			displacE(o.name,'up',aspect,speed); return
+		}
 	}
 
-	if(dc=='do'){
-		var dcn = signal.substr(4); if(dcn!=''){var speed = parseFloat(dcn);}
+	if(dc=='do'){ //down
+		var dcn = signal.substr(4); //if(dcn!=''){var speed = parseFloat(dcn);}
 //we need to add Drag here
 		if(ent){
 // down>>~
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
 			displacE('~','down',aspect,speed);
 			if(Drag.length>0){
 				for (var i3 = 0; i3 < Drag.length; i3++) {
-					displacE(Drag[i3],'down',aspect,speed);
+					var to = Drag[i3].split('/');
+					displacE(to[0],'down',to[1],speed);
 				}
 			}
 			return
 		}
 // down>>orb , /aspect
-		if(o){displacE(o.name,'down',aspect,speed); return}
+		if(o){
+			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
+			displacE(o.name,'down',aspect,speed); return
+		}
 	}
 
+//incomplete!!!!!!!!!!!!!!!!!!!!!!!!!
 //strife clockwise and counter clockwise
 //we want to be able to focus on a target circle form for now ... strife comands are incomplete!!!!!!!!!!
 	if(signal=='strifec'){
@@ -2591,14 +2635,122 @@ const getLeValue = function(LS,St){
 //
 	if(SS.length==4){ //SS[3] is a sub
 		if(ent){
-// ~/cont/key/sub
+// ~/cont/ckey/sub
+			// reff.
+			//if(RS[0]=='~'){
+			//cant think about 3 '/' on left side for '~' yet..
+				//return
+			//}
 		}
 		
 		if(o){
-// orb/cont/key/sub
-		}
+// orb/cont/ckey/sub
+			var cont = SS[1]; var ckey = SS[2]; var sub =SS[3];
+			// o , cont, ckey, sub . we are retrieving here RS[1] is cont , RS[2] is ckey
 
-		return 'end'
+			if(cont=='text'){
+				if(o.txtLi){
+					if(o.txtLi.length==0){return 'end'}//nothing here
+					if(ckey=='last'){
+						var lastl = o.txtLi[o.txtLi.length-1];
+
+						if(sub=='beats'){
+// orb/text/last/beats>>?
+							var strba = [];
+							for (var i = 0; i <= lastl.beats.length-1; i++) {
+								var strb =  lastl.beats[i].toString();//txtToB(RSout[i]);
+								strba.push(strb);
+							}
+							//var RSout=strba;
+							//o.o=RSout;
+							return strba
+						}
+						if(sub=='cn'){
+// orb/text/last/cn>>?
+							//var RSout=[lastl.tB];
+							//o.o=RSout;
+							return [lastl.tB]
+						}
+// orb/text/last/1..2..3.. >>?
+						var rln = parseFloat(sub);//we need to turn sub into a number
+						let nan = isNaN(rln);
+						if(nan){return 'end'}
+						if(rln>lastl.beats.length){return 'end'}
+						var strb = lastl.beats[rln-1].toString();
+						//var RSout = [strb]
+						//o.o=RSout;
+						return [strb]
+					}//last
+
+					if(ckey=='current'){
+						var currl = o.txtLi[o.txtB-1]; 
+						if(sub=='beats'){
+// orb/text/current/beats>>?
+							var strba = [];
+							for (var i = 0; i <= currl.beats.length-1; i++) {
+								var strb =  currl.beats[i].toString();
+								strba.push(strb);
+							}
+							//var RSout=strba;
+							//o.o=RSout;
+							return strba
+
+						}
+						if(sub=='cn'){
+// orb/text/current/cn>>?
+							//var RSout=[currl.tB];
+							//o.o = RSout;
+							return [currl.tB];
+						}
+// orb/text/current/1..2..3.. >>?
+						var rln = parseFloat(sub);
+						var nan = isNaN(rln);
+						if(nan){return 'end'}
+						if(rln>currl.beats.length){return 'end'}
+						var strb = currl.beats[rln-1].toString();
+						//var RSout = [strb]
+						//o.o=RSout;
+						return [strb]
+
+					} 
+
+					var rln = parseFloat(ckey);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>o.txtLi.length){return 'end'}
+					var irl = o.txtLi[rln-1];
+					//irl holds the whole line now...
+					if(sub=='beats'){
+// orb/text/1..2..3../beats>>?
+						var strba = [];
+						for (var i = 0; i <= irl.beats.length-1; i++) {
+							var strb =  irl.beats[i].toString();//txtToB(RSout[i]);
+							strba.push(strb);
+						}
+						//var RSout=strba;
+						//o.o=RSout;
+						return strba
+					}
+					if(sub=='cn'){
+// orb/text/1..2..3../cn>>?
+						//var RSout=[irl.tB];
+			//so retrieve commands should not really return data to o.o? not sure. 
+						//o.o = RSout;
+						return [irl.tB]
+					}
+// orb/text/1..2..3../1..2..3..>>?
+					var rln = parseFloat(sub);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>irl.beats.length){return 'end'}
+					var strb = irl.beats[rln-1].toString();
+					//var RSout = [strb];
+					//o.o = RSout;
+					return [strb]
+				}//o.txtLi 
+			}//text
+
+		}
 	}
 	//...
 	return 'end'
@@ -2765,7 +2917,7 @@ const putRiValue = function(op,RS,St,pol){
 // ~/inline
 					chat_in.value = op[0]//we want RSout here
 					chat_in.style.display="inLine";
-					all.chat_on = true; 
+					chatOn = true; 
 					nLine = true; //inline prompt
 					chat_in.focus();
 					return
@@ -2773,7 +2925,7 @@ const putRiValue = function(op,RS,St,pol){
 // ~/comline
 					chat_in.value = op[0]//we want RSout here
 					chat_in.style.display="inLine";
-					all.chat_on = true; 
+					chatOn = true; 
 					chat_in.focus();		
 					return
 /*
@@ -2949,7 +3101,7 @@ const putRiValue = function(op,RS,St,pol){
 							return 'end'
 						}
 						o.txtLi[o.txtB-1].txt = op[0];
-						o.o=[op[0]];
+						//o.o=[op[0]];
 						return
 					}
 
@@ -2972,7 +3124,7 @@ const putRiValue = function(op,RS,St,pol){
 					var rln = parseFloat(ckey);//we need to turn ckey into a number
 					//if(rln==undefined){return 'end'}
 					let nan = isNaN(rln);
-					if(nan){return}
+					if(nan){return 'end'}
 
 					if(rln>=o.txtLi.length){
 						//get the difference... i have a function to get diff now.. maybe use it here!!!!!!!!
@@ -3227,6 +3379,167 @@ const putRiValue = function(op,RS,St,pol){
 
 		}
 		if(o){
+			var cont = SS[1]; var ckey = SS[2]; var sub = SS[3];
+			// o , pol, op , cont, ckey, sub . we are retrieving here CS[1] is cont , CS[2] is ckey
+
+// ?>>orb/con/conk/beats  , ?>>orb/con/conk/mirror
+			if(cont=='text'){
+				if(o.txtLi){
+					if(o.txtLi.length==0){return 'end'}//nothing here
+
+					if(ckey=='last'){
+
+						var lastl = o.txtLi[o.txtLi.length-1];
+
+						if(sub=='beats'){
+// ?>>orb/text/last/beats
+//we want to rewrite all beats. so we clear and use op array to fill it up .. actually we need to transform RSout into beats.
+//So loop RSout elements and run txtToB on each one of them. Beats expects beat formated texts, any number of lines. we need  a safe
+//changes on beats are permanent. 
+							var nba = [];
+							for (var i = 0; i <= op.length-1; i++) {
+								var rsob = txtToB(op[i]);
+								nba.push(rsob);
+							}
+							lastl.beats = nba;
+							lastl.tB = 1;//////////!!!!!!!!!!!!!!!!!!!
+							//o.o=RSout;
+							return
+						}
+						if(sub=='cn'){
+// ?>>orb/text/last/cn
+//We want to change the current beat on line form. This command should only accept a number, no less than 0 and not higher than the line
+//beats.length. needs adjustments!!!!!
+							lastl.tB = op[0];
+							//o.o = RSout[0];
+							return
+						}
+
+						if(sub=='mirror'){
+// ?>>orb/text/last/mirror
+//sowhen we mirror last night, even tho we selected a different line, it didnt mirror the line selected , but kept blinking,
+//mirror line kept blinking on text/1. we need to clarify what is cn and current
+							var mirror = {
+								is:'txt',
+								txt:lastl.txt,
+								font:'18px Courier New', //do we need font here.. ?
+								align:'left', //by default could be left
+								x:o.txtX,//+window.innerWidth/2,
+								y:o.txtY,//+window.innerHeight/2,
+								r:lastl.state.r, g:lastl.state.g,
+								b:lastl.state.b, a:lastl.state.a 
+							}
+							Mirror(op[0],mirror,o.txtL);
+							//o.o=RSout; 
+							return
+
+						}//mirror
+
+					}//last
+
+					if(ckey=='current'){
+						var currl = o.txtLi[o.txtB-1];
+						if(sub=='beats'){
+// ?>>orb/text/current/beats 
+							var nba = [];
+							for (var i = 0; i <= op.length-1; i++) { // lenght-1?
+								var rsob = txtToB(op[i]);
+								nba.push(rsob);
+							}
+							currl.beats = nba;
+							currl.tB = 1;//////////!!!!!!!!!!!!!!!!!!!
+							//o.o=op;
+							return
+
+						}
+						if(sub=='cn'){
+// ?>>orb/text/current/cn
+							currl.tB = op[0];
+							//o.o = op[0];
+							return
+						}
+						if(sub=='mirror'){
+// ?>>orb/text/current/mirror
+							var mirror = {
+								is:'txt',
+								txt:currl.txt,
+								font:'18px Courier New', //do we need font here.. ?
+								align:'left', //by default could be left
+								x:o.txtX,//+window.innerWidth/2,
+								y:o.txtY,//+window.innerHeight/2,
+								r:currl.state.r, g:currl.state.g,
+								b:currl.state.b, a:currl.state.a 
+							}
+							Mirror(op[0],mirror,o.txtL);
+							return
+
+						}//mirror
+
+// ?>>orb/text/current/1..2..3.. 
+						var rln = parseFloat(sub);//we need to turn RS[2] into a number
+						let nan = isNaN(rln);
+						if(nan){return 'end'}
+						if(rln>currl.beats.length){return 'end'}
+						var nb = txtToB(op[0]);
+						currl.beats[rln-1] = nb;
+						//o.o = nb;
+						return
+
+					} 
+
+					/////////
+					var rln = parseFloat(ckey);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>o.txtLi.length){return 'end'}
+					var irl = o.txtLi[rln-1];
+					//maybe irl is undefined... posible error
+					//irl holds the whole line now...
+					if(sub=='beats'){
+// ?>>orb/text/1..2..3../beats 
+						var nba = [];
+						for (var i = 0; i <= op.length-1; i++) {
+							var rsob = txtToB(op[i]);
+							nba.push(rsob);
+						}
+						irl.beats = nba;
+						irl.tB = 1;//////////!!!!!!!!!!!!!!!!!!!
+						//o.o=RSout;
+						return
+					}
+					if(sub=='cn'){
+// ?>>orb/text/1..2..3../cn 
+						irl.tB=op[0];
+						//o.o = RSout[0];
+						return
+					}
+					if(sub=='mirror'){
+// ?>>orb/text/1..2..3../mirror
+						var mirror = {
+							is:'txt',
+							txt:irl.txt,
+							font:'18px Courier New', //do we need font here.. ?
+							align:'left', //by default could be left
+							x:o.txtX,//+window.innerWidth/2,
+							y:o.txtY,//+window.innerHeight/2,
+							r:irl.state.r, g:irl.state.g,
+							b:irl.state.b, a:irl.state.a 
+						}
+						Mirror(op[0],mirror,o.txtL);
+						//o.o=RSout; 
+						return
+
+					}//mirror
+// ?>>orb/text/1..2..3../1..2..3.. 
+					var rln = parseFloat(sub);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>irl.beats.length){return 'end'}
+					irl.beats[rln-1] = op[0];
+					//o.o = RSout[0];
+					return
+				}//o.txtLi 
+			}//text
 
 		}
 	
@@ -3247,10 +3560,8 @@ const comA = function(S,C){
 //if >> , get value on left side, put it on right side or, use command to affect right side
 //if ==, get value on left side, get value on right side, compare
 //get command, annalize target
-//const comLeCast
 //const comRiTarget
 //const getLeValue
-//const getRiValue
 //const putRiValue
 //const getCom
 		
@@ -3300,7 +3611,7 @@ const comA = function(S,C){
 		if(pol==0){
 			var MSS = MS[0].split('/');
 			if(MSS.length==1){
-				return comRiTarget(MS[0],MS[1]);
+				return comRiTarget(MS[0],MS[1],S);
 			}
 
 //if we get here, its a retrieve not a signal .We divide using '/' on getLeValue. it should return LSout .
@@ -3313,11 +3624,36 @@ const comA = function(S,C){
 
 	}//'>>'
 
-	var MS = C.split('==');
+	var MS = C.split('=='); //... ok its also working
 	if(MS.length==2){
 //check for '#'. 
+		if(MS[0][0]=='#'){
+			if(MS.length==2){ 
+	// there is 1 '=='
+				var LSout = [];
+				var lit = MS[0].substr(1); var litn = parseFloat(lit); var nan = isNaN(litn);
+				if(nan){LSout.push(lit);}else{LSout.push(litn);}
+			}
+			//reff
+			//if(MS.length>2){
+	//we want to make LSout into everything until the last '>>'.. and RS must be the last '>>'
+			//	var RSh = MS.pop();
+			//	var LSo = MS.join('>>');
+			//	var rmhash = LSo.substr(1);
+			//	var LSout = [rmhash];
+			//	MS[1]=RSh;
+			//}
+		}else{
+			var LSout = getLeValue(MS[0],S);
+		}
+
+		var RSout = getLeValue(MS[1],S);
 //check for left side as retrieve value.  check right side also as retrieve value. compare
-	}
+		//problem here is... arrays cant be compared... but maybe we can turn these outs into strings and just compare them
+		var lsout = LSout.toString();	var rsout = RSout.toString();
+		if(lsout==rsout){return}else{return 'end'}
+		
+	}// '=='
 
 //if we still here, its an entity command with no '>>' nor '=='. It might also be a retrieve with or without '/' to be
 //printed into the current stance orb if text aspect activated
@@ -3354,1806 +3690,10 @@ const comA = function(S,C){
 	//if we got here, then this is not a valid command, so dont run next instruction after '<>' if any
 	return 'end'
 
-//////////////////////////////////////////////////////////////
-
-/*
-//OK sowe actually want to be able to just dump output from commands into the orb that called  the command. !!!!!!!!!!!!!!! by default
-//when no ">>"
-//So we first annalize TS[0] , the Retrieving Side and then we see how it would go into TS[1] the Container Side .
-//ok so in case we wanted to say something like '#orb/key>>orb2/key>>orb/text' , the system uses the last '>>' to seperate sides
-//With this, we can now pass literal commands into a container
-	var TS = C.split('>>');  //transfer split
-
-//PEAK '#'
-//hashtag should allow everything in between '#' and the last '>>' . Literals require at least 1 '>>' . A command line starting
-//with '#' can be used to change any container or key value after '>>'. it produces RSout. working perfectly
-	if(TS[0][0]=='#'){
-		if(TS.length==2){ 
-// there is 1 '>>'
-			var RSout = [];
-			var lit = TS[0].substr(1); var litn = parseFloat(lit);
-			var nan = isNaN(litn);
-			if(nan){RSout.push(lit);}else{RSout.push(litn);}
-		}
-		if(TS.length>2){
-//we want to make RSout into everything until the last '>>'.. and CS must be the last '>>'
-			var CSh = TS.pop();
-			var RSo = TS.join('>>');
-			var rmhash = RSo.substr(1);
-			var RSout = [rmhash];
-			TS[1]=CSh;
-		}
-
-	}//#	
-
-
-//if there is no '>>' it means its an orb creation command or memory space grow or shrink request...
-//or now it could be '==' .
-//.. or now it could be an orb switch or ent ? all retrieve commands should be available to be called on their own and return the values
-//and put them into the orb text input if the orb has text aspect awakened
-	if(TS.length==1){
-//ORB PEAK
-//this command should create an orb soul. Probably needs to have the entity physical stats. The orb created location has the coordinates
-//of the entity screen center and all aspects are closed initially. . probably we also want all defense layers off
-//we could say @orbname ..
-
-// @orbname
-		if(C[0]=='@'){
-			var oname = C.substr(1);
-			//look if the name already has been asigned to an orb. what if it has
-			let l1 = staNce.length;
-			while(l1--){
-				if(oname==staNce[l1]){return 'end'} //maybe some feedback here..
-			}
-			var o = OrbSoul();
-		//for now we are having body aspect by default and text by default.. and others lol
-			o.body=true; o.text=true; o.script=true; o.circle=true;
-			//o.rectangle=true; o.image=true; o.oscillator=true;//for now
-			//line
-			//audio
-			//...
-
-			SoulSeal(o);
-			//this for now.. but we need to decide orbs first location by default..
-			o.txtX=eX; o.txtY=eY; //!!!!!!!
-			if(oname!=''){o.name=oname;}
-			Orbs.push(o);
-			staNce.push(o.name);
-
-			return 
-		}// @
-
-//memory space grow
-		if(TS[0]=='msgrow'){
-			MSpRad++;
-			MSp.state.radius++;
-			//we should do pop push here. The last beat should be the 'first one'.
-			//var last = MSp.beats.length-1;
-			//MSp.beats[last].pop(); MSp.beats[last].pop(); MSp.beats[last].push('radius',msRad); 
-//lets try returning something on Eout here!!!!!!!!!1
-			Eout = 'msgrow';
-			return
-		}
-//memory space shrink
-		if(TS[0]=='msshrink'){
-			MSpRad--;
-			MSp.state.radius--;
-			//var last = MSp.beats.length-1;
-			//MSp.beats[last].pop(); MSp.beats[last].pop(); MSp.beats[last].push('radius',msRad); 
-			Eout = 'msshrink';
-			return
-		}
-//create a buffer for an image file on local machine 
-		if(TS[0]=='loadimg'){
-			img_in.click();
-			return
-		}
-//local audio file buffer into the browser
-		if(TS[0]=='loadaudio'){
-			audio_in.click();
-			return
-		}
-
-
-		var RS = TS[0].split('/');
-		var o = Fting(Orbs,'name',S); //stance orb o
-		if(o){
-//commands to dump data into the stance orb
-
-			if(o.text){}else{return}
-
-			if(RS[0]=='~'){
-// ~
-//return access keys to entity structure
-				var op=[
-					'~/name', '~/orbs', '~/stance', '~/dsignat', '~/in', '~/out', '~/gspeed', '~/wspeed',
-					'~/x', '~/y', '~/angle', '~/dismode'
-				]
-			}
-			
-			//var or = Fting(Orbs,'name',RS[0]);//!!!
-			if(RS[0]=='$'){var or = Fting(Orbs,'name',S); }else{ var or = Fting(Orbs,'name',RS[0]); }
-// $
-//return access keys for orb control $elected or $tanciated
-			if(or){
-				var op=[
-					or.name+'/name', or.name+'/gspeed', or.name+'/wspeed', or.name+'/in', 
-					or.name+'/out', or.name+'/x', or.name+'/y', or.name+'/angle'
-					//o.name+'/elis'
-				];
-				if(or.text){op.push(or.name+'/text');}
-				if(or.script){op.push(or.name+'/script');}
-				if(or.circle){op.push(or.name+'/circle');}
-				if(or.rectangle){op.push(or.name+'/rectangle');}
-				if(or.oscillator){op.push(or.name+'/osc');}
-				if(or.image){op.push(or.name+'/image');}
-			}
-
-
-			if(RS.length==2){ //there is 1 '/' on the left side...
-// ~/key
-				if(RS[0]=='~'){
-					var op = swKEnt(RS[1],0,undefined);
-				}
-//into a different array ALOrbs , after loop orbs. This array contains all signals that need inmediate reaction to orbs activity
-//drag, delete, in, out. All these signals need a special after procesing time .
-				if(or){ //orb on RS[0]
-			//. we could simply include all signals into a switch !!
-					if(RS[1]=='in'||RS[1]=='out'){
-						if(o.cast){ //o.cast //!!!!!!!!!!
-							if(RS[1]=='in'){
-//orb/in 
-								var op = [or.i]; if(or.i==undefined){return 'end'}
-							}
-							if(RS[1]=='out'){
-//orb/out
-								var op = [or.o]; if(or.o==undefined){return 'end'}
-							}
-							o.cast=false;
-						}else{
-//create package to read later in order to not have issues, orb/in or out should always go on the first line. .We also need to let
-//know the orb loop
-//!!!!!!!!!a detail here .... can signal run the second command as a signal later?.. hmm i think it can
-//we want to use RS[0] name to find the orb and ask for the whole command on scB because C only holds first '<>' 
-//.. and yea we want to recycle comA so we want to use comA again on ALOrbs loop. We need a tag to distinguish . ok its o.cast
-//.. we store the tag on the stance calling.. and also use the stance scC 
-							if(or){
-								o.cast=true;
-								ALOrbs.push({//scR:'signal', 
-									st:S,//RS[0], //? stancE
-									com:o.scC[o.scB-1]
-								});
-								//we dont want to read the second instruction on line either just yet
-							}
-							return 'end'
-						}
-					}else{//in and out
-// orb/key
-						var op = swKOrb(or,RS[1],0,undefined);
-					}
-				}//if or
-
-			}//1 '/' on left side, no '>>'
-
-			if(RS.length==3){ //there is 2 '/' on the left side...
-// orb/container/ckey
-				var op = swCKOrb(or,RS[1],RS[2],0,undefined);
-			}
-//
-			//length 4? ... incomplete
-
-		}//orb stance retrieving no '>>' . just use stance text aspect to print data
-
-//op generated here is directed by default into the current stance orb text . no '>>' 
-		if(op){
-			o.txtLi = [];
-			var l = op.length; 
-	//so RSout(op) is always expected to be a list of lines we can use to create a text.. format lines and push them into data
-			while(l--){
-				var text = op[l];
-				var Line = DataLine();
-				//use dsignat to create default beats on the new line
-				Line.beats=dsignat;
-		//maybe we could pass entity layer here laYer ?
-				Line.x=o.txtX; Line.y=o.txtY;
-				Line.txt=text;
-				o.txtLi.push(Line);
-			}
-//we also probably need to let the orb know it has new data so we might want to call.... line alignment functions
-			dESpacer(o);
-
-			return //[]  //not sure what to return here
-		}
-
-	}//no '>>'
-
-//from here on comes transfer commands. These use the value retrieved and use it to modify the target on the right side CS of '>>'
-	//
-	if(TS.length==2){ //there is '>>'
-
-//left side retrieves, right side accepts the return value. on the left side we need to determine from where we need to retrieve
-//on the right side, we need to check if container is capable to handle the output from left side. TS[0] is the left side
-//we need to annalize TS[0] , RS retrieve side
-		var RS = TS[0].split('/');
-//polarity
-//.. we could also say +234>>? . its not dificult to implement from here. incresing by number like this is probably going to be
-//used a lot but it might be messy
-		var pol = 0;
-		if(RS[0][0]=='+'){var pol = 1;}
-		if(RS[0][0]=='-'){var pol = -1;}
-
-// no '/' on left side , and '>>' . it means we are not retrieving from left, we are casting
-//these commands always act upon something so they use '>>' . they dont use '/' either
-// we have , displacement commands, toggle, edit data commands, or commands that act upon orbs as well
-		if(RS.length==1){
-
-// command>>target
-//annalize target on right side
-			var aspect = undefined; var speed = undefined;
-			if(TS[1][0]=='~'){var ent = true;}
-//so we may or may not have a '/' here.
-//if no aspect is specified, we move the form specified in o.cursor
-			var CCS = TS[1].split('/');  //
-			if(CCS.length==2){
-				var o = Fting(Orbs,'name',CCS[0]); var aspect = CCS[1];
-			} //is a specific aspect target on the orb
-			if(CCS.length==1){
-				if(TS[1][0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',TS[1]);}
-			} //its just an orb name as target
-
-//displacements
-			//get the displacement command by reading just the first 2 letters.. ok it works!!
-			var dc = RS[0].substr(0,2);
-			
-			if(dc=='le'){ // left
-//if no speed is specified, we use gspeed of target
-				var dcn = RS[0].substr(4); if(dcn!=''){var speed = parseFloat(dcn);}
-
-				if(ent){
-// left>>~
-					displacE('~','left',aspect,speed);
-					if(Drag.length>0){
-						for (var i3 = 0; i3 < Drag.length; i3++) {
-							displacE(Drag[i3],'left',aspect,speed);
-						}
-					}
-					return
-				}
-				if(o){
-//left>>orb ,  /aspect
-					displacE(o.name,'left',aspect,speed);
-		//o drag is working but am still not sure if we want to really implement orb drag
-					if(o.drag.length>0){
-						for (var i3 = 0; i3 < o.drag.length; i3++) {
-							displacE(o.drag[i3],'left',aspect,speed);
-						}
-					}
-					return
-
-				}
-			}
-
-			if(dc=='ri'){ // left
-				var dcn = RS[0].substr(5); if(dcn!=''){var speed = parseFloat(dcn);}
-				if(ent){
-// right>>~
-					displacE('~','right',aspect,speed);
-					if(Drag.length>0){
-						for (var i3 = 0; i3 < Drag.length; i3++) {
-							displacE(Drag[i3],'right',aspect,speed);
-						}
-					}
-					return
-				}
-// right>>orb  ,/aspect
-				if(o){displacE(o.name,'right',aspect,speed); return}
-			}
-
-			if(dc=='up'){ // left
-				var dcn = RS[0].substr(2); if(dcn!=''){var speed = parseFloat(dcn);}
-				if(ent){
-// up>>~
-					displacE('~','up',aspect,speed);
-					if(Drag.length>0){
-						for (var i3 = 0; i3 < Drag.length; i3++) {
-							displacE(Drag[i3],'up',aspect,speed);
-						}
-					}
-					return
-				}
-// up>>orb , /aspect
-				if(o){displacE(o.name,'up',aspect,speed); return}
-			}
-
-			if(dc=='do'){
-				var dcn = RS[0].substr(4); if(dcn!=''){var speed = parseFloat(dcn);}
-		//we need to add Drag here
-				if(ent){
-// down>>~
-					displacE('~','down',aspect,speed);
-					if(Drag.length>0){
-						for (var i3 = 0; i3 < Drag.length; i3++) {
-							displacE(Drag[i3],'down',aspect,speed);
-						}
-					}
-					return
-				}
-// down>>orb , /aspect
-				if(o){displacE(o.name,'down',aspect,speed); return}
-			}
-
-//strife clockwise and counter clockwise
-//we want to be able to focus on a target circle form for now ...
-			if(RS[0]=='strifec'){
-// strifec>>~
-				if(ent){
-					strifE('~','right',undefined,undefined,Focus);
-				}
-			}
-			if(RS[0]=='strifecc'){
-// strifecc>>~
-				if(ent){
-					strifE('~','left',aspect,speed);
-				}
-
-			}
-
-			if(RS[0]=='advance'){
-// advance>>~
-				if(ent){
-					strifE('~','up',aspect,speed);
-				}
-
-			}
-
-			if(RS[0]=='recede'){
-// recede>>~
-				if(ent){
-					strifE('~','down',aspect,speed);
-				}
-
-			}
-
-
-//a commnad to delete a target orb.. for now
-// delete>>orb
-			if(RS[0]=='delete'){
-				if(o){
-					//send a signal to be processed on correct instance. but for now just remove
-					var ioo = Orbs.indexOf(o);
-					Orbs.splice(ioo,1);
-					var iooo = staNce.indexOf(o.name);
-					staNce.splice(iooo,1);
-					return
-				}
-				return 'end'
-			}
-
-//.. and how about deleting specific things. how would delete line look like.. here maybe?
-// rmline>>orb/text/..... hm... modify the switch a bit maybe? Because now we can do a command>>into a specific place/of a target orb
-//so '>>' doesnt just transfer data but sinthax also uses it to cast a command on a target... !!!!!!! we definitely want the sinthax
-//to work like this because command>>target looks kinda easy to grasp i mean it is self explanatory imo... ok this is interesting..
-//But i just realized rmline could simply access an orb, and just yoink the current text line. we really dont need more data than that
-//.. this is notbad either.. 
-// rmline>>orb
-			if(RS[0]=='rmline'){
-//we could send a signal kinda like when we do orb/in ..
-				if(o){
-					//send a signal to be processed on correct instance. but for now just remove the line on txtB
-					if(o.text){
-						var targetl = o.txtLi[o.txtB-1];
-						if(targetl){
-							o.txtLi.splice(o.txtB-1,1);
-							dESpacer(o);
-							return
-						}
-					}
-				}			
-				return 'end'
-			}
-
-//aspect embeding commands
-// form>>orb
-			if(RS[0]=='textform'){
-				if(o){ o.text=true; SoulSeal(o); return }else{return 'end'}
-			}
-			if(RS[0]=='circleform'){
-				if(o){ o.circle=true; SoulSeal(o); return }else{return 'end'}
-			}
-			if(RS[0]=='rectangleform'){
-				if(o){ o.rectangle=true; SoulSeal(o); return }else{return 'end'}
-			}
-			if(RS[0]=='oscillatorform'){
-				if(o){ o.oscillator=true; SoulSeal(o); return }else{return 'end'}
-			}
-			if(RS[0]=='imageform'){
-				if(o){ o.image=true; SoulSeal(o); return }else{return 'end'}
-			}
-			if(RS[0]=='scriptform'){
-				if(o){ o.script=true; SoulSeal(o); return }else{return 'end'}
-			}
-
-//these return something to place on target . produce RSout
-// ~
-			if(RS[0]=='~'){
-				RSout=[
-					'~/name', '~/orbs', '~/stance', '~/dsignat', '~/in', '~/out', '~/gspeed', '~/wspeed',
-					'~/x', '~/y', '~/angle', '~/dismode'
-				]
-			}
-// $
-			if(RS[0]=='$'){
-				var so = Fting(Orbs,'name',S);
-				if(so){
-					var RSout=[
-						so.name+'/name', so.name+'/gspeed', so.name+'/wspeed', so.name+'/in', 
-						so.name+'/out', so.name+'/x', so.name+'/y', so.name+'/angle'
-						//o.name+'/elis'
-					];
-					if(so.text){RSout.push(so.name+'/text');}
-					if(so.script){RSout.push(so.name+'/script');}
-					if(so.circle){RSout.push(so.name+'/circle');}
-					if(so.rectangle){RSout.push(so.name+'/rectangle');}
-					if(so.oscillator){RSout.push(so.name+'/osc');}
-					if(so.image){RSout.push(so.name+'/image');}
-				}
-			}
-
-
-		}//key commands with no '/' on left side
-
-
-// 1 '/' on the left side RS. it means we are calling retrieve commands. These always look for a key value inside entity or orb
-//and return an array RSout with 1 or multilines of data to be placed on CS 
-		if(RS.length==2){ //there is 1 '/' on the left side...
-//can we have orb/x>>orb/out ..... no these instructions should always go on the left side. makes no sense to read them from right side
-//there is a good reason trust me... wait no we are actually doing this on Entry system. Yeah #something>>orb/in puts the value on left
-//side into orb/in, and so the system puts orb/in into the current line if any
-			if(RS[0]=='~'){
-// ~/key>>?
-				var RSout = swKEnt(RS[1],0,undefined);
-// ~/in>>?
-				if(RS[1]=='in'){
-					var RSout = [Ein]; if(Ein==undefined){return 'end'}
-				}
-				if(RS[1]=='out'){
-// ~/out>>?
-//~/out/com , ~/out/target ... so out/com returns the command as a string and out/target returns an orb or a memory element, a line,
-//a frame... hmmmm ... what do we really want out to hold..? the result of the casted command? or maybe the command itself raw
-					var RSout = [Eout]; if(Eout==undefined){return 'end'}
-				}
-
-			}
-
-
-			if(RS[0]=='$'){var o = Fting(Orbs,'name',S); }else{ var o = Fting(Orbs,'name',RS[0]); }
-			if(o){
-				if(RS[1]=='in'||RS[1]=='out'){
-//no need to ask if signal, if in or out, just push the command and caster name into ALOrbs to be procesed after main heartbeat loop
-//.... so in this case, we cant ask for o, because o is RS[0] if no '$'. we always want to ask for S because we want to kick this command
-					var sto = Fting(Orbs,'name',S);
-					if(sto.cast){
-						if(RS[1]=='in'){
-//orb/in>>?
-							var RSout = [o.i]; if(o.i==undefined){return 'end'}
-							//if o.i has nothing, we should return end
-						}
-						//still not sure of what out does...
-						if(RS[1]=='out'){
-//orb/out>>?
-							var RSout = [o.o]; if(o.o==undefined){return 'end'}
-						}
-						sto.cast=false;
-					}else{
-
-						sto.cast=true;
-						ALOrbs.push({//scR:'signal', 
-							st:S,//RS[0], //? stancE
-							//script:true, 
-							//com:C
-							com:sto.scC[sto.scB-1]
-						});
-//we are pushing the whole instruction to read after all other orbs updates because we dont want to read the second instruction on
-//line either just yet ...so ALOrbs uses the name as S and the command itself
-						return 'end'
-					}
-				}else{//in and out special cases
-//orb/key>>?
-					//.. why not include in and out operations into swKOrb?
-					var RSout = swKOrb(o,RS[1],0,undefined);
-				}
-
-			}// orbname on RS[0]
-
-		}// 1 '/' on RS, 1 '>>'
-
-//2 '/' on retrieve side RS ... 
-		if(RS.length==3){ //there are two '/' on the left side..
-// ~/container/conk>>?
-			if(RS[0]=='~'){
-//maybe we could have ~/msp/x ... !!!!!!!!!!!!!! or ~/keys/1
-				//var RSout = swCKEnt ... //not implemented yet
-			}
-
-// orb/container/conk>>?  
-			if(RS[0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',RS[0]);}
-			if(o){
-				var RSout = swCKOrb(o, RS[1],RS[2],pol,undefined);
-			}
-
-		}// 2 '/' on left side , 1 '>>'
-// 3 '/' on left side
-		if(RS.length==4){ 
-			if(RS[0]=='~'){
-//cant think about 3 '/' on left side for '~' yet..
-				//return
-			}
-
-			if(RS[0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',RS[0]);}
-			if(o){
-				if(RS[1]=='text'){
-					if(o.txtLi){
-						if(o.txtLi.length==0){return 'end'}//nothing here
-						if(RS[2]=='last'){
-							var lastl = o.txtLi[o.txtLi.length-1];
-
-							if(RS[3]=='beats'){
-// orb/text/last/beats>>?
-								var strba = [];
-								for (var i = 0; i <= lastl.beats.length-1; i++) {
-									var strb =  lastl.beats[i].toString();//txtToB(RSout[i]);
-									strba.push(strb);
-								}
-								var RSout=strba;
-								o.o=RSout;
-							}
-							if(RS[3]=='cn'){
-// orb/text/last/cn>>?
-								var RSout=[lastl.tB];
-								o.o=RSout;
-							}
-							if(o.o==undefined){ 
-// orb/text/last/1..2..3.. >>?
-								var rln = parseFloat(RS[3]);//we need to turn RS[3] into a number
-								let nan = isNaN(rln);
-								if(nan){return 'end'}
-								if(rln>currl.beats.length){return 'end'}
-								var strb = lastl.beats[rln-1].toString();
-								var RSout = [strb]
-								o.o=RSout;
-							}
-						}//last
-
-						if(RS[2]=='current'){
-							var currl = o.txtLi[o.txtB-1]; 
-							if(RS[3]=='beats'){
-// orb/text/current/beats>>?
-								var strba = [];
-								for (var i = 0; i <= currl.beats.length-1; i++) {
-									var strb =  currl.beats[i].toString();//txtToB(RSout[i]);
-									strba.push(strb);
-								}
-								var RSout=strba;
-								o.o=RSout;
-
-							}
-							if(RS[3]=='cn'){
-// orb/text/current/cn>>?
-								var RSout=[currl.tB];
-								o.o = RSout;
-							}
-							if(o.o==undefined){ 
-// orb/text/current/1..2..3.. >>?
-								var rln = parseFloat(RS[3]);//we need to turn RS[3] into a number
-								let nan = isNaN(rln);
-								if(nan){return 'end'}
-								if(rln>currl.beats.length){return 'end'}
-								var strb = currl.beats[rln-1].toString();
-								var RSout = [strb]
-								o.o=RSout;
-							}
-
-						} 
-
-						if(o.o==undefined){ 
-							var rln = parseFloat(RS[2]);
-							let nan = isNaN(rln);
-							if(nan){return 'end'}
-							if(rln>o.txtLi.length){return 'end'}
-							var irl = o.txtLi[rln-1];
-							//irl holds the whole line now...
-							if(RS[3]=='beats'){
-// orb/text/1..2..3../beats>>? 
-								var strba = [];
-								for (var i = 0; i <= irl.beats.length-1; i++) {
-									var strb =  irl.beats[i].toString();//txtToB(RSout[i]);
-									strba.push(strb);
-								}
-								var RSout=strba;
-								o.o=RSout;
-							}
-							if(RS[3]=='cn'){
-// orb/text/1..2..3../cn>>?
-								var RSout=[irl.tB];
-				//so retrieve commands should not really return data to o.o? not sure. 
-								o.o = RSout;
-							}
-							if(o.o==undefined){ 
-// orb/text/1..2..3../1..2..3..>>?
-								var rln = parseFloat(RS[3]);
-								let nan = isNaN(rln);
-								if(nan){return 'end'}
-								if(rln>irl.beats.length){return 'end'}
-								var strb = irl.beats[rln-1].toString();
-								var RSout = [strb];
-								o.o = RSout;
-							}
-						}//RS[2] is a number to access a line
-					}//o.txtLi 
-				}//text
-			}//RS[0] is orb
-
-		}// 3 '/' on left side
-
-/////////////////////////////////////////////////////////////////////////// CS
-//We need or RSout or pol not 0. This part here is key to stop the second command on the line from executing when the first one
-//didnt find anything to retrieve
-		if(pol==0){
-			if(RSout){}else{return 'end'}
-		}
-//RSout processing....		
-//By now we should have a return value on RSout. We need to annalise TS[1] to see if we can place
-//it where the instruction requests
-//so now we use TS[1] to work on the right side. CS . container side
-		var CS = TS[1].split('/');
-//there is one '/' on the right side...  there should at least be 1 '/' because there is '>>' , and this means we want to place a value
-//somewhere, and we can never place a value on an orb or an entity directly >>orb , ent , thats just ugly.. haha yeah but now we
-//can do command>>orb  , ent   .. so yeah CS.length==1 is a thing now. . but this is just transfering values commands 
-		if(CS.length==2){ 
-			if(CS[0]=='~'){
-// ?>>~/entkey
-				//so RSout is an array always 
-				Eout = swKEnt(CS[1],pol,RSout); 
-//..we could do
-// ?>>~/in   , out .... no we can do this on orbs, not entities. doing it on entities would be kinda wack
-
-				return
-			}
-
-			if(CS[0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',CS[0]);}
-			if(o){
-// ?>>orb/key .. includes in and out
-				//console.log('RSout??'); //WE ARE TOTALLY HERE. CONGRATULATIONS MY GUY THIS IS GOING WELL:D
-				//YOUT GOT THIS COME BACK LATER PLEASE WE UNDERSTAND YOUR BATERY IS DYING ITS HARD TO BE A HUMAN U,U
-				o.o = swKOrb(o,CS[1],pol,RSout); //here goes RSout.. right?
-
-				return
-			}
-			
-		} // 1 '/' on right side
-
-// 2 '/' on right side
-		if(CS.length==3){ 
-
-			if(CS[0]=='~'){
-// ?>>~/con/ckey.... maybe later?
-				// Eout =
-				//return
-			}
-			if(CS[0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',CS[0]);}
-			if(o){
-//?>>orb/con/ckey  
-				o.o = swCKOrb(o,CS[1],CS[2],pol,RSout); 
-				return
-			}		
-
-		}// 2 '/' on right side
-
-// 3 '/' on right side
-		if(CS.length==4){ 
-			if(CS[0]=='~'){
-// ?>>~/con/ckey.... maybe later?
-				//return
-			}
-
-// ?>>orb/con/conk/beats  , ?>>orb/con/conk/mirror
-			if(CS[0]=='$'){var o = Fting(Orbs,'name',S);}else{var o = Fting(Orbs,'name',CS[0]);}
-			if(o){
-				if(CS[1]=='text'){
-					if(o.txtLi){
-						if(o.txtLi.length==0){return 'end'}//nothing here
-
-						if(CS[2]=='last'){
-
-							var lastl = o.txtLi[o.txtLi.length-1];
-
-							if(CS[3]=='beats'){
-// ?>>orb/text/last/beats
-//we want to rewrite all beats. so we clear and use RSout array to will it up .. actually we need to transform RSout into beats.
-//So loop RSout elements and run txtToB on each one of them. Beats expects beat formated texts, any number of lines. we need  a safe
-//changes on beats are permanent. 
-								var nba = [];
-								for (var i = 0; i <= RSout.length-1; i++) {
-									var rsob = txtToB(RSout[i]);
-									nba.push(rsob);
-								}
-								lastl.beats = nba;
-								lastl.tB = 1;//////////!!!!!!!!!!!!!!!!!!!
-								o.o=RSout; return
-							}
-							if(CS[3]=='cn'){
-// ?>>orb/text/last/cn
-//We want to change the current beat on line form. This command should only accept a number, no less than 0 and not higher than the line
-//beats.length. needs adjustments!!!!!
-								lastl.tB = RSout[0];
-								o.o = RSout[0]; return
-							}
-
-							if(CS[3]=='mirror'){
-// ?>>orb/text/last/mirror
-//sowhen we mirror last night, even tho we selected a different line, it didnt mirror the line selected , but kept blinking,
-//mirror line kept blinking on text/1. we need to clarify what is cn and current
-								var mirror = {
-									is:'txt',
-									txt:lastl.txt,
-									font:'18px Courier New', //do we need font here.. ?
-									align:'left', //by default could be left
-									x:o.txtX,//+window.innerWidth/2,
-									y:o.txtY,//+window.innerHeight/2,
-									r:lastl.state.r, g:lastl.state.g,
-									b:lastl.state.b, a:lastl.state.a 
-								}
-								Mirror(RSout[0],mirror,o.txtL);
-								o.o=RSout; return
-
-							}//mirror
-
-						}//last
-
-						if(CS[2]=='current'){
-							var currl = o.txtLi[o.txtB-1];
-							if(CS[3]=='beats'){
-// ?>>orb/text/current/beats 
-								var nba = [];
-								for (var i = 0; i <= RSout.length-1; i++) { // lenght-1?
-									var rsob = txtToB(RSout[i]);
-									nba.push(rsob);
-								}
-								currl.beats = nba;
-								currl.tB = 1;//////////!!!!!!!!!!!!!!!!!!!
-								o.o=RSout;
-								//.. actually we need to transform RSout into beats
-								//currl.beats = RSout;
-
-							}
-							if(CS[3]=='cn'){
-// ?>>orb/text/current/cn
-								currl.tB = RSout[0];
-								o.o = RSout[0];
-								return
-							}
-							if(CS[3]=='mirror'){
-// ?>>orb/text/current/mirror
-								var mirror = {
-									is:'txt',
-									txt:currl.txt,
-									font:'18px Courier New', //do we need font here.. ?
-									align:'left', //by default could be left
-									x:o.txtX,//+window.innerWidth/2,
-									y:o.txtY,//+window.innerHeight/2,
-									r:currl.state.r, g:currl.state.g,
-									b:currl.state.b, a:currl.state.a 
-								}
-								Mirror(RSout[0],mirror,o.txtL);
-								o.o=RSout; return
-
-							}//mirror
-
-							if(o.o==undefined){ 
-// ?>>orb/text/current/1..2..3.. 
-								var rln = parseFloat(CS[3]);//we need to turn RS[2] into a number
-								let nan = isNaN(rln);
-								if(nan){return 'end'}
-								if(rln>currl.beats.length){return 'end'}
-								var nb = txtToB(RSout[0]);
-								currl.beats[rln-1] = nb;
-								o.o = nb;
-								return
-							}
-
-						} 
-
-						if(o.o==undefined){ //asume its a number.. but it might not
-							var rln = parseFloat(CS[2]);
-							let nan = isNaN(rln);
-							if(nan){return 'end'}
-							if(rln>o.txtLi.length){return 'end'}
-							var irl = o.txtLi[rln-1];
-							//irl holds the whole line now...
-							if(CS[3]=='beats'){
-// ?>>orb/text/1..2..3../beats 
-								var nba = [];
-								for (var i = 0; i <= RSout.length-1; i++) {
-									var rsob = txtToB(RSout[i]);
-									nba.push(rsob);
-								}
-								irl.beats = nba;
-								irl.tB = 1;//////////!!!!!!!!!!!!!!!!!!!
-								o.o=RSout;
-							}
-							if(CS[3]=='cn'){
-// ?>>orb/text/1..2..3../cn 
-								irl.tB=RSout[0];
-								o.o = RSout[0];
-							}
-							if(CS[3]=='mirror'){
-// ?>>orb/text/1..2..3../mirror
-								var mirror = {
-									is:'txt',
-									txt:irl.txt,
-									font:'18px Courier New', //do we need font here.. ?
-									align:'left', //by default could be left
-									x:o.txtX,//+window.innerWidth/2,
-									y:o.txtY,//+window.innerHeight/2,
-									r:irl.state.r, g:irl.state.g,
-									b:irl.state.b, a:irl.state.a 
-								}
-								Mirror(RSout[0],mirror,o.txtL);
-								o.o=RSout; return
-
-							}//mirror
-							if(o.o==undefined){ 
-// ?>>orb/text/1..2..3../1..2..3.. 
-								var rln = parseFloat(CS[3]);
-								let nan = isNaN(rln);
-								if(nan){return 'end'}
-								if(rln>irl.beats.length){return 'end'}
-								irl.beats[rln-1] = RSout[0];
-								o.o = RSout[0];
-							}
-						}//CS[1] is a number to access a line
-					}//o.txtLi 
-				}//text
-
-			}//CS[0] is orb
-
-		}// 3 '/' on right side
-
-	}//there is '>>'
-////////////////////////////////////////	
-*/
-
 
 }//command annalizer PEAK
 
 
-
-
-//!!!!!!!!!!!!!!!
-//SWITCH COMMANDS
-//Ok i have really good idea. Lets just modularize all the switch calls. Yes this makes a lot of sense because we might need the same
-//switches on different situations.
-//switch orb commands. takes orb and command as params
-//
-//PEAK. love this one
-//use a key a number and a polarity to toggle between possible values. all possible values live here.
-//.. we could probably use the orb and something else?
-//might still be extracted even more, because we could have one function to extract the value, and different function to act upon
-//results
-//But we just want to retrieve a value from key without changing it. so we set po = 0. got it.
-//This switch should simply return the value of the key, modified by polarity or not.
-//We probably want a swKtog for entity and one for orbs?.. maybe not. if all keys are unique then we rly dont
-//we need to rename n to cv for current value....
-//polarity could be 1, or -1 , or 0
-//so we could have something like. 
-// And we would only use polarity on swKin operations. And we could use RSout as last optional parameter as well.... !!!
-// SO no ... just swKOrb and swKEnt ... use the last parameter to determine if we want to asign this value or if we want to
-// swKOrb(orb, key, polarity, operationin)
-// if operation is defined, it holds the new value we want to store on the key, if operation is not defined, it means we want
-// to return the value in the key... Yes. I think this is it.
-// one last thing. If polarity is zero, we simply return the key value, and ask if op wants to redefine the key
-// if polarity is not zero, we modify the key using po
-// PEAK
-// we l need a switch for beats keys i think.
-// orb/okey
-const swKOrb = function(o,k,po,op){ 
-	switch (k){
-//we shouldnt be able to change position directly .. for now at least. When we ask for orb/x , what refference do we take?
-//MSp? but memories can exist beyond MSp right? .. if a memory is out of MSp... how do we locate it? ..hmm . Maybe we can just
-//keep monitoring its position but not making it responsive to the entity commands... but we dont want to move the orb out of
-//range when we move the entity.. so it needs to be independant from the entity location.. so maybe orbs just need to use real
-//coordinates.. hmm.. yeah like everything else, its just that , when we retrieve an orb coordinates, we want a number with which
-//we can work with. We cant work with its real values, we need to have a refference. MSp makes sense to be this refference, orbs
-//cant be commanded beyond MSp radius actually, so yeah
-		case 'name':
-			if(op){
-				//we also want to update staNce
-				var si = staNce.indexOf(o.name);
-				staNce.splice(si,1,op[0]);
-				
-				o.name = op[0];
-				return 
-			}
-			return [o.name] 
-			break
-
-//so when we request orbs position, we take MSp as refference. that makes sense since orbs can only be sustained by memory space,
-//we want this rule. so how about accessing MSpace data? What if we want to know MSpace x and y, this coordinate should take the main
-//canvas itself as refference
-			//
-//.. so am thinking orbs should not be able to move so fast as to just take any coordinate value and travel there in an instant like
-//entity eye does.. 
-	//.. yeah so now there is no o.x .. so this instruction does not go here
-/*
-		case 'x':
-			//console.log(o.x-MSp.state.x);
-			return [o.x-MSp.state.x]
-			break
-		//read,
-		case 'y':
-			//console.log(o.y-MSp.state.y);
-			return [o.y-MSp.state.y]
-			break
-*/
-
-//i think all this is not really necesary now. !!!!!!!!!!!!!!!
-		//untested
-//SO NOW we want to be able to directly place a line of data here on o.i with op[0]. So on text updates we use the value
-//on o.i to create a line where txtB dictates....
-//in and out on orbs is kinda deprecated. only available for entities now.... WAIT
-//ok adapt this... reff
-/*
-		case 'in':
-			if(o.cast){
-//orb/in 
-				var RSout = [o.i]; if(o.i==undefined){return 'end'}
-			}
-
-			break
-
-	//out is in a weird place right now
-		//case 'out':
-
-		//	break
-
-					if(RS[1]=='in'||RS[1]=='out'){
-						if(o.cast){ //o.cast //!!!!!!!!!!
-							if(RS[1]=='in'){
-//orb/in 
-								var op = [or.i]; if(or.i==undefined){return 'end'}
-							}
-							if(RS[1]=='out'){
-//orb/out
-								var op = [or.o]; if(or.o==undefined){return 'end'}
-							}
-							o.cast=false;
-						}else{
-//create package to read later in order to not have issues, orb/in or out should always go on the first line. .We also need to let
-//know the orb loop
-//!!!!!!!!!a detail here .... can signal run the second command as a signal later?.. hmm i think it can
-//we want to use RS[0] name to find the orb and ask for the whole command on scB because C only holds first '<>' 
-//.. and yea we want to recycle comA so we want to use comA again on ALOrbs loop. We need a tag to distinguish . ok its o.cast
-//.. we store the tag on the stance calling.. and also use the stance scC 
-							if(or){
-								o.cast=true;
-
-								ALOrbs.push({//scR:'signal', 
-									st:S,//RS[0], //? stancE
-									com:o.scC[o.scB-1]
-								});
-								//we are pushing the whole instruction to read after all other orbs updates
-								//because we dont want to read the second instruction on line either just yet
-							}
-							//in or out should always just return end
-							return 'end'
-						}
-					}else{//in and out
-*/
-
-//oldies... but working?
-		case 'in':
-			if(op){
-				o.i = op[0];
-				return
-			}
-			return [o.i]
-			break
-		case 'out':
-			//
-			return [o.o]
-			break
-
-		case 'script':
-			if(op){
-				o.scC = op; //op should be an array with instructions
-				return //[]  //not sure what to return here
-			}
-			var dla = [];
-			var l = o.scC.length; 
-			while(l--){
-				//we are only pushing the text here and in reverse... important?
-				dla.push(o.scC[l]);
-			}
-			return dla
-			
-			break
-
-		case 'circle':
-//so circle should return circle beats on string format.. beat to array
-			if(op){
-				var ncb = [];
-				for (var i = 0; i <= op.length-1; i++) {
-					var ttb = txtToB(op[i]);
-					ncb.push(ttb);
-				}
-				o.cirF = ncb;
-				o.cirB = 1;
-				return //?
-			}
-			
-			var btt = [];
-			for (var i = 0; i <= o.cirF.length-1; i++) {
-				var bt = o.cirF[i].toString();
-				btt.push(bt);
-			}
-			//var RSout = bbt;
-			return btt;
-			break
-
-		case 'rectangle':
-			if(op){
-				var ncb = [];
-				for (var i = 0; i <= op.length-1; i++) {
-					var ttb = txtToB(op[i]);
-					ncb.push(ttb);
-				}
-				o.rectF = ncb;
-				o.rectB = 1;
-				return //?
-			}
-			
-			var btt = [];
-			for (var i = 0; i <= o.rectF.length-1; i++) {
-				var bt = o.rectF[i].toString();
-				btt.push(bt);
-			}
-			//var RSout = bbt;
-			return btt;
-			break
-
-
-		case 'text':
-//so, we can place multilines on a data container by passing in an array with lines on op
-//text key on its own does not react to polarity. it returns all text lines in the orb.
-//this command not only needs to clear previous data, but also return all lines
-			if(op){
-				//op is the data we want to have now so we want to clear old data here and place op instead
-				//we want RSout op to overide all data and replace it
-				o.txtLi = [];
-				var l = op.length; 
-		//so RSout(op) is always espected to be a list of lines we can use to create a text.. format lines and push them into data
-				while(l--){
-					var text = op[l];
-					//call here a function to create as many lines as there are output data bits
-					var Line = DataLine();
-					//use dsignat to create default beats on the new line
-					Line.beats=dsignat;
-			//maybe we could pass entity layer here laYer ?
-					Line.x=o.txtX; Line.y=o.txtY;
-					//and push the text into Line.txt
-					Line.txt=text;
-					//only then we can push the Line
-					o.txtLi.push(Line);
-				}
-
-				dESpacer(o);
-
-				return //[]  //not sure what to return here
-			}
-		//is this ok? .. if we are not changing the data, we are requesting it. so we are creating an array with
-		//raw text lines and returning it into RSout.. right? Yes this is no problem
-			var dla = [];
-			var l = o.txtLi.length; 
-			while(l--){
-				//we are only pushing the text here and in reverse... important?
-				dla.push(o.txtLi[l].txt);
-			}
-			return dla
-			
-			break
-
-		case 'osc':
-			if(op){
-				o.oscTL = op;
-				return //[]  //not sure what to return here
-			}
-			var tla = [];
-			var l = o.oscTL.length; 
-			while(l--){
-				//we are only pushing the text here and in reverse... important?
-				tla.push(o.oscTL[l]);
-			}
-			return tla
-			break
-//.. wait
-//drag . Make a target move with the caster. drag accepts targets names . every target is sent a displacement signal everytime
-//the orb displaces. o.Drag accepts a list of one or more names to send signals to. if no op, it returns the list of draging targets
-//into RSout
-		case 'drag':
-			if(op){
-				o.drag=op;
-				return //[]  //not sure what to return here
-			}
-			return o.drag		
-			break
-
-		case 'cursor':
-			if(po==0){
-				if(op){
-					o.cursor=op[0];
-				}
-				return [o.cursor]	
-			}else{
-				var cursor = ['off','once','loop','repeat']; 
-				var n = cursor.indexOf(o.cursor);
-				var res = n+po;
-				if(res>=cursor.length){res--;} 
-				if(res<0){res++;} 
-				o.cursor=cursor[res];
-				return o.cursor
-			}
-
-		case 'gspeed':
-			//to toggle between lines to select on a data container. should be easy
-			if(po==0){
-				//op could be an array... with 1 line.. so thats why this didnt work
-				if(op){o.gspeed=op[0];} return [o.gspeed]	
-			}
-
-			var res = o.gspeed+po;
-			if(res>=60){res--;} 
-			if(res<=0){res++;} 
-			o.gspeed=res;
-			return [o.gspeed]
-			
-			//return Egspeed
-			break
-	}
-}//swKOrb
-
-//so what really should user be able to learn about position. the screen can be permasynched with Ecen, but Ecen 0 is the memory space
-//0.. isnt it. Memory space position takes main canvas values..
-// ~/Ekey>>? , ?>>~/Ekey 
-const swKEnt = function(k,po,op){
-	switch (k){
-		case 'name':
-			return [Ename] 
-			break
-//so these coordinates are the actual center of screen. The entity screen center. Ecen. we probly want these to also be read only. no.
-//but we could do orb/x>>~/x<>orb/y>>~/y . Tha could be interesting. Because we can make orbs trace a specific activity and the just hook
-//into that orb. lets do that. We need an instruction to translate to the location of the orb.... wait no. We just want the difference
-//between ent x and orb x , then ent y and orb y. This difference will tell us how we need to translate to match orb location. !!
-	//so all we need to do is build a function to do the math now, then implement the function here
-		//if oX>eX , displace to the right(left) a number of times equal to the diff between oX-eX
-		//if oX<eX, displace to the left(right) ... = diff bettween  .. ok  math is good but. we l do this differently
-// ~/x expects a coordinate number, we want the explicit number of x in refference to the MSp center so
-//x negatives are located to the left and positives to the right
-//y negatives are located up and positives are located down .. from MSp center.
-//OK so the most pragmatic thing to do is this
-//ctx0.translate(eX,eY);
-//ctx0.translate(-(targetX),(-targetY));
-//cant believe it works perfectly. we can now simply asign x into entity so it goes there. Watch out for falling outside of MSp
-//.. what happens when we end up outside of MSp?
-		case 'x':
-			if(po==0){
-				if(op){
-					ctx0.translate(eX,0);
-					ctx0.translate(-(op[0]),0);
-					eX=op[0];
-					Ecen.state.x=eX; 
-					Elid.state.x=eX-window.innerWidth/2; 
-				}
-			}
-			return [eX] 
-			break
-		case 'y':
-			if(po==0){
-				if(op){
-					ctx0.translate(0,eY);
-					ctx0.translate(0,-(op[0]));
-					eY=op[0];
-					Ecen.state.y=eY;
-					Elid.state.y=eY-window.innerHeight/2;
-				}
-			}
-			return [eY] 
-			break
-// entity Drag
-		case 'drag':
-			if(op){
-				Drag=op;
-				return //[]  //not sure what to return here
-			}
-			return Drag		
-			break
-
-		case 'msp':
-//okoko am having a achange of heart here. Maybe we dont want an MSp 'interface' we could simply say ~/msp and this would return
-//the msp current value. we could say ~/mspx  , mspy  , mspradius . simple.
-			//
-//so we need a MSpace command to retrieve and work with msp data. msgrow and msshrink mechanics are ok i guess, one command
-//at a time. Maybe we can just return all msp data at once? kinda like with skeys
-//MSp cannot be asigned a new x or y the same way we do with eX and eY, but we probably want to learn about MSp location in refference
-//with the void canvas center X0 Y0. we want the size of the space in radius, and its memory capacity? We might start thinking about
-//memory limitations btw. We said growing MSp would grant a new max memory orb capacity as long as the size reaches a new value. MSp
-//can shrink back but the entity will still be able to control the same number of orbs it can control while MSp radius was bigger.
-//I want the grow system to be permanent. User is relieved from the fear of losing its progress.
-//but what does msp on its own return? maybe dirs..  ~/msp/ .. hm.. We need to use real parameters here . Maybe we could print
-//all data on lines at once instead . we can simply access what we need
-			return MSpSize
-			break
-		case 'mspx':
-			return MSpX
-			break
-		case 'mspy':
-			return MSpY
-			break
-		case 'mspradius':
-			return MSpRad
-			break
-		case 'orbs':
-//read only . return a list of all orbs in the domain... including '~' ? but this is not an orb... should be stance
-			return staNce 
-			break
-		case 'dsignat':
-			//read. write. A list of beats to all forms by default
-//.. would be convenient to designate all the most common colours on default
-			if(op){
-				var nba = [];
-				for (var i = 0; i <= RSout.length-1; i++) {
-					var rsob = txtToB(RSout[i]);
-					nba.push(rsob);
-				}
-				dsignat = nba;
-				return //RSout;//?
-			}
-			var dsi = [];
-			for (var i = 0; i <= dsignat.length-1; i++) {
-				var dsib = dsignat[i].toString();
-				dsi.push(dsib);
-			}
-			return dsi;
-			break
-		case 'keys':
-			if(op){
-//if op, use op[0] we expect a single line.. or a multi line.. so skeys just like other containers should be able to take conk to
-//ask for a specific line, or an option to add single liner without clearing all other keys. but this sinthax here SHOULD clear all
-//and just dump in what we are feeding it on op. we need to turn key lines into actual keys obj first.
-				//loop for op
-				//console.log(op);
-				EkeyS = [];
-				for (var i = 0; i <= op.length-1; i++) {
-					var sk = op[i];
-					//turn key lines into obj
-					var ska = sk.split(',');
-					var kobj = KLTObj(ska);
-					EkeyS.push(kobj);
-				}
-				o.o = op;
-				return op
-			}
-			var SkS = [];
-			//loop for EkeyS
-			for (var i = 0; i <= EkeyS.length-1; i++) {
-				var sk = EkeyS[i];
-				//turn each object key into kpair style format. so embed the key and use the value, then join with ','
-				var kpsf = [];
-				kpsf.push('name',sk.name,'key',sk.key,'com1',sk.com1);
-				var line = kpsf.join(',');
-				SkS.push(line);
-
-			}
-			return SkS //RSout is an array with key lines
-			break
-
-		//read only. use a file name to store on orb/image/file to use it
-		case 'limage':
-			var images = [];
-			for (var i = 0; i <= LImg.length-1; i++) {
-				var im = LImg[i].name;
-				images.push(im);
-			}
-			return images
-			break
-		case 'laudio':
-/*
-			var images = [];
-			for (var i = 0; i <= LImg.length-1; i++) {
-				var im = LImg[i].name;
-				images.push(im);
-			}
-			return images
-			break
-*/
-
-			break
-		case 'gspeed':
-			//to toggle between lines to select on a data container. should be easy
-			if(po==0){
-				//op could be an array... with 1 line.. so thats why this didnt work
-				//op is always an array now
-				//ok and we always expect a number here so .. yeah check for other containers like this
-		//we need to pay atention to numbers on op
-
-				if(op){
-					var numba = parseFloat(op[0]);
-					let nan = isNaN(numba);
-					if(nan){return 'end'}
-					Egspeed=numba;
-				}
-				return [Egspeed]
-			}else{
-				var res = Egspeed+po[0];
-				if(res>=60){res--;} 
-				if(res<=0){res++;} 
-				Egspeed=res;
-				return [Egspeed]
-			}
-			//return Egspeed
-			break
-//follow is kinda deprecated .. not sure just leave as is for now... ok follow sounds interesting because its a fast and easy way
-//to hook memories positions without having to worry about writing the logic . . however this might be an obsolete way of seeing it
-//kinda like what happened when i tried to update the .type command. Turns out we dont really need that since we can now use
-//inline and comline...
-//OK but now that i ve been playing around, i noticed the flow in creating interfaces, and its really a bless to be able to simply
-//hook orbs into the entity center like this, or into other orbs. Its just very intuitive and satisfying to be able to hook like this
-//.. i think we want to implement this hook follow command so the displacements mehcanics are taken care by the system itself
-//i can picture many instancesw were we l be hooking orbs to each other , it doesnt make sense to having to worry about all the little
-//commands required to atach orbs into other orbs arrangements. Yeah i think we really want this follow command
-//so we say:  orb1/name>>orb2/follow  . we can also say: orb1/name>>~/follow 
-//follow	If it holds an orb or entity name, it will follow and synch its position with it.
-//so how it works... an idea. Everytime we change this follow box value, we store how x and y far away the follower is from the followed
-			//
-//..or.. everytime the followed displaces, it produces an output. followers could evaluate followed output and use it on themselves
-//to displace just like the followed.. but in that case.. isnt it more simple to just evaluate output..
-		case 'follow':
-			//follow should be similar to stance. we just need to select an orb name or '~' in order to follow it
-			//we can probably toggle this one
-			break
-		case 'stance':
-//PEAK function here
-//we need to ask Orbs and consider '~'... but we first need to match the current stance with a number. find stancE index num
-//so in this case we dont even need n from function param. Interesting function here. We can just toggle safely upwards and downwards
-//using an array with strings as options. we probably need to extract this one
-			//if we want a new key value literally, we use op and set polarity to 0
-			if(po==0){
-				if(op){stancE=op[0];} return [stancE]
-			}else{
-				var n = staNce.indexOf(stancE); var res = n+po;
-				if(res<=0){stancE = '~'; return ['~']} //return first value on array which in this case is always '~'
-				if(res>(staNce.length-1)){res--;}
-				var l = staNce.length; //we would have to create staNce an array to keep track of all memories names formated
-				while(l--){
-					var name = staNce[l];
-					if(l==res){
-						stancE = name;
-						return [stancE]
-					}
-				}
-				//if no match, just return to initial stance. 
-				stancE = '~'; return ['~']
-			}
-			break
-
-//TYPE
-//.type is a special command that only takes one parameter which is a string that can contain "." and ":" without having an effect
-//on the instruction. .type:a string to appear on input and instant focus
-//This command is useful to create specific shortkeys
-//This commands should probly be available always. !!!!!!!!!!
-//PEAK! This command was rally peak ngl. But now a lot has changed. We have com prompt  and in prompt
-//We still want to able to just Press a key, and link a couple of commands. we want to grab a current line selected on a text,
-//and pass it into the prompt, to modify it, and maybe place it somewhere else. We also want to be able to just type in a previous
-//text on any prompt..? But thats kinda strange because we could now simply write something to be copied and keep working on..
-//okokokokok maybe treat prompts as containers... in .. and out... kinda like .... let me just.. ... ... what really is in and out?!!!!!!!
-// ~/inline	read. write. The value of chat_in on input prompt
-// ~/comline	read. write. The value of chat_in on command prompt
-//so we could say something like: $/text/current>>~/comline .. or ~/inline>>$/text/3? thats a bit weird... no not really. an orb
-//could listen to this value and work with it in real time. PEAK 
-//These commands rule. 
-		case 'inline':
-			if(op){
-				chat_in.value = op[0]//we want RSout here
-				chat_in.style.display="inLine";
-				all.chat_on = true; 
-				nLine = true; //inline prompt
-				chat_in.focus();
-				return
-			}
-			return [chat_in.value]
-
-			break
-		case 'comline':
-			if(op){
-				chat_in.value = op[0]//we want RSout here
-				chat_in.style.display="inLine";
-				all.chat_on = true; 
-				chat_in.focus();		
-				return
-			}
-			return [chat_in.value]
-
-			break
-
-//read only, returns entity input and output
-		case 'in':
-			if(Ein==undefined){return}
-			return [Ein]
-			break
-		case 'out':
-			if(Eout==undefined){return}
-			return [Eout]
-			break
-
-
-	}
-}//swKEnt
-
-//.. i think we also need a switch for orbs conkeys on CS..!!! ..maybe we can modify the one we have just a little.. 
-//
-//a switch for orbs conkeys on RS.. but also CS?
-//!!!!!!!!!!ok done. We need to test this op implementation here before proceeding !!!!!!!!!! GN MY GUY YOU VE BEEN INCREDIBLE!!
-const swCKOrb = function(o ,cont, ckey,po,op){ //takes an orb, a container and a container key. modify value using op
-	if(cont=='text'){
-//we want to use RS[1] number to retrieve o.data line but we first check if orb even has data and if that line even has something
-		if(o.text){
-			//.. ok so we cant  do this because sometimes there is no text and we want to add a line here...
-			//if(o.txtLi.length==0){return 'end'}//nothing here
-
-//so what if we want to put op[0] on a new line on target text..
-			if(ckey=='last'){
-				if(op){
-					//we want to put op[0] on the last line of the orb text
-					if(o.txtLi.length==0){
-						var dli = DataLine(); dli.beats=dsignat; dli.txt=op[0];
-						dli.x=o.txtX; dli.y=o.txtY;
-						o.txtLi.push(dli);
-						dESpacer(o);
-						return
-					}else{
-						o.txtLi[o.txtLi.length-1].txt = op[0];
-						//CSout = [op[0]]; return CSout
-						o.o=[op[0]];
-						return
-					}
-				}
-				if(o.txtLi.length==0){return}//nothing here
-				var lastl = o.txtLi[o.txtLi.length-1].txt;
-				var RSout = [lastl];
-			}
-			if(ckey=='current'){
-				if(op){
-					//we want to put op[0] on the currently selected beat.. but what if beat has not line
-					if(o.txtLi[o.txtB-1]==undefined){
-						//var dli = DataLine(); dli.beats=dsignat; dli.txt=op[0];
-						//dli.x=o.x; dli.y=o.y;
-						//o.txtLi.push(dli);
-						//dESpacer(o);
-				//fo now lets return end.. it doesnt feel right to create a line on current when there isnt one..
-						return 
-					}
-					o.txtLi[o.txtB-1].txt = op[0];
-					o.o=[op[0]];
-					return
-				}
-				var currentl = o.txtLi[o.txtB-1].txt;
-				var RSout = [currentl];
-			}
-
-//we should be able to toggle current number....!!!!!
-			if(ckey=='cn'){
-				if(po==0){
-					if(op){o.txtB=op[0];}//.. maybe we need to check here if op[0] is a number?
-					return [o.txtB]	
-					//var RSout = [o.txtB];
-				}else{
-					o.txtB = o.txtB+po;
-					if(o.txtB<=0){o.txtB++;} 
-					var RSout = [o.txtB];
-				}
-
-			}
-			//text/number
-			//if RSout stil undefined, we ask if this is a number we can work with
-			if(RSout==undefined){ //asume its a number.. but it might not
-				var rln = parseFloat(ckey);//we need to turn ckey into a number
-				//if(rln==undefined){return 'end'}
-				let nan = isNaN(rln);
-				if(nan){return}
-				//if(rln>o.txtLi.length){return 'end'}
-				if(op){
-					if(rln>=o.txtLi.length){
-						//get the difference
-						var subs = rln-o.txtLi.length;
-						//add DataLines difference 
-						for (var i2 = 0; i2 < subs; i2++) {
-							var dli = DataLine();
-							dli.beats=dsignat; 
-							dli.txt='';
-							dli.x=o.txtX; dli.y=o.txtY;
-							//o.txtLi.splice(rln-1,0,dli);
-							o.txtLi.push(dli);
-						}
-						//and place op[0] text on rln
-						var ldli = o.txtLi[rln-1];
-						ldli.txt = op[0];
-					}else{
-
-						var dli = DataLine();
-						dli.beats=dsignat; 
-						dli.txt=op[0];//Ein;
-						dli.x=o.txtX; dli.y=o.txtY;
-						//this operation adds a line simply on selected place
-						//o.txtLi.splice(rln-1,0,dli);
-						//we could also replace the line from here like this:
-						o.txtLi.splice(rln-1,1,dli);
-					}
-
-					dESpacer(o);
-					//o.txtLi[rln-1].txt = op[0];
-					//CSout = [op[0]]; return CSout
-					return
-				}//op
-
-				var rl = o.txtLi[rln-1].txt;
-				if(rl){var RSout = [rl];}else{return}
-			}
-		}
-		//.. if no data defined, then we should return 'end'
-	}//text
-
-	if(cont=='script'){
-		if(o.script){
-			//? Yeah this is canceling out everything else... we need this out of here
-			//if(o.scC.length==0){return 'end'}//nothing here
-		//.. hmm polarity on run seems unnecesary.. but this is an interesting aproach
-			if(ckey=='run'){
-				//if(po==0){
-				if(op){o.scR=op[0];}
-				return [o.scR]	
-				//}else{
-				//	var run = ['off','once','loop','repeat']; 
-				//	var n = run.indexOf(o.scR);
-				//	var res = n+po;
-				//	if(res>=run.length){res--;} 
-				//	if(res<0){res++;} 
-				//	o.scR=run[res];
-				//	var RSout = o.scR;
-				//	//return [RSout]
-				//}
-			}
-
-			if(ckey=='last'){
-				if(op){
-					o.scC[o.scC.length-1] = op[0];
-					//lets roll with this CSout for now..
-					CSout = [op[0]]; return CSout
-				}
-				var lastl = o.scC[o.scC.length-1];
-				var RSout = [lastl];
-			}
-
-			if(ckey=='current'){
-				if(op){
-					o.scC[o.scB-1] = op[0];
-					//lets roll with this CSout for now..
-					CSout = [op[0]]; return CSout
-				}
-				var currentl = o.scC[o.scB-1];
-				var RSout = [currentl];
-			}
-			if(ckey=='cn'){
-	//we probly want cn to manage toggle ?
-				if(op){
-					//should only accept numbers.. max is number of lines in script
-					//.... maybe we want to turn this into a number
-					o.scB = op[0];
-					//lets roll with this CSout for now..
-					CSout = [op[0]]; return CSout
-				}
-				var cnl = o.scB;
-				var RSout = [cnl];
-			}
-			if(RSout==undefined){
-				//we need to turn ckey into a number
-				var rln = parseFloat(ckey);
-				let nan = isNaN(rln);
-				if(nan){return}
-				if(rln>o.scC.length-1){return}
-				var rl = o.scC[rln-1];
-				if(op){
-					if(rl){
-						o.scC[rln-1] = op[0];
-						CSout = [op[0]]; return CSout
-					}
-				}
-				if(rl){var RSout = [rl];}
-				//this is weird
-				//if(rl==undefined){return}
-			}
-		}
-
-	}//script
-
-	if(cont=='image'){
-		if(o.image){
-			if(ckey=='file'){
-				if(op){
-//loading a file should should create a beat by default with image default properties? we expect a file name on op
-					//use op[0] to find the image on LImg
-					if(LImg.length==0){return 'end'}
-					for (var i = 0; i <= LImg.length-1; i++) {
-						var Img = LImg[i];
-						if(Img.name==op[0]){
-							o.imgfile = op[0];
-							o.imgS.img = Img.img;
-							o.imgF.push(
-								[
-							//these coordinates need clarification..
-									'x',0,//o.x
-									'y',0,//o.y
-									'w',Img.img.width,'h',Img.img.height,
-//!!!!!!!!!!!!!!! am using circle coordinates now here but ... i just have this realization... we probably need to use rect.
-									'px',o.cirS.x,//o.x
-									'py',o.cirS.y,//o.y
-									'pw',Img.img.width,'ph',Img.img.height
-								]
-							);
-							return 
-						}//match
-					}
-					return 'end'
-					//o.img = op[0]
-					//CSout = [op[0]]; return CSout
-				}
-				var RSout = [o.imgfile]
-				return
-			}
-			if(ckey=='run'){
-				if(po==0){
-					if(op){o.imgR=op[0];} return [o.imgR]	
-				}else{
-					var run = ['off','once','loop','repeat']; 
-					var n = run.indexOf(o.imgR);
-					var res = n+po;
-					if(res>=run.length){res--;} 
-					if(res<0){res++;} 
-					o.imgR=run[res];
-					var RSout = [o.imgR];
-				}
-			}
-			if(ckey=='current'){
-	//current needs to return the current beat as text
-
-			}
-			if(ckey=='cn'){
-	//imgB
-
-			}
-		}
-	}
-//.. rememeber we need to consider text to beat and beat to text format transfomations in all these beat manipulations
-	if(cont=='circle'){
-		if(o.circle){
-			if(ckey=='run'){
-				if(po==0){
-					if(op){o.cirR=op[0];} return [o.cirR]	
-				}else{
-					var run = ['off','once','loop','repeat']; 
-					var n = run.indexOf(o.cirR);
-					var res = n+po;
-					if(res>=run.length){res--;} 
-					if(res<0){res++;} 
-					o.cirR=run[res];
-					var RSout = [o.cirR];
-					//return [run[res]]
-				}
-			}
-			if(ckey=='current'){
-				if(op){
-			//in here we need to transform text beat format into beat array
-					var nb = txtToB(op[0]);
-					o.cirF[o.cirB-1] = nb;
-					//o.cirF[o.cirB-1] = op[0];
-					//lets roll with this CSout for now..
-					//var CSout = [op[0]]; 
-					return //CSout
-				}
-		//nono we need to do beat to ext
-		//var strb =  lastl.beats[i].toString();//txtToB(RSout[i]);
-				var strb = o.cirF[o.cirB-1].toString();
-				//var currentl = o.cirF[o.cirB-1];
-				var RSout = [strb];			
-			}
-			if(ckey=='cn'){
-				if(op){
-					//we want to make sure op[0] points to a valid value here....!!!!
-					o.cirB = op[0];
-				}
-				var RSout = [o.cirB];
-			}
-//a mirror for circle forms..... not so sure about this now
-			if(ckey=='mirror'){
-// ?>>orb/circle/mirror
-//mirror pretty much requires op because... what could mirror do on the left side RS? ... one sec $/circle/mirror>> ... maybe an instruction
-//to copy a beat
-				if(op){
-					var mirror = {
-						is:'circle', radius:o.cirS.radius,
-						x:o.cirS.x,//+window.innerWidth/2,
-						y:o.cirS.y,//+window.innerHeight/2,
-						r:o.cirS.r, g:o.cirS.g, b:o.cirS.b, a:o.cirS.a 
-					}
-					Mirror(op[0],mirror,o.cirL);
-					o.o=op[0]; return
-				}
-
-			}//mirror
-
-		}
-	}//circle
-
-	if(cont=='rectangle'){
-		if(o.rectangle){
-			if(ckey=='run'){
-				if(po==0){
-					if(op){o.rectR=op[0];} return [o.rectR]	
-				}else{
-					var run = ['off','once','loop','repeat']; 
-					var n = run.indexOf(o.rectR);
-					var res = n+po;
-					if(res>=run.length){res--;} 
-					if(res<0){res++;} 
-					o.rectR=run[res];
-					var RSout = [o.rectR];
-					//return [run[res]]
-				}
-			}
-			if(ckey=='current'){
-
-			}
-			if(ckey=='cn'){
-
-			}
-		}
-	}
-
-	if(cont=='osc'){
-		if(o.oscillator){
-			if(ckey=='run'){
-				if(po==0){
-					if(op){o.oscR=op[0];} return [o.oscR]	
-				}else{
-					var run = ['off','once'];//,'loop','repeat']; 
-					var n = run.indexOf(o.oscR);
-					var res = n+po;
-					if(res>=run.length){res--;} 
-					if(res<0){res++;} 
-					o.oscR=run[res];
-					var RSout = [o.oscR];
-					//return [run[res]]
-				}
-			}
-			if(ckey=='current'){
-
-			}
-			if(ckey=='cn'){
-
-			}
-		}
-	}
-
-	return RSout
-}//swCKOrb
 
 
 //string beat text to array beat. neat . ok but we need to consider the random asignment sinthax '..12-23'
@@ -5339,131 +3879,6 @@ all.imgd_s_new = function(ctx,name,w,h){
 //by the type parameter.
 
 
-//deprecated
-//TXT ORB
-//a function to return a txt memory. we will create these orbs in different situations.
-//!!!!!!!!!!!!!!!!!!!!!!1
-//okok so now we will have text memory orbs. They will have a circle to represent their prim location, and a number of parameters
-//to determine the orb behavior. Orb memories will use input and output packets to update their changes and call print to update
-//all lines controled by the orb. When there are no updates, the orb memory will check for its life span or for listeners etc.
-//most commands will have an effect on this Orb. this object lives in all.orbs
-all.txtOrb = function(){
-	var o = {
-		name:undefined, form:'Text',//form here? .. probly unnecesary, orbs live in all.orbs array
-		id:undefined,
-		se:undefined, //sub events could be 'open', 'closed' etc
-		mode:undefined, //.. do we need mode
-//ok so since this orb structure wont live in all.anim_a, we are going to need it to have a circle state to illustrate its
-//primordial form location and appearance. Its prim will be the circle state itself OR the circle state id.. not sure which one is
-//more efficient. I think just id can work
-		primX:undefined, primY:undefined,
-		spacer:15,
-		selL:1,//the line currently selected
-		selB:0,//line beat selected
-		insOp:'new line', //'modify' / 'remove'
-		lines:[
-//so lines here probly just 1 array of changes per line.. even text can go in the array here.. these are literaly beats
-			//['something blabla...','txt',1,'a'], [] //...
-		],
-		channels:[], //ids of entities or vessels that the memory is listening to
-		limitL:5, //the last lines to display /'all' display all lines
-		anchor:false,
-		synch:undefined, 
-		layer:2,
-		font:'18px Courier New', align:'left',
-		loop:true //here?
-		//tin:false, tout:false  //booleans to allow this txt orb to listen to input and output data in proximity
-	}
-	return o
-}
-
-//txt states will now be lines. They will need an id to be asociated with their controling memory orb.
-//all parameters of a line should be contained in custom_a, by default there is just one item holding all print data
-//this object lives in all.anim_a
-all.txtLine = function(){  //so a line needs at least 1 beat to work. and this works good because we use beats from txt orb on print
-	var l = {
-		is:'f', id:undefined, //st:st, //orb_name:undefined, anim_name:undefined, 
-		//txt:undefined,
-		font:'18px Courier New', //do we need font here.. ?
-		align:'left', //by default could be left
-		layer:2, //se: undefined, //subevent
-		//x:0, y:0,
-		txt:undefined,
-		r:210, g:210, b:210, a:1, 
-		t:-1, s:"txt", layer:2, loop:false, //do we need loop here?
-		display:'custom', mode:undefined,
-		custom_a:[
-			[1,'a'],0
-			//beat,0
-			//[220,'r',220,'g',220,'b', 1, 'a', x, 'x', y, 'y', txt , 'txt']
-		]
-	}
-	return l
-}
-
-//circle state
-all.circle_s_new = function(name){
-	var state = {
-		is:'f', name:name, 
-		x:0, y:0, radius:40, inside:"empty",
-		tx:0, ty:0,
-		r:180, g:180, b:180, a:0.8, layer:0, 
-		loop:false, run:true, s:'circle',
-		ft:undefined, rt:-1, et:undefined, nfreq:undefined, anim:undefined,
-		//
-		t:-1, display:undefined,
-		custom_a:[],
-		data:[]
-		//u_d:[]
-
-	};
-	return state;
-}
-
-
-//deprecat...
-all.txt_s_new = function(name){ //loop, st, sf, ctx
-	var state = {
-		anim:undefined,  //anim in txt edits hold lines..
-		is:'f', name:name, //st:st, //orb_name:undefined, anim_name:undefined, 
-		//ctx:undefined, 
-		loop:false,
-		txt:undefined, font:'10px Courier New', 
-		align:'left', //by default could be left
-		x:0, y:0, tx: 0, ty: 0, //sx:0, sy:0,//i think 0 should be default
-		r:210, g:210, b:210, a:1, layer:2, //se: undefined, //subevent
-		t:-1, //wait:undefined, //nfreq: undefined,
-		s:"txt", //cursor tag and anim_func activator
-
-		t:-1, display:'normal',
-		custom_a:[],
-
-		u_d: []
-
-	}
-	return state
-}
-
-//rect state
-all.rect_s_new = function(name){
-	var state = {
-		is:"f",  name:name,   
-		x:0, y:0, w:70, h:70, inside:"empty",
-		tx: 0, ty: 0,
-		r:180, g:180, b:180, a:0.8, layer:0, 
-		//ctx:undefined, 
-		loop:false, run:true, s:'rect',
-		ft:undefined, rt:-1, et:undefined, nfreq:undefined, anim:undefined, 
-
-		t:-1, display:undefined,
-		custom_a:[],
-		u_d: []
-	};
-	return state;
-}
-
-
-
 
 /*
 //we can destructure like this
@@ -5474,15 +3889,15 @@ a , b and c will now be defined and hold their values on qwe. nice
 //interpolation. a and b are 2 different point on a vector. t is the position we want in between the point. we can use decimals
 //0.1 , returns the 10% of the distance, 0.3 returns 30% and so on
 //negative values return points outside, its called extrapolation. values over 1 extrapolates to the other side
-var lerp = function(a,b,t){ 
+const lerp = function(a,b,t){ 
 	return a+(b-a)*t;
 }
 //we could use this one to avoid funny numbers
-var lerpe = function(a,b,t){//lerperfect
+const lerpe = function(a,b,t){//lerperfect
 	return a*(1-t)+b*t;
 }
 //we can also work with 2 dimensions at once so we can feed objects with x and y coordinates into the function...
-var vLerp = function(A,B,t){
+const vLerp = function(A,B,t){
 	return{
 		x:lerp(A.x,B.x,t),
 		y:lerp(A.y,B.y,t)
@@ -5490,7 +3905,7 @@ var vLerp = function(A,B,t){
 }
 //..
 //but we just want to work with x and y directly. return an object with x and y
-var xyLerp = function(x1,x2,y1,y2,t){
+const xyLerp = function(x1,x2,y1,y2,t){
 	return{
 		x:lerp(x1,x2,t),
 		y:lerp(y1,y2,t)
@@ -5500,7 +3915,7 @@ var xyLerp = function(x1,x2,y1,y2,t){
 
 //we can return an array with number n of equidistant points between 2 points A and B where each returned point is an object
 //with x and y coordinates . untested
-var equidisLerp = function(A,B,n){
+const equidisLerp = function(A,B,n){
 	var a = []; 
 	for(let i=0;i<=n-1;i++){
 		var t =i/(n-1);
@@ -5514,8 +3929,7 @@ var equidisLerp = function(A,B,n){
 
 //another function from radu mariescu video about linear interpolation..!
 //We generalize vLerp so we can work with all properties inside objects A and B
-
-var vLerpG = function(A,B,t){ 
+const vLerpG = function(A,B,t){ 
 	var res ={}
 	for(let attr in A){
 		res[attr]=lerp(A[attr],B[attr],t);
@@ -5523,17 +3937,23 @@ var vLerpG = function(A,B,t){
 	return res
 }
 
-
 //a function to spawn a number between min and max.. might be simpler
-all.get_r_num = function(min, max){return Math.floor(Math.random() * (max - min + 1) ) + min;}
+const getRandom = function(min, max){return Math.floor(Math.random() * (max - min + 1) ) + min;}
+
 
 //get dist.
-all.get_dist = function(x1,x2,y1,y2){
+const getDist = function(x1,x2,y1,y2){
 	var vx = x1 - x2;
 	var vy = y1 - y2;
 	return Math.sqrt(vx*vx+vy*vy);
 }
 
+/*
+all.get_dist = function(x1,x2,y1,y2){
+	var vx = x1 - x2;
+	var vy = y1 - y2;
+	return Math.sqrt(vx*vx+vy*vy);
+}
 //return distance between two points on screen using x y values. this is better i think because it handles overflow and underflow?
 //.. but it doesnt work so...
 all.get_dist_meh = function(x1,x2,y1,y2){
@@ -5541,8 +3961,10 @@ all.get_dist_meh = function(x1,x2,y1,y2){
 	var vy = y1 - y2;
 	return Math.hypot(vx+vy);
 }
+*/
 
-//
+
+
 //a TIMER ?
 //use Date.now and any other refference
 //Just create an instance to loop this function when a timer is necesary. It should run on each logic loop
@@ -5551,8 +3973,6 @@ all.get_dist_meh = function(x1,x2,y1,y2){
 all.timer = function(){
 	var msec = Date.now()/1000;
 	var sec = msec-Math.floor(msec);
-	all.stream_a.push(sec);
-	all.screen_log()
 }
 */
 
@@ -5562,7 +3982,6 @@ all.timer = function(){
 //a is an array, p is a parameter , and v is the value of the parameter
 //needs  new name  Fting xD like, FUck teh ting lol I like it!
 const Fting = function(a,p,v){var i = 0; var len = a.length; while(len--){if(a[i][p]=== v ){return a[i]}; i++;}}
-
 
 //am only using all find ting
 //find and return a thing directly stored on an array
@@ -5577,4780 +3996,10 @@ const Fting = function(a,p,v){var i = 0; var len = a.length; while(len--){if(a[i
 //find an object on an array with a property
 //all.find_property = function(a,p){var i = 0; var l = a.length; while(l--){if(a[i][p]){ return a[i]}; i++;}}
 
-//better yet. find specific param of specific object on specific array using name of object and change value of param
-//.. now if i could change more than one param on the same single loop that l be sweet
-//a built in object on functions. arguments.length returns how many arguments are passed to the function
-//write a single new_pv function that can self resolve how many arguments is going to use
-//first arg is the array we wish to modify, second is the name of that specific item to work on,
-//third and fourth are the parameter and the new value we want for that parameter.
-//Must be able to repeat third and four params in order to change as many params as we want on a single loop
-//if no name or id is passed, affect all items on array . ?
-//
-//try to use the highest number of changes at once so all is done in a single loop run. 
-//just here for refference, we not using this one now
-//deprecat
-all.new_pv = function(a,n,p,nv){
-	var i = 0; var l = a.length;
-	while(l--){
-		if(a[i].name == n){
-			a[i][p]= nv; //fist pair goes like this normally
-			var args = arguments;
-			if(args.length>=6){
-				var p_i = 4; var l2 = args.length-4;
-				while(l2--){
-					if(p_i >= args.length) {return}
-					a[i][args[p_i]] = args[p_i+1];
-				p_i=p_i+2;}
-			}
-			return
-		}
-	i++;}
-}
-
-
-
-//......HERE
-//ok first the mind, then the body. s.u_d works because it add changes after we clear. we need to check user stance, get access to
-//element stanciated, ask for commands available. next we need to ask for orbs scripts,
-//next we check for elements updates: vessels, husks, waves
-
-//ANIM_FUNC
-//In anim_func, anim_a will be checked. So a loop will run trough every state .
-//states will be items in anim_a. states would be easily accesible by any object on up_objs
-//states should be structures to contain specific kinds of data. They need a tag for
-//easy access from logic control
-//and they need to be differenciated. A single state for a whole object (entity)
-//wouldn make any sense
-//states need to hold specific parameters to paint specific tings
-//a logic process can even directly change a specific parameter using tag name
-//(act statements).
-//anim_func loop. the ml_up of animations o,o runs backwards ! ! !
-//the idea of using tags to make states behave on specific ways is very good ithink.
-//tags nfreq only work using orb.anim to retrieve next frame.
-//If i want to run animations using a diferent array i should use a new tag for that.
-//Void envelopes should totally be out of users capability of customization.
-//users should only be able to excert control on orbs memories trough act language
-//States should be as simple as possible, and they should just come and go from 
-//anim_a if it becomes complicated to track a single state
-//Logic fluidity should t be harmed by states running as they should 
-//!!!!!!!!
-
-//anim_func operations should be optimal, we need fast responses and
-//animations Must feel fluid. avoid repetitive loops and expensive operations
-//at all cost.
-
-//... new system. we dont even need logic to clear, we just clear the only canvas there is once per beat.
-//clear the whole screen. only clear the part of the canvas which is visible to the user.
-//we are working with one single canvas now
-
-//... ok so what if we simply use one context and we just clear and draw at every beat. animations clears would not overlap anymore..
-//it might be a bit forced but it does look like the most simple solution.
-//time would simply affect how many times the same frame its going to be drawn before drawing the next one.
-//ok lets do rect, cricle and the img for a start... text animations should also implement this new system because we want to
-//run these text as animations, changing colors and displacing trough the screen.
-//ANIMF
-//To create layers without having to create whole context we run animf once, but we push drawing cue into different arrays depending
-//on the order we want to draw the thing.
-//To change the order in which we want to draw a specific state, we just push the state in the corresponding draw cue
-//array.
-
-
-//just push to different draw cues. this is far much more manageable and efficient.
-//each state holds an instruction to indicate layer. after animf checks, we ask layer and place on corresponding draw cue array. simple
-//no need to rearrange items on array, no need to run loops against the same array more than once
-//SOUND
-//Am thinking we are going to need prims for sound as well. Since sound will also behave as a memory Orb and will have a
-//center and an area of influence
-
-all.anim_func = function(){
-	var l = all.anim_a.length;
-	while(l--){
-		var s = all.anim_a[l]; //s for state
-
-
-//c_circle CIRCLE
-//All mayor elements are circles. vessels , husks and waves and there are always a few around so we might as well just ask first
-//new system . i could even go further and just check if it really is more efficient to just clear all screen on a specific context
-//once instead of making all these little clears for each state... //done. we have layers now and just one single ctx
-		if(s.is=="c_circle"){
-
-			if(s.display=='custom'){
-				if(s.t<0){s.t=s.custom_a.length-1;}
-					//var clr = s.custom_a.length-1;
-					//s.t=clr;//s.custom_a.length-1;
-				var delta = s.custom_a[s.t];
-				var lc = delta.length;
-				//if(lc){
-				while(lc--){
-					var p = delta[lc]; var v = delta[lc-1];
-					var nv = v;
-					if(v.length==undefined){}else{
-					//a random notation system.. i like this one
-						var dots = v.substr(0,2);
-						if(dots=='..'){
-							var cded = v.substr(2);
-							//console.log(cded,dots,nv);
-							var cdeda = cded.split("-");
-							var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
-							var n_rand = all.get_r_num(min,max);
-							nv = n_rand;
-						}
-					}
-
-					s[p] = nv;
-					//s[p] = v;
-				
-				lc--;}//we decrease again because its a parameter value pair in the array. must be, always
-				s.t--;
-				s.is='circle';
-			}//custom system
-
-//this system is clearer , more versatile and less poluted than the old one... and this is also old now.. we should just
-//use custom_a system.... deprecat
-			if(s.run==false){s.is="f";}
-			if(s.run==true){
-				//no more clears oh jeez
-				//all.u_state(s); //u_states kinda useless now
-				if(s.rt==-1){}else{ //here is how we clear and do nothing
-					s.rt++; s.ft--; //keep timers together here
-					if(s.rt<s.et){
-						//we ask for frame time
-						if(s.ft>0){
-							s.is='circle';
-						}
-						if(s.ft==0){//ask for nextframe
-							s.nfreq++;
-							var nf = s.anim[s.nfreq];
-							s.x=nf.x; s.y=nf.y; s.radius=nf.radius;
-							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-							s.inside=nf.inside; s.ft=nf.ft; s.is='circle';
-						}
-					}
-					if(s.rt>=s.et){
-						//time up. we reinitialize the state.all properties are taken from f0
-//to initialize we want to set rt=0 , and nfreq=0; . we dont need to touch et. and loop will determine s.is value
-						var nf = s.anim[0];
-						s.x=nf.x; s.y=nf.y; s.radius=nf.radius;
-						s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-						s.inside=nf.inside; s.ft=nf.ft;
-						s.rt=0; s.nfreq=0;
-						//we then ask for loop
-						if(s.loop){s.is='circle';}else{s.rt=-1;}
-					}	
-				}//rt -1
-			}//run
-
-		}//c_circle
-
-//using circle for circle draw
-		if(s.is=="circle"){
-			if(s.offs){s.is='c_circle';}else{
-				if(s.layer==0){visual_q0.push(s);}
-				if(s.layer==1){visual_q1.push(s);}
-				if(s.layer==2){visual_q2.push(s);}
-				//all.anim_cue.push(s);
-			}
-	//lets just continue after these checks, there is nothing more for circles down here.
-			continue
-
-		}//circle animation
-
-
-//a value for fading out is = "slow_fade_out" sfo
-//i need a new "is" to make graphic states dissapear changing alpha value,
-//kinda like fading out to give a fading effect? maybe no 'is' necc3sary
-
-//audio states
-//.. so maybe i should put all flow logic here as well for order s sake. 
-//AUDIO
-		if(s.is=="audio"){
-			//s.t++; //...
-//maybe state needs to know animation duration....maybe. probly. for acts access
-			if(s.end=="end"){
-			s.src_node.stop(); s.src_node.disconnect(); s.is="rm";
-			}
-/*
-			//a tag for audio state to tell it to stop by fading out
-			if(s.end=="fade"){
-				s.gain_n.gain.setTargetAtTime(0, all.au.currentTime + 0.1, s.fade);
-				s.end = "check";
-			}
-			if(s.end=="check"){
-				if(s.gain_n.gain.value<=0.00){
-					s.src_node.stop(); s.src_node.disconnect(); s.is="rm";
-				}
-			}
-*/
-		}
-
-
-
-
-
-//text states
-/*
-//ok so now am thinking, we need time. we select a number of beats to loop the txt animation. we say 10 beats, animation will print
-//10 times the same. but now we need a command to modify each beat properties. so the first 5 beats will have all the same properties
-//but 20 red, and the last 5 beats is the same, but now we l have 200 red... so its basically a framing system.. yeah 
-//ok so choose a number of beats, and add one change at a time for each beat. . so animf asks what beat number are we, then checks
-//for a change on said beat, and then prints and loop
-//o.op6 keep track of beat. all changes in color, position, transparency are registered with currently selected beat and pushed into
-//a[0].custom_a=[] .
-//s.display = 'custom'.. custom has an array with objects. each object represents changes from then to the end of the loop. a loop
-//has as many beats as this array. so we use a counter to change what item to use to affect the line property.
-*/
-//TXT
-		if(s.is=="c_txt"){
-//.. no the print function needs to run somewhere else..
-//only line1 should be able to have print value here. print takes properties from this state and uses them to create the rest
-//of the ext anim lines. kinda like print does on edit mode but now we use this state as anim[0] line 1. this state has the anim
-//property to retrieve all lines txt values. print actually searches the rest of the line states if they are already on animf and
-//quickly clears and banishes them and then it prints the whole text again.
-//we use print on act scripts because is easier to keep track of line1 to apply any desired changes to the rest of the animation lines.
-//and i think we can treat ft and rt on txt states just the same as others..? noup, ft counts up, t counts down..
-//but maybe we dont really need to manipulate time and duration on texts from act scripts.. i rly dont think its escential
-			if(s.display=='remove'){s.is='rm';}
-			//print here is used by act scripts? the idea was to..
-		//update text on screen when new lines arrive. We only want to print again(create all lines again) on lines modifications
-	//so this operation probly needs to live in orb_up.? txt_up?
-			if(s.display=='print'){
-				//always clear old lines if any
-				var l0=s.anim[0];
-				var al = all.anim_a.length; var cl_pl = (l0.name.length+5);
-				while(al--){
-					var cs = all.anim_a[al];
-					if(s.name){
-						var name = cs.name.substr(0, cl_pl);
-						if(name == l0.name+'_line'){ //so it removes all lines right now
-							//s.is="rm"; 
-							if(index==l){}else{
-								var index = all.anim_a.indexOf(cs); 
-								all.anim_a.splice(index,1);
-							}
-						}
-					}
-				}//old lines clear loop
-
-				//print lines of anim from top to bottom using s as starting point
-				var i = 2; //we start from 2 here because we dont want to create line1(this very state) again. 
-				var al = s.anim.length-1; //not sure what length to use
-				var spacer = s.spacer; //spacer unsure yes
-				while(al--){
-					var l_txt = s.anim[(i-1)].txt;
-					var print = all.txt_s_new(s.anim[0].name+"_line"+i+s.actid);
-					//print.ctx=ctx1; 
-					print.x=s.x; print.y=s.y;
-					print.r=s.r; print.g=s.g; print.b=s.b; print.a=s.a;
-					print.font=s.font;
-					print.tx=s.tx; print.ty=s.ty;
-					print.is="txt"; print.txt=l_txt;
-					print.y=print.y+spacer; //next line y position difference . we need spacer on s0
-					print.display=s.anim[0].display;
-					print.custom_a=s.anim[0].custom_a;
-					print.t=-1;
-					all.anim_a.push(print);
-				spacer = spacer+s.spacer;
-				i++;}
-
-				s.display=s.anim[0].display;
-			}
-//do we even need normal...? i dont think so. we could just use custom with 1 item
-			if(s.display=='normal'){s.is='txt';}
-			if(s.display=='ignore'){s.is='f';}
-//custom
-			if(s.display=='custom'){
-				if(s.t<0){
-					var clr = s.custom_a.length-1;
-					s.t=clr;//s.custom_a.length-1;
-	//and also we need to restore properties to initial.. so just keep initial properties on
-	//s.custom_a last item :) yeah nice one
-				}
-				var delta = s.custom_a[s.t];
-//the custom_a items are simple strings with instructions. there are as many items as beats the txt animation has. instructions on each item
-//change all the states properties. these changes apply for each succesive beat until s.t reaches 0
-//so delta could be;  [20,'r',0.4,'a'] , alpha is set to 0.4, r is set to 20 and so on
-				var lc = delta.length;
-				while(lc--){
-					var p = delta[lc]; var v = delta[lc-1];
-					var nv = v;
-					if(v.length==undefined){}else{
-						var dots = v.substr(0,2);
-						if(dots=='..'){
-							var cded = v.substr(2);
-							var cdeda = cded.split("-");
-							var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
-							var n_rand = all.get_r_num(min,max);
-							nv = n_rand;
-						}
-					}
-					s[p] = nv;
-				//we decrease again because its a parameter value pair in the array
-				lc--;}
-				s.t--;
-				s.is='txt';
-			}//custom system
-
-		}//c_txt
-		
-//if s is "txt" means is text state not printed. so it will print
-		if(s.is=="txt"){
-			if(s.offs){s.is='c_txt';}else{
-				if(s.layer==0){visual_q0.push(s);}
-				if(s.layer==1){visual_q1.push(s);}
-				if(s.layer==2){visual_q2.push(s);}
-			}
-			continue
-		}//txt animations
-
-
-//When we use time and duration on a script we are also reffering to different parameters on states wich account
-//to what users perceive as time. scripts synthax purpose is to facilitate animation to users.
-//if time = number, sum t(ft) of every frame operation to asign requested nfreq and ft
-//if duration = number, simply change et directly
-
-/*
-//run time rt could manage nfreq to run the animation from a specific point.
-//run time param retrieving sums all ft from every frame and stops at requested number
-//we just need to asign to nfreq the frame at which sum stoped
-//what if we stop, change rt and start running.. ? in that case, we need to run the
-//ft sum operation so anim f can tell from where animation starts running
-//the reason we are working with rt now and not frames directly is because we can
-//decide for how long a frame stays on screen to control animation speed and rythm,
-//and so the number of beats may differ from the number of frames depending on the
-//specific animation we are running, hence, we need a beat counter for animations
-//that run with frames.
-//audio anims and txt work differently but we still want to
-//use 'time' and 'duration' instructions to make these operations
-			//
-//rt, run time. a counter to manage how many beats are we into the animation at
-//any time. 
-//et, end time when rt reaches et value, animation reinits from frame 0.
-//frame time, end time, run time. ft , et, rt
-//logic is permanent, we should be able to manage these timers from the state,
-//we dont want to create logic resources to always control directly timer parameters
-//of a state because actors could mess up timers for other actors
-//.. so rt adds 1 at every check and it becomes 0 when animation initializes
-//if a run reaches an asigned duration value, it will stop and reinit and ask for loop
-*/
-
-//c_img
-//ok so we are adding a rt(run time) counter which adds up 1 on every update. its
-//reference will be nfreq. we can synch all using nfreq, rt and ft. t will
-//change name to ft(frame time). we are also adding et(end time) , by defaul
-//its value is going to be the sum of all animation ft. animation state
-//will automatically reinit when rt value
-//reaches et value. et will be stored on frame0 for visuals.
-//acts will now be able to control very precisely how animations will run.
-//everytime we want to do anything its c_something , run true. we clear and add changes. we can even freeze again after changes
-//IMG
-		//FUNC
-		if(s.is=="c_img"){
-//this system is clearer , more versatile and less poluted
-//ok so to mannually just print once and let it be which is rare, mostly bg operations, make s.is=s.s and set run to false
-//to ignore checks.
-//ok. make it so we can control run start just by changing rt . you need to work on phase 1 statement pushing the link of img state
-//.. gn
-//ok so if run on, animation will run from rt to et and self reinit.
-			if(s.run==false){s.is="f";}
-			if(s.run==true){
-				//all.u_state(s);
-				if(s.rt==-1){}else{ //here is how we clear and do nothing but keep running
-					s.rt++; s.ft--; //keep timers together here
-					if(s.rt<s.et){
-						//we ask for frame time
-						if(s.ft>0){
-							s.is='img';
-						}
-						if(s.ft==0){//ask for nextframe
-							s.nfreq++;
-							var nf = s.anim[s.nfreq];
-							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-							s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
-							s.a=nf.a; s.ft=nf.ft; s.is='img';
-						}
-					}
-
-					if(s.rt>=s.et){//!!!!!!!!!!!!!!!! >=!!!!
-						var nf = s.anim[0]; //frame 0
-						s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-						s.px=nf.px; s.py=nf.py; s.pw=nf.pw; s.ph=nf.ph;
-						s.a=nf.a; s.ft=nf.ft;
-						s.rt=0; s.nfreq=0;
-						//we then ask for loop
-			//so instead of sending to f straight away, we could do rt-1 . this way we only need to change rt value to start
-			//the animation again just once... yeah this is good because animation run value can keep being true but the animation
-			//wont run until we do rt = 0. 
-						if(s.loop){s.is='img';}else{s.rt=-1;}//s.is='f';}
-					}	
-				}//rt -1
-
-			}//run
-
-		}//c_img
-
-//img
-		if(s.is=="img"){
-			//s.se ='started';?
-//is it ok to just store a context refference on a state? i l have to test out the cost
-//.. maybe i could use a number to create the context refference here on use.. i l test that later
-//..so instead of inmediately draw , we cue state data to be used to draw later
-			if(s.offs){s.is='c_img';}else{
-				if(s.layer==0){visual_q0.push(s);}
-				if(s.layer==1){visual_q1.push(s);}
-				if(s.layer==2){visual_q2.push(s);}
-				//all.anim_cue.push(s);
-			}
-			//all.anim_cue.push(s);
-			continue
-		}//img animation
-
-
-//c_rect RECT
-		if(s.is=="c_rect"){
-			if(s.display=='custom'){
-				if(s.t<0){
-					var clr = s.custom_a.length-1;
-					s.t=clr;//s.custom_a.length-1;
-				}
-				var delta = s.custom_a[s.t];
-				var lc = delta.length;
-				//if(lc){
-				while(lc--){
-					var p = delta[lc]; var v = delta[lc-1];
-					//if(s.t==clr){s[p]=v;}else{s[p] = s[p]+v;}
-					s[p] = v;
-				//we decrease again because its a parameter value pair in the array
-				lc--;}
-				s.t--;
-				s.is='rect';
-			}//custom system
-
-//frame system
-			if(s.run==false){s.is="f";}
-			if(s.run==true){
-				//all.u_state(s);
-				if(s.rt==-1){}else{ //here is how we clear and do nothing, but leaving all up to s_u
-					s.rt++; s.ft--; //keep timers together here
-					if(s.rt<s.et){
-						//we ask for frame time
-						if(s.ft>0){
-							s.is='rect';
-						}
-						if(s.ft==0){//ask for nextframe
-							s.nfreq++;
-							var nf = s.anim[s.nfreq];
-							s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-							s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-							s.inside=nf.inside; s.ft=nf.ft; s.is='rect';
-						}
-					}
-					if(s.rt>=s.et){
-						var nf = s.anim[0];
-						s.x=nf.x; s.y=nf.y; s.w=nf.w; s.h=nf.h;
-						s.r=nf.r; s.g=nf.g; s.b=nf.b; s.a=nf.a;
-						s.inside=nf.inside; s.ft=nf.ft;
-						s.rt=0; s.nfreq=0;
-						//we then ask for loop
-						if(s.loop){s.is='rect';}else{s.rt=-1;}
-					}	
-				}//rt -1 else
-
-			}//run
-
-		}//c_rect
-
-//rect
-		if(s.is=="rect"){
-			if(s.offs){s.is='c_rect';}else{
-				if(s.layer==0){visual_q0.push(s);}
-				if(s.layer==1){visual_q1.push(s);}
-				if(s.layer==2){visual_q2.push(s);}
-			}
-			//all.anim_cue.push(s);
-			continue
-
-		}//rect animation
-	
-
-
-//if state is f means is frozen, will just be ignored but kept on anim_a
-		//should simply be undefined if i just want to ignore it
-		if(s.is=="f"){}//dont do anything
-
-//if state is rm means is being removed
-		if(s.is=="rm"){all.anim_a.splice(l,1);}
-
-	}//anim_func loop
-
-//after all states data is collected, first phase perform clears and
-//modifications, second phase checks anim_cue to run animations
-//all.anim_cue simply runs all states in it and flush.
-//audio anims probly dont need phase 2 check !!!!
-//PHASE2	
-//phase2. draw
-	//
-	all.anim_drawall();
-	
-}//anim_func
-
-
-
-
-
-
-
-all.txt_up = function(o){//takes txt memory orb prim
-//TXT editor
-//Txt editor should allow user to create a specific text to be displayed in a specific way.
-//Write a line, position it, select color..
-//The same txt animation can now take another line, and as many lines as user wants
-//When txt animation is run , it will print at every beat, just like any other animation .
-
-//it would be nice to see colourful roots holding the selected line and changing acordingly?.. maybe an idea for act script
-//... i would like to see other acts scripts next to each other simultaneously.. this is done , we have .signal:_+/-e
-//text probly needs a timer or an end condition.. editor should be able to provide
-//that . . ..or maybe not neccesary.. we do want txt to be able to vibe , change colours , position and transparency periodically..
-	//!!!!!!!!!!!!!!!!!!!!!!!
-//... ok so we will now create txt memories in the void as well, so a txt memory will live in an independant prim
-//EDIT
-	//if(o.se=='editing'){
-	if(o.edit_txt_mode==true){
-		if(uinit){ 
-			//var tt = all.transition(uinit.transition, uinit.stancefrom);//, uinit.stanceto);
-			//if(tt=='all set'){
-				var print = true; 
-				o.op2 = 1; //always set selected line to 1
-				uinit=false;
-//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'?
-//.. dont remove them, simply offs them... __r thing should ask also for orb name and should be on beginning
-		//so we are not going to need to do this anymore because memories now are independant.
-				//var l = all.anim_a.length; 
-				//while(l--){
-				//	var s = all.anim_a[l];
-				//	var namend = s.name.substr(-3, 3);
-				//	if(namend == '__r'){
-				//		//s.offs=true;
-				//		all.anim_a.splice(l,1);
-				//	}
-				//}
-
-			//}
-
-			//if(tt==undefined){return}
-
-		}//init
-
-//ok so everyhting needs to work around grid zero, at the center of the orb. so we need to define grid zero, and all coordinates
-//we use here to create animations need to be in X and Y , not in tx or ty, we dont use translates like this anymore, we use
-//translates to move the user view exclusively
-//grid zero here wont work properly if we change around user location so this needs revamp. fix this one first then we go to
-//img editor
-
-		//var ceX=-U.x+window.innerWidth/2; var ceY=-U.y+window.innerHeight/2;//grid zero
-		//var ceX=o.primX; var ceY=o.primY;//grid zero
-		var ceX=o.x; var ceY=o.x;//grid zero
-
-		//op1 for text animation
-		var anim = o.m;//o.txt[o.op1];
-		var l0 = anim[0];
-//i dont really need to change the line state directly since print will use
-//line data on changes ..
-		var a_line =  anim[o.op2-1];//animation line. data to keep
-
-		//op6 for tracking beats on custom display
-		//op5 for insert modes
-		//op4 for input signaling
-		//op3 for delta
-		//op2 for line
-		
-		//delta control
-		if(o.op3!=0){var delta = all.signify(o.op3);}
-		if(delta){
-			
-			if(delta.signal=='exit'){
-				o.inner_mode=true; o.edit_txt_mode = false;
-				//uinit='orb edit';
-				uinit={transition:'orb edit',stancefrom:o}//,stanceto:o};
-//remove all lines from all opened txt anims.
-				var tlen = o.txt.length;
-				while(tlen--){
-					var a = o.txt[tlen];
-					if(a[0].open==true){
-						//clear lines
-						var l0=a[0];
-						var l = all.anim_a.length; var cl_pl = (l0.name.length+5);
-						while(l--){
-							var s = all.anim_a[l];
-							if(s.name){
-								var name = s.name.substr(0, cl_pl);
-								if(name == l0.name+'_line'){
-									//s.is="rm"; 
-									if(s.showcase==undefined){
-										var index = all.anim_a.indexOf(s); 
-										all.anim_a.splice(index,1);
-									}
-								}
-							}
-						}//clear lines loop
-						
-						a[0].open=false;
-					}//if open
-				}//txt anim loop
-
-				//clear selected values
-				o.op1= 0; o.op2= 0; o.op3= 0; o.op4= 0; o.op5= 0; o.op6= 0;
-				//clear feed
-				all.clear_stream(U.estream);
-				all.stream_a.push("Out of txt edit mode"); all.screen_log();
-				//console.log("Out of edit mode");
-				return
-			}
-		
-//we need a command signal to change our txt animation layer i think......
-			if(delta.signal=='layer'){
-				l0.Glayer=delta.value; var print =true;
-			}
-
-
-//a command to open a different txt to be edit3d simultaneously. open parameter
-//on txt anim so exit command knows what states to remove when called
-			if(delta.signal=='e'){
-//delta value could be the index of the txt we wish to open and edit. the idea is user
-//to be able to work on many texts at the same time
-			//check if txt item exist
-				if(delta.operation=='+'){var ni = (o.op1+1);}
-				if(delta.operation=='-'){var ni = (o.op1-1);}
-				if(delta.operation==undefined){var ni = delta.value;}
-				if(o.txt[ni]){
-					o.op1=ni;
-					o.txt[o.op1][0].open=true;
-					//uinit = 'all set'; //maybe i can just print...?
-					var print = true;
-					var anim = o.txt[o.op1];
-					var l0 = anim[0];
-					o.op2 = 1;
-					var a_line =  anim[o.op2-1];
-					 
-					all.stream_a.push("Editing ..."+o.txt[o.op1][0].name); all.screen_log();
-					//o.op3= 0;
-					//return
-				}else{
-					all.stream_a.push("No txt found"); all.screen_log();
-				}
-			}
-			
-			//select next line
-			if(delta.signal=='next'){
-				o.op2++;
-				if(o.op2>anim.length+1){o.op2--;}
-				var a_line = anim[o.op2-1];
-				if(a_line){o.op6=0;}
-				var print = true;
-			}
-			//select prev line
-			if(delta.signal=='back'){
-				o.op2--;
-				if(o.op2==0){o.op2++;}
-				var a_line =  anim[o.op2-1];
-				if(a_line){o.op6=0;}
-				var print = true;
-			}
-
-//i could modify they we pass on size and font to work with custom display as well.
-			if(delta.signal=='size'){
-				if(delta.operation=='+'){
-					var font = l0.font.substr(5);
-					var size = l0.font.substr(0,2); parseInt(size); size++;
-					l0.font = size+"px "+font;
-					l0.spacer++;
-				}
-				if(delta.operation=='-'){
-					var font = l0.font.substr(5);
-					var size = l0.font.substr(0,2); parseInt(size); size--;
-					l0.font = size+"px "+font;
-					l0.spacer--;
-				}
-
-				var print = true;
-			}//size
-
-			if(delta.signal=='r'){
-				if(delta.value>220){
-					all.stream_a.push("Maximum value input is 220.");
-				}else{
-
-					//if(l0.display=='custom'){
-					if(a_line.display=='custom'){
-						//var l0c = l0.custom_a[o.op6];
-						var l0c = a_line.custom_a[o.op6];
-						var clo = l0c.length; 
-						while(clo--){
-							var alr = l0c[clo];
-							if(alr=='r'){l0c[clo-1] = delta.value; var dont_p = true; break;}
-						}
-						if(dont_p){}else{l0c.push(delta.value,'r');}
-						all.stream_a.push('New red value on beat '+o.op6);
-					}else{
-						l0.Gr=delta.value;// 
-						all.stream_a.push("Numbers are red.");
-					}
-					var print = true;
-				}
-				all.screen_log();
-			}
-				
-			if(delta.signal=='g'){
-				if(delta.value>220){
-					all.stream_a.push("Maximum value input is 220.");
-				}else{
-					if(a_line.display=='custom'){
-						var l0c = a_line.custom_a[o.op6];
-						var clo = l0c.length; 
-						while(clo--){
-							var alr = l0c[clo];
-							if(alr=='g'){l0c[clo-1] = delta.value; var dont_p = true; break;}
-						}
-						if(dont_p){}else{l0c.push(delta.value,'g');}
-					}else{
-						l0.Gg=delta.value;// 
-					}
-					var print = true;
-					all.stream_a.push("Grass is green.");
-				}
-				all.screen_log();
-			}
-				
-			if(delta.signal=='b'){
-				if(delta.value>220){
-					all.stream_a.push("Maximum value input is 220.");
-				}else{
-					if(a_line.display=='custom'){
-						var l0c = a_line.custom_a[o.op6];
-						var clo = l0c.length; 
-						while(clo--){
-							var alr = l0c[clo];
-							if(alr=='b'){l0c[clo-1] = delta.value; var dont_p = true; break;}
-						}
-						if(dont_p){}else{l0c.push(delta.value,'b');}
-					}else{
-						l0.Gb=delta.value;// 
-					}
-					var print = true;
-					all.stream_a.push("Value is blue.");
-				}
-				all.screen_log();
-			}
-//.. should i just turn alpha into transparency and use a synthax similar to rgb? this whol + - messes up custom system..	
-//just asign from 1-10 a so 1 translates to 0.1 , 2 to 0.2 and so on. 10 is 1. So bassically divide a_number by 10.
-			if(delta.signal=='a'){
-				if(delta.value>10){
-					all.stream_a.push("Maximum value input is 10.");
-				}else{
-					if(a_line.display=='custom'){
-						var l0c = a_line.custom_a[o.op6];
-						var clo = l0c.length; 
-						while(clo--){
-							var alr = l0c[clo];
-							if(alr=='a'){l0c[clo-1] = delta.value/10; var dont_p = true; break;}
-						}
-						if(dont_p){}else{l0c.push(delta.value/10,'a');}
-					}else{
-						l0.Ga=delta.value/10;// 
-					}
-					var print = true;
-					all.stream_a.push("Transparency changed.");
-				}
-				all.screen_log();
-			}
-
-			//old alpha system
-			//if(delta.signal=='a'){
-			//	if(delta.operation=='+'){
-			//		l0.Ga = l0.Ga+0.1;
-			//		if(l0.Ga > 1){l0.Ga = l0.Ga-0.1}
-			//	}
-			//	if(delta.operation=='-'){
-			//		l0.Ga = l0.Ga-0.1;
-			//		if(l0.Ga < 0.1){l0.Ga = l0.Ga+0.1} 
-			//	}
-			//	var print = true;
-			//}
-
-			
-//use C to Change the currently selected line from whats already on there
-//C and X needs to have a line selected in order to work..
-			if(delta.signal=='change'){
-				all.chat_on = true;
-				chat_in.style.display="inLine";
-				chat_in.focus();
-				chat_in.value = a_line.txt;
-				o.op5=1;
-				all.stream_a.push("Change the current line"); all.screen_log();
-
-			}
-				
-			if(delta.signal=='remove'){
-				anim.splice((o.op2-1), 1);
-				all.stream_a.push("Line removed"); all.screen_log();
-				var print = true;
-			}
-				
-			//cursor
-			if(delta.signal=='left'||delta.signal=='right'||delta.signal=='up'||delta.signal=='down'){
-//wait so to work with custom here, just check for x or y or create item on custom_a, and calculate new
-//x value on selected beat? sounds convoluted. we want cursor to let us move txt fast and easy to work with
-//multiple txt at once. Lets reserve the use of .signal:x with custom and beats to create movement effects instead...
-//or just push new values into selected custom frame directly this doesnt sound bad at all.
-
-				if(delta.signal=='left'){
-					l0.Gx=l0.Gx-delta.value;
-				}            
-				if(delta.signal=='right'){
-					l0.Gx=l0.Gx+delta.value;
-				}
-				if(delta.signal=='up'){
-					l0.Gy=l0.Gy-delta.value;
-				}
-				if(delta.signal=='down'){
-					l0.Gy=l0.Gy+delta.value;
-				}
-				var print = true;
-				//all.screen_log();
-			}//cursor
-
-//expressed like this , x and y properties are stored on beats to create movement on txt
-//its an interesting idea . do it
-			if(delta.signal=='x'){
-				if(a_line.display=='custom'){
-					var l0c = a_line.custom_a[o.op6];
-					var clo = l0c.length; 
-					while(clo--){
-						var alr = l0c[clo];
-						if(alr=='x'){l0c[clo-1] = delta.value; var dont_p = true; break;}
-					}
-					if(dont_p){}else{l0c.push(delta.value,'x');}
-				}else{
-					l0.Gx=delta.value;// 
-				}
-				all.stream_a.push("New x coordinate asigned on beat "+o.op6);
-			}
-
-			if(delta.signal=='y'){
-				if(a_line.display=='custom'){
-					var l0c = a_line.custom_a[o.op6];
-					var clo = l0c.length; 
-					while(clo--){
-						var alr = l0c[clo];
-						if(alr=='y'){l0c[clo-1] = delta.value; var dont_p = true; break;}
-					}
-					if(dont_p){}else{l0c.push(delta.value,'y');}
-				}else{
-					l0.Gy=delta.value;// 
-				}
-				all.stream_a.push("New y coordinate asigned on beat "+o.op6);
-			}
-
-
-//.signal:custom_number	Asigns a number of beats to the txt anim custom_a property. Last item holds current properties, all other items
-//			are initially empty.
-//only rgba properties values work on custom but we should be able to work with x y size spacer as well add these later..
-//we need a simple and yet illustrative feedback for these operations. maybe dots or lines that change size to indicate beat position
-//and differenciate the beat currently selected
-//... so we want custom system to be able to be implemented on each line separatedly. instead of l0 we should use the selected line
-//to create a custom_a that will beat only for that line. in this way we can just use the system on any other line including
-//stream lines
-//we need a command to restore a line into normal display... maybe custom_-1 should do it... but there is a problem here it doesnt
-//work.. i l fix later this is weird.. its setting itself back to custom for some reason
-			if(delta.signal=='custom'){
-				var lc = delta.value;
-				if(a_line==undefined){}else{
-			//	if(delta.value==-1){
-			//		a_line.display='normal'; var ok=true; lc=' zero'; a_line.custom_a=[];//?
-			//		o.op6=0;
-			//		anim[o.op2-1]=a_line;//animation line. data to keep
-
-			//	}
-			//	if(ok){}else{
-					o.op6=delta.value-1;
-					//shouldnt we define a line again..?
-			//if display is already custom, we need to add or substract beats to fit the new value
-					if(a_line.display=='custom'){
-						if(lc<a_line.custom_a.length){
-							var sub = a_line.custom_a.length-lc;
-							while(sub--){
-								a_line.custom_a.shift();
-							}
-						}
-						if(lc>a_line.custom_a.length){
-							var add = lc-a_line.custom_a.length;
-							while(add--){
-								a_line.custom_a.unshift([]);
-							}
-						}
-					}else{
-					//
-						while(lc--){
-							a_line.custom_a.push([]);
-						}
-						a_line.display='custom'; a_line.t=-1;
-						var ori = a_line.custom_a[a_line.custom_a.length-1];
-						//lets stick to rgba for now.. ok adding x and y
-				//we need y to be consistent with line number. o.op2 holds line number, we need to calculate
-				//y using the line number and l0.spacer
-						var lineY = (l0.spacer*(o.op2-1))+l0.Gy;
-						ori.push(l0.Gx,'x',lineY,'y',l0.Gr,'r',l0.Gg,'g',l0.Gb,'b',l0.Ga,'a');
-					}
-				//}//delta.value -1 , we set display to normal !!!!!!!!!! doesnt wurk!!!!!
-
-				all.stream_a.push('Total number of beats is '+lc);
-				all.screen_log();				
-				var print = true;
-
-				}//a_line safe
-			}//custom
-
-
-
-//.signal:beat_number	Selects a beat item on custom_a by number. Now we add changes to that beat. we use op6 to track current beat. 
-//			So all changes in properties will now use op6 to push changes into custom_a correct item.
-			if(delta.signal=='beat'){
-				////
-				if(delta.value>=a_line.custom_a.length){o.op6=a_line.custom_a.length-1; var ok = true;}
-				if(delta.value<0){o.op6=0; var ok =true;}
-				if(ok){}else{o.op6=delta.value;}
-					
-				all.stream_a.push('Current beat '+o.op6+' Listenning to changes.');
-				all.screen_log();
-			}//beat
-
-			o.op3 = 0;
-			
-		}//delta
-
-//use X and C to manipulate existing lines.
-//C will allow user to change the selected line by puting the line txt on input
-//so we can modify it from there
-//X will completely remove the selected line. probly could ask to confirm
-	//use op4 to let editor know when user want to enter input into a line 
-		if(o.op4 == 1){
-			//behavior by default
-			if(o.op5==0){
-				if(o.op2==1){
-					var new_line = {
-						Gx:a_line.Gx, Gy:a_line.Gy, Glayer:l0.Glayer,
-						Gr:a_line.Gr, Gg:a_line.Gg, Gb:a_line.Gb, Ga:a_line.Ga,
-						name:a_line.name, //Gt:a_line.Gt,
-						running:a_line.running,
-						display:a_line.display,
-						custom_a:a_line.custom_a,
-						t:-1,
-						spacer:a_line.spacer,
-						font:a_line.font,
-						open:true, s:'txt',
-						txt:all.c_input,
-					}
-					var prev0_line = {txt:a_line.txt, custom_a:a_line.custom_a, display:a_line.display}
-					anim.splice((o.op2-1), 1, prev0_line);
-					anim.splice((o.op2-1), 0, new_line);
-				}else{
-					var new_line = {txt:all.c_input, custom_a:[], display:'normal'}
-					anim.splice((o.op2-1), 0, new_line);//o.op2-1?
-				}
-			}
-			//C behavior .Change line
-			if(o.op5==1){
-				a_line.txt = all.c_input;
-				o.op5=0;//normalize
-			}
-
-			o.op2++; //select next empty line automatically after pressing enter
-			//all.stream_a.push("line "+o.op2); all.screen_log();
-			o.op4 = 0; //normalize input flag
-			var print = true;
-			
-		}//op4
-		
-		if(print){
-//this could be part of an independent function to clear txt anims
-			//good clear
-			var l0=anim[0];
-			var l = all.anim_a.length; var cl_pl = (l0.name.length+5);
-			while(l--){
-				var s = all.anim_a[l];
-				if(s.name){
-					var name = s.name.substr(0, cl_pl);
-					if(name == l0.name+'_line'){ //so it removes all lines
-						//s.is="rm";
-						if(s.showcase==undefined){
-							var index = all.anim_a.indexOf(s); 
-							all.anim_a.splice(index,1);
-						}
-					}
-				}
-			}//clears
-			//print lines of anim from top to bottom
-			var i = 1; var l = anim.length; var spacer = 0;
-			while(l--){
-				var lin = anim[(i-1)];
-				var print = all.txt_s_new(l0.name+"_line"+i);
-				print.x=l0.Gx; print.y=l0.Gy;
-				//here comes nothing. yup this is the way
-				print.tx=ceX; print.ty=ceY;
-				print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
-				print.font=l0.font; print.layer=l0.Glayer;
-			//use [] for selected line... this needs improve, the line number takes too much space
-			//better now but still a bit sneaky
-				if(o.op2==i){
-					print.txt=lin.txt+'   '+i+'  <<';
-
-				}else{print.txt=lin.txt+'   '+i;}
-
-				print.is="c_txt";
-				print.display = lin.display;
-				print.custom_a = lin.custom_a;
-				print.t=-1;
-				print.y=print.y+spacer; //next line y position difference
-				all.anim_a.push(print);
-			spacer = spacer+l0.spacer;
-			i++;}
-		}//print
-//feedback
-//we need to see properties of beat selected: 11 .  and an animation to illustrate beats in time |start| 00000100007 |end|
-//use Gx rgba properties on normal display. use last custom_a item on custom display
-	//maybe custom display should be default and just use 1 beat. beat 0....
-	//if(l0.display=='custom'){	
-	if(a_line){
-		if(a_line.display=='custom'){
-			var c_b = o.op6; //current beat
-			//var blen = l0.custom_a.length;
-			var blen = a_line.custom_a.length;
-			b_n_a = [];
-			//var l1s = Fting(all.anim_a ,'name', l0.name+'_line1');
-			var l1s = Fting(all.anim_a ,'name', l0.name+'_line'+o.op2);
-			var c_t = l1s.t;
-			while(blen--){
-				var B = 0;
-				if(blen==c_b){var B = 1;}
-				if(blen==c_t){var B = 7;}
-				b_n_a.push(B);
-			}
-			var beatit = b_n_a.join('');
-
-			//get changes
-			//var bit = l0.custom_a[o.op6].length;
-//when we change line, we also need to adjust current beat selected. some lines might have less beats than others.
-			var bit = a_line.custom_a[o.op6].length;
-			var changes_a = [];
-			while(bit--){
-				//var bat =l0.custom_a[o.op6][bit];
-				var bat =a_line.custom_a[o.op6][bit];
-				changes_a.push(bat);
-			}
-			var batit = changes_a.join('>');
-
-			if(o.op2==anim.length+1){var seline='NEW LINE';}else{var seline=o.op2;}
-			all.stream_a.push(
-				beatit,
-				"txt name: "+l0.name,
-				"current selected beat: "+o.op6,
-				"changes: "+batit,
-				"current selected line: "+seline,
-				"layer: "+l0.Glayer
-				);
-			all.screen_log('estream');//estream		
-		}else{all.clear_stream(U.estream);}
-	}else{
-		//we could still print some info here
-		//if(o.op2==anim.length+1){var seline='NEW LINE';}else{
-		all.clear_stream(U.estream);
-	}
-
-	}//text edit mode
-
-}
-
-
-
-
-//ex ML_UP (my logic update)
-//STANCE UPDATE
-//ORB
-//all.orb_up runs when user on vessel stance . checking for modes reacting to commands and also check inits
-//!!!!!!!!!!!!!!!
-//ok so lets leave this orb_up to check for vessels and lets just create a new function txt_up to check on txt mode
-all.orb_up = function(o){//takes orb structure
-
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//ok so most of these operations need to be reestructured and adjusted to fit the new logic so leaving this for refference
-//but yeah is mostly deprecated.
-
-
-//INNER mode
-//Users need to access inner mode in order to create , modify , and have full control
-//of orbs capabilities. Users may now run commands to access orb information and
-//create animations , sounds and programable behavior
-//show orb status(animations stored, image stored, jobs being executed, defense
-//systems etc )
-//User should be able to run on loop any animation on the background of inner mode, along with any sound as well. these animations
-//are not interactive but help users have an idea of this orb potential
-	//
-//!!!!!!!!!!!!!!
-//SO... instead of old orb check, what we are really going to need to do is; check for user stance.mode and stance... properties.
-//stance.form could be.... txt , img, audio, osc , wave , vessel... stance.se could be.. editing , idling , running, playing
-//... no
-//!!!!!!!!!!!!!!!!!!!!!!!!
-
-		if(o.inner_mode){
-			if(uinit){
-//from husk to inner mode>>husk got named, turning into a vessel. 'orb born'
-//from radiant to inner>>user run .reform from radiant mode. 'orb reform'
-//from other orb mode not radiant to inner>> user did exit signal from mode to inner. 'orb edit'
-//from void to inner>> user casted a control command from void. 'orb inwards'
-//we return run edits once. on next beat we return 'all set'
-				//var tt = all.transition(uinit);
-				var tt = all.transition(uinit.transition, uinit.stancefrom);//, uinit.stanceto);
-				//if(tt=='set interface'){return}
-				if(tt=='all set'){uinit=false; return}
-//at this point we also need to push init states of all animations with the running tag on 'TRUE'. except for scripts. scripts dont 'run',
-//scripts 'play', they work differently from 'edits' .so we run a loop to find all running edits and push their init states
-//when transition returns 'run edits'. we do this when orb has running animations but user got in to edit some animation that
-//was running already, changed it and then went from edit mode into inner mode again. we want to see those changes so we simply restart
-//all animations.
-				if(tt=='run edits'){
-//am seriusly thinking about removing circle and rect editors completely...
-		 			//circle
-					var el = o.circle.length;
-					while(el--){
-						var a = o.circle[el];
-						if(a[0].running=='TRUE'){
-							var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-							if(sr){
-								//
-							}else{
-							var sr = all.circle_s_new(a[0].name+"__r");
-							sr.anim=a; //sr.layer=1;//sr.ctx=ctx1;
-							sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-							//new
-					 		var sret = all.getetv(a);
-					 		sr.is='c_circle'; sr.loop = true;
-							sr.et=sret; sr.rt=sr.et;
-							all.anim_a.push(sr);
-							}
-						}
-					}//circle
-
- 					//rect
-					var el = o.rect.length;
-					while(el--){
-						var a = o.rect[el];
-						if(a[0].running=='TRUE'){
-							var sr = all.rect_s_new(a[0].name+"__r");
-							sr.anim=a; //sr.ctx=ctx1;
-							sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2;
-					 		var sret = all.getetv(a);
-					 		sr.is='c_rect'; sr.loop = true;
-							sr.et=sret; sr.rt=sr.et; 
-							all.anim_a.push(sr);
-						}
-					}//rect
-
-					//img
-					var el = o.img.length;
-					var ceX=o.primX; var ceY=o.primY;
-					while(el--){
-						var a = o.img[el];
-						if(a[0].running=='TRUE'){
-			//we cant push and run this state if the corresponding img file is not loaded..
-						if(o.current_img_file.name==a[0].img_file_name){
-							var sr = all.ims_s_new(a[0].name+o.name+"__r", o.img_access);
-							sr.anim=a; //sr.ctx=ctx1;
-							sr.showcase=true;
-							sr.tx=ceX; sr.ty=ceY; sr.layer=1;//temporary
-							//new
-					 		var sret = all.getetv(a);
-							sr.et=sret; sr.rt=sr.et;
-					 		sr.is='c_img'; sr.loop = true;
-							all.anim_a.push(sr);
-						}//no img file safe
-						}
-					}//img
-
-					//txt
-					var el = o.txt.length;
-					while(el--){
-						var a = o.txt[el];
-						if(a[0].running=='TRUE'){
-			//.... needs to ask if states already exist.. or we could clear by default
-			//print lines of anim from top to bottom
-				var i = 1; var l = a.length; var spacer = 0; var l0=a[0];
-				var ceX=o.primX; var ceY=o.primY;
-				while(l--){
-					var lin = a[(i-1)];
-					//var l_txt = a[(i-1)].txt;
-					var print = all.txt_s_new(l0.name+"_line"+i+o.name+'__r');
-			//when we call these user should be centered on the orb already... 
-					//var ceX=-U.x+window.innerWidth/2; var ceY=-U.y+window.innerHeight/2;
-					print.showcase=true; //
-					print.tx=ceX; print.ty=ceY;
-					print.x=l0.Gx; print.y=l0.Gy;
-					print.r=l0.Gr; print.g=l0.Gg; print.b=l0.Gb; print.a=l0.Ga;
-					print.font=l0.font; print.layer=l0.Glayer;
-					//print.tx=window.innerWidth/2; print.ty=window.innerHeight/2;
-					print.is="txt"; print.txt=lin.txt;
-					print.y=print.y+spacer; //next line y position difference
-					print.display=lin.display;
-					print.custom_a=lin.custom_a;
-					print.t=-1; //print.run=1;
-					all.anim_a.push(print);
-				spacer = spacer+l0.spacer;
-				i++;}
-						}//if running true
-					}//txt
-
-					//osc
-					//audio
-					
-					all.shadow_mode(stance);
-
-					return	
-
-				}//tt run edits
-
-				if(tt==undefined){return}
-
-			}//init inner mode
-
-//INNERMODE , IDLING
-
-//Use diferent signals here to manage orb on inner mode, broadcast, streams, sound
-//background etc? this command is pretty op 
-			if(o.op3!=0){var delta = all.signify(o.op3);}
-			if(delta){
-				if(delta.signal=='exit'){
-					//exit on idling inner mode puts user back into the void
-					stance = undefined; 
-					uinit={transition:'orb outwards',stancefrom:o}//,stanceto:undefined};
-
-					all.stream_a.push("User left .." + o.name); all.screen_log();
-				}//exit
-				
-				o.op3=0;
-				
-			}//delta
-
-		}//inner mode
-
-
-//RADIANCE
-//here goes phase 3 of act system?..
-//While on radiant mode, input can be managed from act scripts. input typed on prompt
-//doesnt go to mainstream anymore, it is piped into the orb radiant stream. Words and text on this stream is also available to be
-//processed by act scripts
-		if(o.radiant_mode){
-			if(uinit){
-				//var tt = all.transition(uinit);
-				var tt = all.transition(uinit.transition, uinit.stancefrom);
-				if(tt=='all set'){
-					uinit=false;
-			
-					if(all.au){}else{all.au=all.audioser();} //safenet?
-	//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
-	//Because we dont want animations showcasing when animations will be synched with radiant orb activity
-					var l = all.anim_a.length; 
-					while(l--){
-						var s = all.anim_a[l];
-						var namend = s.name.substr(-3, 3);
-						if(namend == '__r'){
-							all.anim_a.splice(l,1);
-						}
-					}
-					return
-				}
-				if(tt==undefined){return}
-			}//uinit
-			
-//we need .signal here . op could help manage radiance. we need a way to request
-//help, exit to void and changing back to orb stance from here as well
-
-			if(o.op3!=0){var delta = all.signify(o.op3);}
-			if(delta){
-				if(delta.signal=='exit'){
-			//exit on radiant mode puts user back into the void
-					stance = undefined; 
-					uinit={transition:'orb outwards',stancefrom:o}
-
-					all.stream_a.push("User left .." + o.name); all.screen_log();
-				}//exit
-				
-				o.op3=0;
-				return
-			}//delta
-
-
-			
-		}//radiant mode
-
-
-
-
-//edit interfaces		ex	..	ANIM..A..T..E
-//AUDIO editor
-//Create an instance to run the sound in a controled way. The sound snipet can be
-//looped, or its sound parameters can be specified on conditions when run.
-//Edit can rememebr all parameters used on WEB audio API.
-//.. needs a function to define from point the audio starts playing and at which point the
-//audio ends
-
-//Implement this now...
-//when users load an audio file, a new audio edit should be created automatically.
-//a default audio animation ready to run as is. users can simply create orbs to store
-//audio buffs to be played later.
-
-//ok so , sound can freely be shared between orbs on inner mode, thats the thing.
-//when we load a sound file, a default animation is created to run the audio as is.
-//we can edit audio and just run it from editor and leave it running while we do other
-//things, just like oscillators.. no this is bad. we dont want to mix allstates from
-//editors. also it would mess up op numbers.
-
-//however on radiant mode sound is restricted to acts scripts conditions. We have
-//control over specific parameters from here, we can make sound play on specific
-//conditions. so we can make playlists , control volume, see and change tracks
-//and so on..
-	//
-//so now we can just showcase run audio . first we need to fix this a bit.. its been a while since i dont mess around here
-//we are going to need to refresh what we know and also implement other nodes avaiable. gotta study web api again now...
-//good night friend.. You got this.
-
-//EDIT AUDIO
-		if(o.edit_audio_mode==true){
-			if(uinit){
-				//var tt = all.transition(uinit);
-				var tt = all.transition(uinit.transition, uinit.stancefrom);
-				if(tt=='all set'){uinit=false; return}
-			
-				if(all.au){}else{all.au=all.audioser();} //safenet?
-
-//we now also need to remove all states from running edits on inner mode if any.. so look for states with names that end in '__r'
-				var l = all.anim_a.length; 
-				while(l--){
-					var s = all.anim_a[l];
-					var namend = s.name.substr(-3, 3);
-					if(namend == '__r'){
-						all.anim_a.splice(l,1);
-					}
-				}
-				//all.stream_a.push('Edit audio mode On'); all.screen_log();
-				//return
-			}
-//audio animation reference
-			var a = o.audio[o.op1];
-//audio state refference
-			var a_s = Fting(all.anim_a,"name", a.name+"__audio");
-
-			if(o.op3!=0){var delta = all.signify(o.op3);}
-			if(delta){
-				
-				if(delta.signal=='exit'){
-					o.inner_mode=true; o.edit_audio_mode = false; uinit={transition:'orb edit',stancefrom:o}
-
-	//cant end and splice inmediately after, must disconnect now and then splice
-	//or send autoremove to animf.. animf should be able to self remove all kinds of
-	//states.. !
-					if(a_s){
-						//a_s.end='end'; //try this
-						a_s.src_node.stop();a_s.src_node.disconnect();
-						var index = all.anim_a.indexOf(a_s);
-						all.anim_a.splice(index,1);
-					}
-					//clear data feedback stream
-					all.clear_stream(U.estream);//just use all.user.estream
-
-					//clear selected values
-					o.op1= 0; o.op5= 0; //var id = a.on_a[0];
-					all.stream_a.push("Out of audio edit mode"); all.screen_log();
-					o.op3=0;
-					return
-				}
-				
-//.. a problem. When i stop and start run  again it doesnt start from a.start . . . .
-				if(delta.signal=='run'){
-//remember loop control is on s.src_node . consider this when working on act
-					if(a_s){
-						//a_s.end="fade"; //to end it
-						a_s.end="end";
-					}else{
-						var a_s = all.buffer_s(o.audio_access, all.au, a.name+"__audio", a);
-						a_s.src_node.loop = true; 
-						a_s.timer_start = all.au.currentTime;//
-				//we need to use update time as well in order to synch.. do we
-						//a_s.t=0;//
-						//start(when, offset, duration)
-		//when act calls the edit, we could use start(a.start, a.end, a.end) to set
-		//duration. to run audio once
-						a_s.src_node.start(a.start, a.end);//this is good
-						all.anim_a.push(a_s);
-					}
-				}//run
-
-//gain
-				if(delta.signal=='gain'){
-					if(delta.operation=='+'){
-						a.gain=a.gain+delta.value;//+0.005;
-						if(a_s){
-							a_s.gain_n.gain.value=a_s.gain_n.gain.value+delta.value;//+0.005;}
-						}
-					}
-					if(delta.operation=='-'){
-						a.gain=a.gain-delta.value;//-0.005;
-						if(a_s){
-							a_s.gain_n.gain.value=a_s.gain_n.gain.value-delta.value;
-						}
-					}
-					all.stream_a.push("Gain adjusted"); all.screen_log();
-
-				}//gain
-
-
-//From To control. Use U or LU to increase Start time. Use H and LH to decrease Start time. Use I and LI to increase End time and
-//J and LJ to decrease End time
-
-				if(delta.signal=='start time'){
-					if(delta.operation=='+'){//+0.01
-						if(a_s){
-							a_s.src_node.loopStart = a_s.src_node.loopStart+delta.value;
-						}
-						a.start = a.start+delta.value;
-					}
-					if(delta.operation=='-'){
-						if(a_s){
-							a_s.src_node.loopStart = a_s.src_node.loopStart-delta.value;
-						}
-						a.start = a.start-delta.value;
-					}
-				}
-
-				
-				if(delta.signal=='end time'){
-					if(delta.operation=='+'){//+0.01
-						if(a_s){
-							//a_s.src_node.loopStart = a_s.src_node.loopEnd+delta.value;
-							a_s.src_node.loopEnd = a_s.src_node.loopEnd+delta.value;
-
-						}
-						a.end = a.end+delta.value;
-					}
-					if(delta.operation=='-'){
-						if(a_s){
-							//a_s.src_node.loopStart = a_s.src_node.loopEnd-delta.value;
-							a_s.src_node.loopEnd = a_s.src_node.loopEnd-delta.value;
-						}
-						a.end = a.end-delta.value;
-					}
-				}
-
-//We should be able  to adjust the number of loops the animation will run...hmm
-//..we could simply call it again using act language
-
-				//var up_sel = true;
-				o.op3=0;
-			}//delta
-
-
-//now we need to see current time of playing sound. we dont need to display all decimals
-//so fast.. 
-//s.src_node.buffer.duration ==> total time of sound file
-//all.au.currentTime ==> the now time
-//so when state starts running we define timer_start = all.au.currentTime;
-//every time we need the now time of running state, all.au.currentTime-timer_start
-//.. ok its done
-//
-			
-//also, when we dont want to loop on act , s.end needs not only to set src_node.loop
-//to false, but also let anim func use a.end to end sound at this value
-
-//doing the timer thing but instead of calling update, i just change feed0 colors
-			o.op5++;
-			if(o.op5==15){
-				var s_0 = U.estream;
-				s_0.r=o_r; s_0.g=o_g; s_0.b=o_b;
-
-				o.op5=0;
-			}
-		//up_sel running at every update here..
-			var up_sel = true;//
-			//timer
-			//Number(2.4387587.toFixed(2))
-			if(a_s){
-				var ctd = all.au.currentTime-a_s.timer_start;
-//if number length is less than 4, i need to add as many zeroes to complete 4 digits
-//this will avoid the funny tingy while displaying
-				//this works so far
-				var ctf = ctd.toFixed(4);//toFixed returns a string.. remember that
-				var ctt = ctf+'000000000';
-				var ct = ctt.substr(0,9);
-			}else{var ct = 0;}
-			
-//interface to show data from currently selected audio edit
-			if(up_sel){//should be update_interface
-				var a = o.audio[o.op1];
-				var a_s = Fting(all.anim_a,"name", a.name+"__audio");
-				all.stream_a.push(
-					"Audio name: "+a.name,
-					"Gain: "+a.gain,
-					"Fade: "+a.fade,
-					"Start Time : "+a.start,
-					"End Time: "+a.end,
-					"Current Time: "+ct
-
-					);
-				all.screen_log('estream'); //estream
-
-			}
-			//
-		}//audio
-
-
-
-
-
-/*
-A central cross painted in the centre of the screen on edit mode should be 
-used to refere to a point of convergence. A point were the animation expresses a
-transfer of energy. An impact, or a receiving gesture, an interaction trough contact.
-It might represent a hit square, or something to protect.
-And may actually represent the orb, the center of the vessel.
-We can then locate this central reference point whenever we want on the screen,
-we can also invert the animation so its executed
-from a diferent direction and maybe even control the size of the animation trough
-/act programming.
-But most importantly, we would be able to connect with other animations trough a
-reference point.
-Animations will use the contact frame as refference to run in proper timming.
-If an attack takes 10 frames before the hit frame and a defense takes 4 frames
-before the block frame, then we asign the block and hit to converge frame.
-Attack animation starts running first since it takes more frames to reach
-converge frame, but defense would start running 4 frames before converge frame,
-in this way hit and block frames from both animations will run simultaneously,
-creating the impact effect desired.
-This can all be programmed using /act language.
-
-img edit will normally position it in the center of the screen so we can
-easily create the animation using image coordinates, but then, act can
-translate canvas to run the animation on any desired position. we can also
-use scale to flip images from origin
-coordinates so this is definitely very convenient.
-
-..so when a script asks for lets say run time 21 we run a loop and sum all
-t from each frame, when we reach 21, thats the frame we looking for
-*/
-//push states to illustrate a central cross only when we test run or we
-//are definning a capture
-//dont allow img scroll when run test is on. or capture still undefined
-//EDIT, IMG
-		if(o.edit_img_mode==true){
-			if(uinit){
-//we got o.primX , o.primY , o.limitrad , o.limitdis
-				//var tt = all.transition(uinit);
-				var tt = all.transition(uinit.transition, uinit.stancefrom);//, uinit.stanceto);
-				if(tt=='all set'){uinit=false; return}			
-				if(tt=='set interface'){
-				//the grid zero we all want
-					var ceX=o.primX; var ceY=o.primY;
-				//assuming we are already at vessel location
-					var anim = o.img[o.op1];
-				//push rect state empty with rainbow colors.
-					var s = all.rect_s_new("rect__sel"); 
-					s.a=1; s.layer=1;
-					s.tx=ceX; s.ty=ceY;
-					s.inside="empty"; //rect_s.tch='sel';
-					all.anim_a.unshift(s);
-			
-				//push background img state and draw. default values
-					var bg = all.ims_s_new("img__bg",o.img_access);//img__bg
-					bg.anim = anim; //maybe we dont need anim here...
-					bg.layer = 0; bg.a=1;
-					bg.tx=ceX; bg.ty=ceY;
-					//just freezing this for now..
-					//if(o.img_access.width>window.innerWidth||
-					//o.img_access.height>window.innerHeight){
-					//	o.op6=1;
-					//}
-					all.anim_a.unshift(bg);
-
-				//push a state to illustrate a caption from the img
-					var ims = all.ims_s_new("img__sel",o.img_access);//img__sel
-					ims.anim = anim; //ims.ctx = ctx1;
-					ims.tx=ceX; ims.ty=ceY;
-					ims.layer=0; ims.a=1;
-					all.anim_a.unshift(ims);
-
-				//push a state to illustrate animation frames sequentially
-					var imr = all.ims_s_new("img_r",o.img_access);//img__r
-					imr.anim = anim;
-					imr.tx=ceX; imr.ty=ceY;
-					imr.layer=0; imr.a=1;
-					all.anim_a.unshift(imr);
-					
-/*
-The way we draw this cross is clunky, we should just write a function to do this.
-c.beginPath();
-c.moveTo(-offsetX,0);
-c.lineTo(width-offsetX,0);
-c.moveTo(0,-offsetY);
-c.lineTo(0,height-offsetY);
-c.stroke();
-*/
-				//horizontal line of cross  ///////////// -
-					var csx = all.rect_s_new("x__c"); 
-					csx.a=0.6; csx.inside="filled"; 
-					csx.tx=ceX; csx.ty=ceY;
-					//just making the line very large for now
-					csx.w=window.innerWidth*3; csx.h=1;
-					csx.x=-o.limitdis; csx.y=0;
-					csx.layer=2;
-					all.anim_a.unshift(csx);
-
-				//vertical line of cross     ///////////// |
-					var csy = all.rect_s_new("y__c"); 
-					//csy.is='f'; //csy.ctx=ctx2; 
-					csy.a=0.6; csy.inside="filled";
-					csy.tx=ceX; csy.ty=ceY;
-					csy.w=1; csy.h=window.innerHeight*10;
-					csy.x=0; csy.y=-(o.limitdis);
-					csy.layer=2;
-					all.anim_a.unshift(csy);
-
-				//remove all states from running edits on inner mode if any
-					var l = all.anim_a.length; 
-					while(l--){
-						var s = all.anim_a[l];
-						var namend = s.name.substr(-3, 3);
-						if(namend == '__r'){
-							all.anim_a.splice(l,1);
-						}
-					}
-					return
-				}//set interface
-
-				if(tt==undefined){return}
-				//u.init = false;
-				//return
-			}
-
-			//the grid zero we all want. center of edit. the orb center.
-			var ceX=o.primX; var ceY=o.primY;
-			//a refference to currently selected anim
-			var anim = o.img[o.op1];
-			//a refference to select rect state .  s
-			var s = Fting(all.anim_a, "name", "rect__sel");
-			//a reff to test run ims
-			var imr = Fting(all.anim_a, "name", "img_r");
-			//ref img selection
-			var ims = Fting(all.anim_a, "name", "img__sel");
-			//bg
-			var bg = Fting(all.anim_a, "name", "img__bg");
-			//refference to horizontal cross line
-			var csx = Fting(all.anim_a, "name", "x__c");
-			//refference to vertical cross line
-			var csy = Fting(all.anim_a, "name", "y__c");
-			//selected frame. we use op2 to keep track of frames we are working on
-			var f = anim[o.op2];
-
-//use delta for processing changing signals. if op3 is anything but 0, delta is defined by our signifier function
-			if(o.op3!=0){var delta = all.signify(o.op3);}
-
-//allthese new delta functions need to limit number range so it doesnt break anything .. !!!!! needs update
-			if(delta){
-
-				if(delta.signal=='exit'){
-//op1 tracks animation index, op2 tracks animation frame index
-					o.inner_mode=true; o.edit_img_mode = false;
-					//uinit = 'orb edit';
-					uinit={transition:'orb edit', stancefrom:o}//,stanceto:o};
-					s.is='rm'; ims.is='rm'; imr.is='rm'; bg.is='rm';
-					csx.is='rm'; csy.is='rm';
-					//var feed_stream = Fting(o.stream, "name", "feed0");
-					all.clear_stream(U.estream);//just use all.user.estream
-
-					//clear up operation values
-					o.op1=0; o.op2=0; o.op3=0; o.op4=0; o.op5=0; o.op6=0; 
-
-					//i need to remove the ghost frame here too..
-					if(imr.loop==false){anim.pop();}
-
-					//remove empty array if user didnt even frame once
-					if(anim.length==0){var rmf = o.img.indexOf(anim); o.img.splice(rmf,1);}
-					
-					all.stream_a.push("Leaving from img edit mode.."); all.screen_log();
-					//o.op3=0;
-					return
-				}
-
-//CURSOR IMG
-//cursor with s.u_d. so we really dont need u_d system at all now because we are just clearing the whole screen once per beat anyway
-//no need to worry about specific clears. .. it might be interesting to be able to clear specific zones eventually but for now we good
-				if(delta.signal=='left'||delta.signal=='right'||delta.signal=='up'||delta.signal=='down'){
-					if(delta.signal=='left'){var u_p = 'x'; var u_v = s.x-delta.value;}
-					if(delta.signal=='right'){var u_p = 'x'; var u_v = s.x+delta.value;}
-					if(delta.signal=='up'){var u_p = 'y'; var u_v = s.y-delta.value;}
-					if(delta.signal=='down'){var u_p = 'y'; var u_v = s.y+delta.value;}
-
-					s[u_p]=u_v;
-					s.is='c_rect'; //s.t=1;
-					if(o.op4==1){
-						if(u_p=='y'){u_p='py';}
-						if(u_p=='x'){u_p='px';}
-						ims[u_p]=u_v;
-					}
-				
-				}//cursor
-
-//.. do i need center.. yes i do.. not sure is this is ok tho. i think its good
-//we want user translates to consider users actions here... so center now needs to translate user to our selection rect
-				if(delta.signal=='center'){
-					//if(o.selected_drag==false){
-					if(o.op4==0){
-						var u_x = window.innerWidth/2; var u_y = window.innerHeight/2;
-						s.x=u_x; s.y=u_y;
-					}
-				}
-
-//square sel size with s.u_d
-				if(delta.signal=='width'||delta.signal=='height'){
-					if(delta.signal=='width'){
-						if(delta.operation=='+'){var u_p = 'w'; var u_v = s.w+delta.value;}
-						if(delta.operation=='-'){var u_p = 'w'; var u_v = s.w-delta.value;}
-					}
-					if(delta.signal=='height'){
-						if(delta.operation=='+'){var u_p = 'h'; var u_v = s.h+delta.value;}
-						if(delta.operation=='-'){var u_p = 'h'; var u_v = s.h-delta.value;}
-					}
-					s[u_p]=u_v;
-					if(o.op4==1){
-						if(u_p=='w'){u_p='pw';}
-						if(u_p=='h'){u_p='ph';}
-						ims[u_p]=u_v;
-					}
-				}//size
-
-	//time editor
-				if(delta.signal=='time'){
-
-					//all.stream_a.push("Numbers without frames?"); all.screen_log();
-					if(delta.operation=='+'){f.ft = (f.ft+delta.value);}
-					if(delta.operation=='-'){f.ft = (f.ft-delta.value);}
-					if(delta.operation!=undefined){}else{f.ft = delta.value;}
-					if(imr.loop){
-						//update times
-						imr.et = all.getetv(anim); imr.rt=imr.et; //imr.t=1;
-						//imr.nfreq=0; 
-						//imr.is='c_img';
-					}
-				}
-				
-				if(delta.signal=='alltime'){
-					var al = anim.length;
-					while(al--){
-						var af = anim[al];
-						af.ft=delta.value; 
-					}
-					if(imr.loop){
-						//update times
-						imr.et = all.getetv(anim); imr.rt=imr.et; //imr.t=1;
-						//imr.nfreq=0; 
-						//imr.is='c_img';
-					}
-					all.stream_a.push("New beat"); all.screen_log();
-				}
-
-	//alpha editor . transparency
-				if(delta.signal=='alpha'){
-					if(delta.operation=='+'){ f.a = f.a+(0.1);}
-					if(delta.operation=='-'){ f.a = f.a-(0.1);}
-				}
-	//frame back
-				if(delta.signal=='back'){
-					//its weird to go back when there is no back to go
-					if(anim[o.op2-1]){ //then i can go back
-						o.op2--;
-						if(imr.loop){
-							var f = anim[o.op2];//refer selected frame again
-			//we could just instruct the state to reinit itself using the anim refference stored in itself
-			//trough the animf function instead of manually changing them in here !!!!!!!!!!!!!!!!!! optimization
-
-							ims.x=f.x; ims.y=f.y; ims.w=f.w; ims.h=f.h;
-							ims.px=f.px; ims.py=f.py; ims.pw=f.pw; ims.ph=f.ph;
-							ims.a=f.a;
-							
-
-							s.x=f.px; s.y=f.py; s.w=f.pw; s.h=f.ph;
-
-							o.op4=1;
-							//we can modify on run
-							//updating captured and definning again.. huh.. 
-							o.C = {x:f.x, y:f.y, w:f.w, h:f.h}
-						}
-					}else{
-						all.stream_a.push("First frame"); all.screen_log();
-					}
-
-				}//back
-
-				if(delta.signal=='next'){
-					//moves on to the next frame... if there is one
-					if(anim[o.op2+1]){
-						o.op2++;
-						if(imr.loop){
-							var f = anim[o.op2];//refer selected frame again
-
-							ims.x=f.x; ims.y=f.y; ims.w=f.w; ims.h=f.h;
-							ims.px=f.px; ims.py=f.py; ims.pw=f.pw; ims.ph=f.ph;
-							ims.a=f.a;
- 
-							s.x=f.px; s.y=f.py; s.w=f.pw; s.h=f.ph;
-
-							//o.selected_drag = true;
-							o.op4=1;
-
-							o.C = {x:f.x, y:f.y, w:f.w, h:f.h}
-						}
-
-					}else{
-						all.stream_a.push("last frame.."); all.screen_log();
-					}
-				}//next
-
-	//capture
-//both C and selected_drag couldsimply be op numbers, for order s sake
-//!!!!! if we are capturing, prevent img scroll? and call cross
-
-				if(delta.signal=='capture'){
-					if(imr.loop==true){
-						all.stream_a.push("Unrun first"); all.screen_log();
-					}else{
-						o.C = {x:s.x, y:s.y, w:s.w, h:s.h}	 
-
-						all.stream_a.push("Frame captured on orb.C"); all.screen_log();
-
-						//updates the section just selected and ready it to drag around..
-						//bg dont go here either this is probly messing up
-						ims.x=s.x; ims.y=s.y; ims.w=s.w; ims.h=s.h;
-						o.op4=1;
-						//when we capture, we probably want to decrease the bg img a to a minimum
-						//so we can work with the selected image captured using our grid cross
-
-//also, select rect needs to inmediately drag the selected image to center of the screen
-						//wait a second...
-				//we could simply displace user here , dont mess up tx ty
-				//now screen position center on vessel
-				//CENTER ON STRUCTURE 
-						ctx0.translate((-U.x),(-U.y));//this should put user on ctx0 zero xy at any moment
-						var screencX = -ceX+(window.innerWidth/2); var screencY = ceY-(window.innerHeight/2);
-						ctx0.translate(screencX,screencY);
-						U.x=screencX; U.y=screencY;
-
-						all.adjust_stream(U.mainstream);
-
-						s.x = 0; s.y = 0; //kinda centered selection
-	
-						ims.px=s.x; ims.py=s.y; ims.pw=s.w; ims.ph=s.h;
-					}
-
-				}//capture
-	//am HERE...	
-		
-				if(delta.signal=='define'){
-					if(o.C.x==undefined){//this safe even working?.. i think it is
-					//if(o.op6==0){?
-						all.stream_a.push("Capture first.."); all.screen_log();
-					}else{
-					//just placedata on frame, dont erase name
-						f.x=o.C.x; f.y=o.C.y; f.w=o.C.w; f.h=o.C.h;
-						f.px=s.x; f.py=s.y; f.pw=s.w; f.ph=s.h;
-						f.a=1; //f.st=0; f.f=o.op2;
-						f.ft=15;
-	
-						all.stream_a.push("Frame SAVED"); all.screen_log();
-
-	//so on loop... we want to keep all running, just modify changes in frame in real time
-						if(imr.loop){
-							o.op4=0;
-						}
-						
-						if(imr.loop==false){
-			//only push new frame if loop is false and last frame was defined
-							if(anim[anim.length-1].a){anim.push({});}
-							bg.a=1;
-							o.op4=0;
-						//place rest selection on selected frame to keep working from there
-							s.x=f.x; s.y=f.y; s.w=f.w; s.h=f.h; 
-			//and here, we also want to translate user so selected frame rect is in the middle of the screen
-			//so we can continue from there..
-						//CURSOR CENTER on s
-							ctx0.translate((-U.x),(-U.y));//ctx0 zero xy
-							var rectcX = (-ceX-s.x)+(window.innerWidth/2);
-							var rectcY = (ceY-s.y)-(window.innerHeight/2);
-							ctx0.translate(rectcX,rectcY);
-							U.x=rectcX; U.y=rectcY;
-							
-							all.adjust_stream(U.mainstream);
-
-							o.C={};
-						}//when no loop
-					}//capture first..
-				}//define
-
-	//run test
-				if(delta.signal=='run'){
-					if(imr.loop){
-						imr.loop=false; imr.run=false;
-						var done =true;
-						o.op4=0;
-						bg.a=1;
-					//update select rect position to selected frame
-					//.. sel rect should now be positioned on where the frame is extracted from !
-						s.x=f.x; s.y=f.y; s.w=f.w; s.h=f.h;
-					//also translate user so we can keep working from here.
-						ctx0.translate((-U.x),(-U.y));//ctx0 zero xy
-						var rectcX = (-ceX-s.x)+(window.innerWidth/2);
-						var rectcY = (ceY-s.y)-(window.innerHeight/2);
-						ctx0.translate(rectcX,rectcY);
-						U.x=rectcX; U.y=rectcY;
-
-						all.adjust_stream(U.mainstream);
-						
-					//when we out of loop we push ghost frame again
-						anim.push({});
-
-					}
-					if(done){}else{ //this is so sketchy lol
-						if(imr.loop==false){
-							if(anim.length==0){
-								all.stream_a.push('Cant run without frames..'); all.screen_log();
-							}else{
-								anim.pop(); //poping ghost frame
-								//new
-								var imret = all.getetv(anim); //imretard lol no
-								//imr.tx=window.innerWidth/2; imr.ty=window.innerHeight/2;//neccesary?
-								imr.anim=anim; imr.is='c_img';
-								imr.loop=true; imr.run=true; imr.et=imret; imr.rt=imr.et;
-						
-								//place cursor on selected frame pos
-								s.x=f.px; s.y=f.py; s.w=f.pw; s.h=f.ph;
-
-								//and translate user to center of prim to see the animation focus activity
-								ctx0.translate((-U.x),(-U.y));//ctx0 zero xy at any moment
-								var screencX = -ceX+(window.innerWidth/2);
-								var screencY = ceY-(window.innerHeight/2);
-								ctx0.translate(screencX,screencY);
-								U.x=screencX; U.y=screencY;
-
-								all.adjust_stream(U.mainstream);
-								
-								//bg now is almost transparent so we can see the animation more clearly
-								bg.a=0.2;
-
-							}
-						}//loop false
-					}
-				}//run
-
-	//and other signals..
-
-				//var update_sel = true;
-				o.op3=0;//clear operation
-			}//if delta
-
-			//op4 with value of 1 tells us user is currently capturing a selected rectangle from our image file
-			//so we should update value in a couple of states here to help us work with our capture
-			if(o.op4==1){
-				//cross updates
-				//csx.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect'); 
-				csx.r=o_r; csx.g=o_g; csx.b=o_b; csx.is='rect'; 
-				//csy.u_d.push('r',o_r,'g',o_g,'b',o_b,'is','rect');
-				csy.r=o_r; csy.g=o_g; csy.b=o_b; csy.is='rect';
-				//selected image drawing
-				//ims.u_d.push('is','img');
-				ims.is='img';
-				//ims.is='c_img';
-			}
-			//and here goes updates on states that need refreshing when user has not captured yet
-			if(o.op4==0){
-				//rainbow selection
-				s.r=o_r; s.g=o_g; s.b=o_b; s.is='rect';
-				//whole image in the backgound located on the positive side of the prim center grid
-				bg.is='img';
-			}
-
-//feedback
-//ask if frames have new params and if they do, gather data and print feedback acordingly
-//we can make 3 random calls to create a color at every update and then
-//just use the same color for all things orbs inner systems related..
-//that l surely help with performance.
-//and it will be super cool to see, and good for interface visibility..
-//except that on text it is anxiety inducing lol. maybe tone down the
-//pulsating frequency.
-			//using op5 as timer to update estream here. heh .. probly could be done in a more consistent way
-			o.op5++;
-			if(o.op5==9){
-				var s_0 = U.estream;
-				s_0.r=o_r; s_0.g=o_g; s_0.b=o_b;
-				o.op5=0;
-			}
-
-			var f = anim[o.op2];
-				
-			//refreshing frame feedback estream
-			var frames = anim.length; var f_n_a = []; //frame number array
-			if(frames == 1){f_n_a.push("[0]");}
-			if(frames == 2){
-				if(o.op2==0){f_n_a.push("[0]",1);}
-				if(o.op2==1){f_n_a.push(0,"[1]");}
-			}
-			if(frames >= 3){
-				if(o.op2==0){}else{f_n_a.push(0);}
-				while(frames--){
-					if(frames == o.op2){f_n_a.push("["+frames+"]");}
-				}
-				if(o.op2==(anim.length-1)){}else{f_n_a.push((anim.length-1));}
-			}	
-			var framed = f_n_a.join("...");//join f_n_a togheter separated by ...
-		
-			all.stream_a.push(
-				"Animation name: "+anim[0].name, 
-				"Frame: "+framed,
-				"Frame X:"+f.px+" Y:"+f.py+" W:"+f.pw+" H:"+f.ph,
-				"Timer: "+f.ft,
-				"Alpha:"+f.a,
-				"Cursor X:"+s.x+" Y:"+s.y+" W:"+s.w+" H:"+s.h
-			);
-			all.screen_log('estream'); //estream
-
-		}//edit img mode
-
-
-
-
-
-
-//VOX mode .. needs update
-//a synthetizer
-//While on vox mode, users should be able to choose if they want to radiate the sounds produced. . ?
-//Orbs radiating oscillations will have visuals particular to their frequencies emited.?
-//Yes, a user will be able to listen to orbs even on void. 
-//The volume of the sounds emited will start to decrease gradually from the moment orbs emiting it fall outside of the
-//listening user perceiving range so it is possible to navigate  the void listening to orbs. Sounds emited by Orbs travel longer
-//than normal perception. Sounds also have special effects on voids
-//An orb can be programmed to emit a specific sound when a specific condition is met, just like any other animation.....?
-
-//Ok, so.. we want osc to be called just like animations?.. no..records..
-//.. maybe  vox can be like a music studio for recording.. 
-//this method for recording should be used to loop sequences in
-//real time.. vox is an instance to create sound sequences (records) , and then
-//act language should be able to call these records the same way it calls animations
-//But vox could simply be used to play music as well. Using snipets from loaded music
-//files and oscillators. Users should be able to swap between orbs while on vox? to
-//run multiple sound files simultaneously. Could act language do this?
-//OK SO vox is an instrument which can be tuned and fully customized. each orb has one vox
-//instance to remember asigned oscillators.
-//if we want to mess around with audio files and vox records then we use act language.
-//ok we good now.
-
-		if(o.vox_mode){
-			if(u.init){		
-			//if(o.init){
-				//all modes init should do this
-				var o_bg = Fting(all.anim_a, "name", "__obg");
-				if(o_bg){o_bg.is='rm';}	
-//screen travels to the right, user can see the orb radius line reacting to the sound now.
-//clear and run traveling to the side animation. dont allow interactions during transition
-				all.sstr_l = ' ';  all.sstr_t = 20;
-//all.sstr=' '; all.sstr_t=20; all.s_s_t_r=[]; //all.com_a=[]; //why was i doing this?
-
-				o.op5=1;
-				u.init=false;
-				//o.init=false;
-				return//using return is good for transition inits
-			}
-			
-//manage k buttons using op5
-			if(o.op5==1){
-				var l = all.anim_a.length;
-				while(l--){
-					var rm_k = all.anim_a[l];
-					
-					if(rm_k.se){
-						if(rm_k.se=='k_txt'){
-							rm_k.is='rm';
-						}
-					}
-					
-					if(rm_k.tch){
-						if(rm_k.tch=='k'){
-							rm_k.is='rm';
-						}
-					}
-					
-				}//rm
-//on touchscreen users search for asigned buttons on membox and call them
-				var l = o.vox_ks.length;
-				while(l--){
-					var bt = o.vox_ks[l];
-					if(bt.asigned_osc!==undefined){
-						var ok = all.create_bt(ctx0, bt.name,undefined, undefined,
-						bt.X, bt.Y, true, 'persist');
-						ok.bt.asigned_osc=bt.asigned_osc;
-						ok.bt.tch='k';
-						ok.txt.se='k_txt';
-						//bts.bt.reff=b;
-						//add coordinates and text boolean
-						all.anim_a.push(ok.bt, ok.txt);
-					}
-				}
-				
-				o.op5=0;
-			}//op5 k management
-			
-			if(o.op3!=0){var delta = all.signify(o.op3);}
-			if(delta){
-				
-				if(delta.signal=='exit'){
-//instead of directly setting inner mode true and vox mode false, i could
-//just set rad_l sub event to "quit" 
-					o.inner_mode=true; o.vox_mode = false;
-					//o.init=true;
-					var obg = all.circle_s_new('__obg');
-					obg.radius=900; obg.t=5;
-					obg.r=0; obg.g=0; obg.b=0; obg.a=0;
-					obg.inside="filled"; obg.is='circle';
-					obg.x=Math.floor(window.innerWidth/2);
-					obg.y=Math.floor(window.innerHeight/2);
-					obg.ctx=ctx0;
-					if(o.inner_mode){obg.se='idle_pick';}
-					//if(o.radiant_mode){obg.se='expand_colors';}
-					all.anim_a.push(obg);
-					
-//what we do with osc states on exit?
-					//if(a_s){a_s.end="fade";}
-					var l = all.anim_a.length;
-					while(l--){
-						var rm_k = all.anim_a[l];
-						if(rm_k.tch){
-							if(rm_k.tch=='k'){rm_k.is='rm';}
-						}
-						
-						if(rm_k.se){
-							if(rm_k.se=='k_txt'){rm_k.is='rm';}
-						}
-						
-					}
-
-					all.stream_a.push("Out of vox mode"); all.screen_log();
-					//console.log("Out of vox mode");
-				}//exit
-				
-				o.op3=0;
-			}//delta
-			
-			
-//inside the orb, audio animations names can be seen as well as their asigned keys
-//Ask is sc_log text corresponds to any audio animations. if does, then take
-//sc_log states and draw lines from anima name text
-//towards orb radius line . Fixate a color when user strokes the key to the asigned anim .
-
-/*
-touch users need to create special buttons and asign oscillators to them on vox.
-This k button behaves just like a button but takes an asigned osc instead of a command.
-Long press runs the oscillator as long as pressed and a gesture can lock into loop.
-Keys are persistant always by default.
-*/
-
-//numbers might be reserved for record button, or a button to list all audio animations.
-//user hit a key and press spacebar, input is focused now with text .asign: already so
-//now all user has to do is type in the name of the audio anim to asign it.
-			//run a loop on o.osc to determine what keys should trigger osc
-			var l = o.osc.length;
-			while(l--){
-				var a_a = o.osc[l];
-				//keyboard system
-				if(all.sstr==a_a.asigned_key){
-					all.sstr_l = ' ';  all.sstr_t = 20; //so it doesnt repeat the command
-					//all.sstr=' ';//
-					
-					//i need an id to avoid problems here
-					var id = all.au.currentTime;//id should be stored on a_a for later access.. ?
-					//to prevent too fast keydown, use previous timestamp and add some time
-					if(a_a.on_a[0]){var fast = true;}
-					if(fast){if(a_a.on_a[0]+0.3>id){var dont = true;}}
-					if(dont){//dont push another sound please, its too fast
-					}else{
-						var a_s = Fting(all.anim_a, "name", a_a.name+"_"+a_a.on_a[0]);
-						if(a_s){var ask_loop = true;}
-						if(ask_loop){if(a_s.loop){var loop = true;}}		
-						
-						if(loop){
-							all.stream_a.push("Key already on loop"); all.screen_log();
-							//console.log("Key already on loop");
-						}else{
-							//record system
-							if(o.rec[0] !== "off"){
-							var starttime = id-o.rec[1];
-							o.rec.push(a_a.name+"_start_"+starttime+"_"+id);
-							}//
-							a_a.on_a.push(id);//default
-							var a_s = all.osc_s(all.au, a_a.name+"_"+id, a_a);
-							a_s.gain_n.gain.value= 0.001; 
-							a_s.gain_n.gain.setTargetAtTime(a_a.gain, all.au.currentTime, 0.06);
-							all.anim_a.push(a_s);
-							//record
-							
-							//here goes visual
-							all.stream_a.push("Sounds .. "+a_s.name+ "time: "+id); all.screen_log();
-							//console.log("Sounds .. ");
-						}
-					}
-				}//asigned key stroke
-
-			}//trigger loop
-
-
-//a button to start recording
-//to record vox activity, i can listen to strokes timestamp for push and release,
-//for shift activity etc and just create
-//a sequence of instructions to repeat the activity recorded
-//when record button is stroke, take all.au current time and and store on
-//rec.startTime. Now everytime user strikes another key
-//, do key press time - start time. Store numbers obtained on each stroke while on
-//record, register the waveform, and the time the key
-//is being pressed as well
-//a combination of numbers and R, starts recording. the same number and R again stops
-//recording?. Records names are the numbers used.
-
-//instead of l1 and l2 system to synch loops, the solution is far much more simple
-//Every record should hold a space to create a timestamp every time the record is
-//being reproduced. A timestamp for when it starts
-//playing and a total time. To get the total time i should just save current time of
-//user finishing the record instead of acccessing
-//the last key end time.
-
-//It would be cool to get some visuals when a record is playing. something to let user
-//know when playback is going to end etc
-			//
-//Users should be able to issue commands to orbs so they start playing a specific record...
-//and maybe records should be able to be asigned into actions..
-//check out if web audio API already comes with a visualizer . . . . .
-			//..just turn R into a delta signal
-			var R = all.num_in("R");
-//... typing a number and then R is a bit hard to do with rythm, should just
-//accept "0" to end the rec
-//if user strokes 0 while recording, make var R into the record name so it stops
-//recording and save
-			if(all.sstr=="0"){
-				all.sstr_l = ' ';  all.sstr_t = 20;
-				if(o.rec[0] !== "off"){
-					var R = o.rec[0];
-				}
-			}
-			
-			//R for start recording on selected number
-//its nice to type a number and start recording but it would also be nice for user to
-//be able to asign a name for the record
-//maybe something like
-//.name:[record number]:[a name]
-/*
-			
-*/
-
-//Also, users should be able to manipulate the record so it can be shortened on demand , while running
-//a timer to illustrate the record progression. we can move limiters to subtract time from begginning to end and from end to beggining
-//.. ahhhh this is gonna be a bit confusing . maybe later gonna work on this
-
-			
-			if(R!==undefined){
-			//check if already recording, 
-				if(o.rec[0] == "off"){
-					//index 0 and 1 of rec are always the name of record (a number) and start recording time
-					o.rec.pop();//no more "off" on [0]
-					o.rec.push(R, all.au.currentTime);//first 2 items are always number name and startt
-					//is recording, if so then push stroke data into the rec item
-					all.stream_a.push("Recording.."); all.screen_log();
-				}else{
-					//end recording when the same number is used to record
-					if(o.rec[0] == R){
-					var rec_time = all.au.currentTime - o.rec[1];
-					o.rec.push(rec_time);//the total record time
-					o.rec[1] = 0;
-					o.records.push(o.rec);
-
-					o.rec = [];
-					o.rec.push("off");//normalizes rec
-					all.stream_a.push("Record stored."); all.screen_log();
-					}
-				}
-			}
-
-//To start playing a previous record, use number and P, to play. Use number and P again to stop playing the record.
-//A loop trough record item use data to push osc audio states at once, which will follow instructions to run properly
-//anim_func can set oscilator ending from the beginning of record play request
-//these playing record functions shouldnt rely on anim_func because timing is not good on updates.
-//s.gain_n.gain.setTargetAtTime(0, all.au.currentTime + 0.2, s.fade);
-//
-			var P = all.num_in("P");
-			var L = all.num_in("L");
-			
-			var i1 = 0; var l1 = o.records.length;
-			while(l1--){
-//the structure of a key pressed is a single string: animname_action_executiontime , so i can use "_" to separate values
-//use r_a[0]to get the name of animation, r_a[1] is the operation,  r_a[2] is the start or ending time, r_a[3] is thekey identifier
-				var r = o.records[i1];
-				if(r[0]==P){
-					//when its playing . . it should stop the sound, clear all record states
-					var playing = Fting(all.anim_a, "r_name", r[0]);
-					if(playing){
-						var l = all.anim_a.length;
-						while(l--){var s = all.anim_a[l]; if(s.r_name==r[0]){s.end = "fade";}}
-					//when its not playing . .
-					}else{var P_call = true;}
-				}	
-//when user requests loop, store current time on r[1] and use r[r.length-1] to let know update when to
-//push_r again since r[r.length-1] is the total time of the record
-//make it so when update checks, it pushes again the record after a fixed time and not just current time
-//since updates times are not precise. just give update a window to realize the operation.
-//a time fixed controled window, a constant so it doesnt mess up the playback timming
-				if(r[0]==L){
-					//when its looping already . . it should stop the sound, clear all record states
-					if(r[1]!==0){
-						r[1] = 0;
-						var l = all.anim_a.length;
-						while(l--){var s = all.anim_a[l]; if(s.r_name==r[0]){s.end = "fade";}}
-					//when its not playing . .
-					}else{var P_call = true; r[1] = all.au.currentTime;}
-				}
-				
-				//Play 1 loop call
-				if(P_call){var push_r = true;}//
-
-				//to check for Loops, just ask 
-				if(r[1]!==0){  
-					//push record again when r[1] + r[r.length-1] is less or equal to currentTime
-					var timer = r[1] + r[r.length-1];
-					if(timer<=all.au.currentTime){
-//make it so record is pushed  some miliseconds after the condition //define a var to add to pushing time
-//also make it so r[1] is re defined //rem_time should be timer + 0.5
-						var rem_time = timer + 0.3;
-						//console.log(timer);
-						var push_r = true;
-						//r[1] = all.au.currentTime;
-						r[1] = timer;
-					}
-				}//
-		
-	
-				if(P_call||r[1]!==0){ 
-				//console.log("Yes, you P called  or r[1]!==0");
-				var i3 = 2; var l3 = r.length-3;//start from item 3
-				if(rem_time){
-					//console.log("using rem_time");
-				}else{
-					var rem_time = all.au.currentTime+0.3;
-					//console.log("rem time =  "+rem_time);
-				}
-				while(l3--){
-					var r_a = r[i3].split("_"); //record array
-					var aud = Fting(o.osc, "name", r_a[0]);
-					var time = parseFloat(r_a[2]);
-					if(r_a[1]=="start"){var start = true;}
-					if(r_a[1]=="end"){var end = true;}
-					//
-					if(push_r){ 
-						if(start){
-							var s = all.osc_s(all.au, r_a[0]+"_"+rem_time+"_"+r_a[3], aud);
-							s.gain_n.gain.value= 0.0001; 
-							s.r_name = r[0];//record name
-							s.gain_n.gain.setTargetAtTime(aud.gain, rem_time+time, 0.06); 
-							all.anim_a.push(s);
-							//console.log(rem_time);
-						start = false;
-						}
-
-						if(end){
-							var s = Fting(all.anim_a, "name", r_a[0]+"_"+rem_time+"_"+r_a[3]);
-							s.gain_n.gain.setTargetAtTime(0, rem_time+time , aud.fade);
-							s.end = "check";
-							//console.log(rem_time);
-						end = false;
-						}
-					}//push record
-
-				i3++;}
-				}//any of 2 conditions
-				//should reset all vars used to control looped record here before passing to next record . . .
-				rem_time = undefined;
-				P_call = undefined;
-			i1++;}//check records
-
-		}//vox mode
-
-}//orb_up
-
-
-
-
-
-
-
-
-//OLD
-all.c_com = function(){ 
-	//var st = stance;
-	if(all.com_a==undefined){}else{
-	//if(all.com_a[0]){ //empty array lock
-
-
-
-		//old
-//Commands are generally called by users and are executed on demand when conditions
-//are met, but there may be some cases when some of these commands may be called by certain events. An encounter may put a 
-//string on all.c_input or an external event may trigger the .commands macro for users to react to incoming attacks or proposals
-//comands packet logic go first on updates and they self delete after executed so they only run once.
-//turn the command string into an array to contain every word between the dots and symbols
-//so users words can specify subcommands and parameters to the commands first dot means its a command macro ,
-//after second dot its an action for the macro to execute. most actions take parameters, ':' allows users to pass parameters
-		//
-		var com = all.com_a;//[0];
-		var str = com.str; 
-		var mcp_a = str.split(":");
-//mcp_a[0] is the macro and the actions separated by dots. the other elements in the array are user parameters
-		var mc_a = mcp_a[0].split("."); 
-//mc_a[0] is always empty, [1] is always the macro and [2], [3] and further are commands of the macro
-//define orb in control once
-//... commands should be available for all stances its just that, they will do different things depending on stance.form and stance.se
-
-//DEBUG version exclusive commands
-//a command to remove touch listeners and key press listeners. also stops the heartbeat
-//of Sunya for console debug.
-//to add back listeners just run NS(); directly on the console
-		if(mc_a[1]=="scan"){
-			document.removeEventListener("touchstart", tstart,{passive:false})
-			document.removeEventListener("touchmove", tmove,{passive:false})
-			document.removeEventListener("touchend", tend,{passive:false})
-			document.removeEventListener("touchcancel", tcancel,{passive:false})
-			
-			window.removeEventListener('keydown', kdown);
-			window.removeEventListener('keyup', kup);
-			
-			clearInterval(all.heartbeat); 
-			//all.heartbeat =	setInterval(update,65); //100 //70
-			//eruda.init();
-
-			console.log('console is responsive now, thanks eruda :)');
-		} //scan
-
-//TYPE
-//.type is a special command that only takes one parameter which is a string that can contain "." and ":" without having an effect
-//on the instruction. .type:a string to appear on input and instant focus
-//This command is useful to create specific shortkeys
-//This commands should probly be available always. !!!!!!!!!!
-		if(mc_a[1]=="type"){
-			var ta = str.split(":"); ta.shift(); 
-			chat_in.style.display="inLine";	chat_in.value = ta.join(":");
-			all.chat_on = true; chat_in.focus();
-		
-		}//.type
-
-//FIREWAVE
-//PULSE
-//.. will be called Fire Wave, will work differently...  !!!!!!!!!!!!!
-//A wave will be a stance now. Special keys will have specific effects while on Fire wave stance.
-//ok so given a radius, an angle and a centerX and a centerY, we can calculate xy of a point in the circle rim
-//var x = radius * Math.cos(angle)+centerX;
-//var y = radius * Math.sin(angle)+centerY;
-//!!!!!!
-//i dont like where wave_up is being called, Fire riding should be tracked before animf, but after we ask for user stance updates.
-//..this command creates the wave state and sets the entity into the Fire wave stance. . so after we ask for all.c_com to evaluate commands
-//acording to stance, we should also update all changes and keep track of the stance logic inmediately after. these changes will be
-//specific to the stance. After this, we need to ask for :
-//orbs, husks, vessels that are not stanciated, but which are the mayor actors that update all other states changes.
-//animf simply runs the graphics.
-//So now Firewave is simply how entities travel. Firewaves should be able to drag memories along when encountered so entities
-//will be able to grab rogue memories in a wide area , finding memories out there on their own will be harder in some areas
-//but easier in others.
-//.fire
-		if(mc_a[1]=='fire'){
-			if(stance.form=='Fire'){
-				stance.intensity++;
-				stance.custom_a=[]
-				stance.custom_a.push([0.5, "a"],0,0,0);
-				let nin = stance.intensity;
-				var ix = stance.intensity;
-				while(ix--){stance.custom_a.push(0);}
-				stance.custom_a.push([1,'a',27-nin,'b',54-nin,'g',153+nin,'r']); stance.t=-1;
-				stance.radius=1;
-				stance.x=Math.round(-U.x+window.innerWidth/2);
-				stance.y=Math.round(-U.y+window.innerHeight/2);
-				stance.maxrad = stance.maxrad+nin;
-
-			}//else{
-
-			if(stance.form=='Void'){
-				var id = Date.now();
-				var p = all.circle_s_new(id+'___fire');
-				p.entity = U.name; p.id = id;
-				p.x = Math.round(-U.x+window.innerWidth/2);
-				p.y = Math.round(-U.y+window.innerHeight/2);
-				p.form='Fire'; p.display='custom'; p.is='c_circle';
-				p.custom_a.push([0.5, "a"],0,0,0,[0.7,"a",27,'b',54,'g',153,'r']); p.t=-1;
-				p.maxrad=500;
-				p.intensity=1;
-				p.radius=1;
-
-				stance=p;
-				all.anim_a.push(stance);
-
-			}
-			if(stance.form=='Husk'){
-
-			}
-
-
-		}//fire
-
-//We need Ice now. A command to induce Ice into the stance. Fire waves will freeze and create a Husk once the Firewave reaches
-//intensity zero? Maybe Husks could melt and reduce its radius slowly in time? for now we need to freeze the Fire
-//.ice
-		if(mc_a[1]=='ice'){
-
-			if(stance.form=='Husk'){
-				//stack ice on Husk
-				stance.intensity--;
-				stance.custom_a=[];
-				stance.custom_a.push(
-					[0.8, "a"],0,0,0,0,0,[0.9,'a',100+(-stance.intensity),'b',20,'g',100,'r']
-				); stance.t=-1;
-			}
-
-			if(stance.form=='Fire'){
-				//create a Husk on intensity 0
-				stance.intensity--;
-				if(stance.intensity==0){
-//maybe update position here after angle changes? .. maybe this operation is performed before updating fire position..
-					stance.form='Husk';
-					stance.name=stance.id+'___husk';
-					stance.custom_a=[];
-					stance.custom_a.push([0.8, "a"],0,0,0,0,0,[0.9,'a',100,'b',20,'g',100,'r']); stance.t=-1;
-				}
-			}
-
-
-		}//ice
-
-//!!!!!!!!!!!!!!!!!!!!!
-//lets make displace a general command that will call the proper function depending on the stance.form and stance.se
-//... but am thinking , the displace command doesnt make much sense because, this is going to be a function called by Arrows
-//consistently from any stance.. displace is not a command , its a program function. Keyboard users will call it by pressing arrows
-//and touchscreen users will call it by pressing some kind of special button on the screen , but its not a command,
-//its not a custom button. It doesnt need to go here on all.c_com.
-//While an entity is on orb stance, arrows will move the orb memory prim as long as the orb is inside a husk.
-//While an entity is on a Husk stance, arrows will displace the screen center
-		//
-//commands for text editor
-//Editors need to track user selected elements. on txt editor we want to keep track of lines , insert operation and line beat
-//st.selL  st.insOp  st.selB
-//.modify		Changes insert operation to modify a currently existing txt on the selected line
-//.lineup  .linedown	To move between lines
-//.beats:number		Asign a number of beats to the animation
-//.beat:number		Select a beat by number
-//once we have selected a beat, we can asign changes like this.
-//.r/g/b/a/layer/align
-//We can asign one value for each parameter per beat.
-		//
-//commands for image editor
-//.cursor.direction:number	A cursor to move around a selected rectangle. We will use a rect to select an image section and
-//				drag it around to place it using the orbprim center as reference.. we could use this to move the txt around
-//				too....? so on txt editor, it changes x y on a line, whilest on image editor, it changes x y of the capture
-//.capture	Captures a cursor selection to be draged
-//.define	Asigns px py pw ph using the captured selection
-//We use the same commands on image editor to manage beats.
-//once we have a selected a beat/frame, we can asign changes like this.?
-//.x/y/w/h/px/py/pw/ph/a/layer ?
-
-		//NEW SYSTEM
-		//select next line
-//On edit mode , selecting a line should center the screen on the line position !!!!!!!!! done
-		//txt orb exclusive. maybe these could work differently on edit mode and on stream in mode.. they should!
-		//..on stream mode, this could be used to.. look back into the stream history, only visible for the
-		//entity issuing the command!!!!
-		//.linedown
-
-		if(mc_a[1]=='linedown'){
-			stance.selL++;
-			if(stance.selL>stance.lines.length+1){stance.selL--;}
-			stance.selB=0;
-			//var op = {msg:'new line selected', x:st.primX, y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-		//select prev line
-		if(mc_a[1]=='lineup'){
-			stance.selL--;
-			stance.selB=0;
-			if(stance.selL==0){stance.selL++;}
-			//var op = {msg:'Line: '+st.selL, cus:[[0.8,'a'],0,0,[250,'r',10,'b']], line:2, x:st.primX, y:st.primY};
-	//.. so instead of sending these packets here, we could simply send a message to let know output picking phase user has selected
-	//a new line. what we do with this packet should be an independant process. Editors process can be embeded but we are
-	//going to need to be able to create this process using scripts.
-			//var op = {msg:'new line selected', x:st.primX, y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}	
-
-	
-		//asign a number of beats for the selected line
-		//should work with image edits as well...
-		//.beats:number
-		if(mc_a[1]=='beats'){
-			var lc = parseFloat(mcp_a[1]);
-			if(lc<=0){}else{
-				var line = stance.lines[stance.selL-1]; // {txt:'...', cus:[[]..]}
-				if(lc<line.cus.length){
-					var sub = line.cus.length-lc;
-					while(sub--){
-						line.cus.shift(); //i know shift is slow, but this operation dont need to be rly fast
-					}
-				}
-				if(lc>line.cus.length){
-					var add = lc-line.cus.length;
-					while(add--){
-						line.cus.unshift(0);
-					}
-				}
-
-				//inform amount of beats and currently selected one. use old method
-				//var op = {msg:'new beats number',x:st.primX,y:st.primY}; all.c_out.push(op);
-				stance.selB=0;
-				var print = true;
-			}// no 0 safe
-
-		}
-
-		//select beat by number
-	//!!!!!! so when we change the line, we also need to change to an existing beat. maybe just make selected beat 0 idk
-		//should work with image edits as well..
-		if(mc_a[1]=='beat'){
-			var nv = parseFloat(mcp_a[1]);
-			var line = stance.lines[stance.selL-1];
-			if(nv<0){nv=0;}
-			if(nv>=line.cus.length-1){nv=line.cus.length-1;}
-			stance.selB = nv;
-			//var op = {msg:'beat selected',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-		//select next beat
-		if(mc_a[1]=='beatdown'){
-			stance.selB++;
-			var line = stance.lines[stance.selL-1];
-			if(stance.selB>line.cus.length-1){stance.selB--;}
-			//var print = true;
-		}
-
-		//select prev beat
-		if(mc_a[1]=='beatup'){
-			stance.selB--;
-			if(stance.selB<0){stance.selB++;}
-			//var print = true;
-		}
-
-//a command to change limitL , limit lines to show on stream mode. needs some thinks
-		if(mc_a[1]=='limit'){
-			stance.limitL=parseFloat(mcp_a[1]);
-			//var print = true;
-			
-		}
-
-
-		//modify a line
-		//txt orbs exclusive
-		if(mc_a[1]=='modify'){
-			if(stance.selL>=stance.lines.length+1){}else{
-				chat_in.style.display="inLine";
-				chat_in.focus();
-				chat_in.value = stance.lines[stance.selL-1].txt;
-				all.chat_on=true;
-				stance.insOp='modify';
-			}
-		}
-
-		//remove a line
-		//txt orbs exclusive. maybe we could use remove to remove image frames too
-		if(mc_a[1]=='remove'){
-			if(stance.selL>=stance.lines.length+1){}else{
-				var place = stance.selL-1;
-				stance.lines.splice(
-					place,1 //let lines be simpler bro
-				);
-				//all.printo(st,'edit');			
-				var print = true;
-			}
-		}
-
-		//so we should control size from the orb, we dont need a different size for each and every line.
-		//txt orbs exclusive. maybe we could generalize to be used on user input size too
-		//.sizeup/sizedown
-		if(mc_a[1]=='sizeup'){
-			var font = stance.font.substr(5);
-			var size = stance.font.substr(0,2); parseInt(size); size++;
-			stance.font = size+"px "+font;
-			stance.spacer++;
-			//all.printo(st,'edit');
-			//var op = {msg:'new size',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-		if(mc_a[1]=='sizedown'){
-			var font = stance.font.substr(5);
-			var size = stance.font.substr(0,2); parseInt(size); size--;
-			stance.font = size+"px "+font;
-			stance.spacer--;
-			//all.printo(st,'edit');
-			//var op = {msg:'new size',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-		//change layer of all lines printed by this memory
-		//this command could also be generalized
-		if(mc_a[1]=='layer'){
-			stance.layer=mcp_a[1];
-			//all.printo(st,'edit');
-			//var op = {msg:'new layer',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-//changing rgb could be one function. a is a bit different because of decimals..
-		//
-		//change red value in the selected beat of the selected line
-		if(mc_a[1]=='r'){
-			var line = stance.lines[stance.selL-1];
-			//if we asign '..number-number' then the system will print a new value for red between numbers
-			if(mcp_a[1][1]=='.'){
-				var nv = mcp_a[1];
-			}else{
-				var nv = parseFloat(mcp_a[1]);
-				if(nv>255||nv<0){console.log('no'); all.com_a=undefined; return}
-			}
-			var lc = line.cus[stance.selB];
-			if(lc==0){
-				//console.log('problem');
-				line.cus.splice(stance.selB,1,[nv,'r']);
-			}else{
-				var clo = lc.length; 
-				while(clo--){
-					var alr = lc[clo];
-					if(alr=='r'){lc[clo-1] = nv; var dont_p = true; break;}
-				}
-				if(dont_p){}else{lc.push(nv,'r');}
-			}
-			//all.printo(st,'edit');
-			//var op = {msg:'change on line',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-		//change green value in the selected beat of the selected line
-		if(mc_a[1]=='g'){
-			var line = stance.lines[stance.selL-1];
-			//if we asign '..number-number' then the system will print a new value for red between numbers
-			if(mcp_a[1][1]=='.'){
-				var nv = mcp_a[1];
-			}else{
-				var nv = parseFloat(mcp_a[1]);
-				if(nv>255||nv<0){console.log('no'); all.com_a=undefined; return}
-			}
-			var lc = line.cus[stance.selB];
-			if(lc==0){
-				//console.log('problem');
-				line.cus.splice(stance.selB,1,[nv,'g']);
-			}else{
-				var clo = lc.length; 
-				while(clo--){
-					var alr = lc[clo];
-					if(alr=='g'){lc[clo-1] = nv; var dont_p = true; break;}
-				}
-				if(dont_p){}else{lc.push(nv,'g');}
-			}
-			//all.printo(st,'edit');
-			//var op = {msg:'change on line',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-		
-		//change blue value in the selected beat of the selected line
-		//this same command could be adapted to manage other blues we could want to change like; user input blue etc
-		//same with all other colors
-		if(mc_a[1]=='b'){
-			var line = stance.lines[stance.selL-1];
-			//if we asign '..number-number' then the system will print a new value for red between numbers
-			if(mcp_a[1][1]=='.'){
-				var nv = mcp_a[1];
-			}else{
-				var nv = parseFloat(mcp_a[1]);
-				if(nv>255||nv<0){console.log('no'); all.com_a=undefined; return}
-			}
-			var lc = line.cus[stance.selB];
-			if(lc==0){
-				//console.log('problem');
-				line.cus.splice(stance.selB,1,[nv,'b']);
-			}else{
-				var clo = lc.length; 
-				while(clo--){
-					var alr = lc[clo];
-					if(alr=='b'){lc[clo-1] = nv; var dont_p = true; break;}
-				}
-				if(dont_p){}else{lc.push(nv,'b');}
-			}
-			//all.printo(stance,'edit');
-			//var op = {msg:'change on line',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-		//change alpha value in the selected beat of the selected line
-		//with only a few modifications we can use most of this code for image alpha control as well
-		if(mc_a[1]=='a'){
-			var line = stance.lines[stance.selL-1];
-			//if we asign '..number-number' then the system will print a new value for red between numbers
-			if(mcp_a[1][1]=='.'){
-				var subs = mcp_a[1].substr(2);
-				var v_a = subs.split('-');
-				var n1 = v_a[0]; var n2 = v_a[1];
-				if(n1>10||n1<1){console.log('no'); all.com_a=undefined; return}
-				if(n2>10||n2<1){console.log('no'); all.com_a=undefined; return}
-				var nv = '..'+n1/10+'-'+n2/10;
-			}else{
-				var nv = parseFloat(mcp_a[1])/10;
-				if(nv>1||nv<0.1){console.log('no'); all.com_a=undefined; return}
-			}
-			var lc = line.cus[stance.selB];
-			if(lc==0){
-				//console.log('problem');
-				line.cus.splice(stance.selB,1,[nv,'a']);
-			}else{
-				var clo = lc.length; 
-				while(clo--){
-					var alr = lc[clo];
-					if(alr=='a'){lc[clo-1] = nv; var dont_p = true; break;}
-				}
-				if(dont_p){}else{lc.push(nv,'a');}
-			}
-			//all.printo(st,'edit');
-			//var op = {msg:'change on line',x:st.primX,y:st.primY}; all.c_out.push(op);
-			//var print = true;
-		}
-
-		//A command to change memory orb into edit mode.
-//edit always need at least one to listen to its outputs so it will create on if doesnt exist already
-		if(mc_a[1]=='edit'){
-			stance.mode='edit';
-			//var print = true;
-		}
-
-		//A command to change memory orb into stream mode.
-		if(mc_a[1]=='stream'){
-	//?
-			ctx0.translate((-U.x),(-U.y));//this should put user on 0
-			//var newX= var newY=
-			var rpx = Math.round(-stance.primX+(window.innerWidth/2));
-			var rpy = Math.round(-stance.primY+(window.innerHeight/2));
-			ctx0.translate(rpx,rpy);
-			U.x=rpx; U.y=rpy;
-			//
-			pupil.x=-U.x+window.innerWidth/2; pupil.y=-U.y+window.innerHeight/2;
-			//
-			stance.mode='stream';
-			//all.printo(stance,'stream');
-		}
-
-//now we want run script mode
-//so actually run script mode should be able to manipulate all memories around. scripts need to be able to change modes
-//in all memories and relocate them etc. a script can offuscate itself with another script executing the instructions to offuscate
-//The scan instruction....
-//...ok .. So,  scripts should simply be commands. Simple as that. All commands need to be modular so they should be able to be called
-//simultanoeusly.
-//Now we need a command to scan for data nearby. This same command should be able to be run in a script.
-//a command to focus on a specific state. We want to focus on any specified state part too. We want line controls, circle rims,
-//circle centers.
-//Focus . 
-
-		if(mc_a[1]=='focus'){
-			
-
-		}	
-/*	
-//!!!!!!!!!!!!
-//so now am thinking , /place/subplace.command.subcommand:param1:param2: etc..
-/user.x  , /user.y:new y , 
-/void.
-/fire .scan ..
-/vessel
-/orb
-/txt
-[id].form
-.scan		We can scan using the body of the current stance.
-{}		Only run when condition is fullfilled.
-.focus 				We use focus to select where user screen position goes. focus alone returns current selected stance
-.focus:id			Take an entity nearby to the point on demand.
-.focus.next/prev/current	Move between posible selections in a txt?. current outputs currently selected id.
-
-[some txt id].focus		We can place the result of a command inside a txt.
-
-.Yes this.
-
-We also want to reestructure heartbeat loop.
-Just do exactly the same as in anim cue drawing. Make more arrays to give specific states priority. But make them interchangeable
-The same structure but placed on arrays in sequence. So we first check on states with logic first and then simpler ones.
-
-So we can run a script from another script. As long as its in radius of the current stance
-/txt/name or id of txt.play
-[id]/line.x '/y/r/g/b/a'
-So id or name could be anything. ... wow ok you need to keep going. Just go all the way in.
-
-*/
-
-
-
-		if(mc_a[1]=='play'){
-			//
-
-		}
-
-
-		//if(print){all.printo(stance,'edit');} //
-		if(stance.form=='Text'){
-			all.printo(stance, stance.mode);
-		}
-
-//panic attack
-//refference.... omg this is too much... ok this is the old edit system... we gotta transform all signals into simple commands
-//synthesize. we gotta re implement the insert lines system.. come on man you got this.
-//..just start from scratch.... you slayed king:) system is much better now. and we can handle outputs now. Maybe check those
-//radu videos some more
-
-/*	
-//vessel and void exclusive commands? no
-		if(comav=='vessel'||comav=='void'){
-
-
-//MAINSTREAM this will be deprecated soon
-//when user is on void or inner mode, we can talk with other users on void or other void entities
-//while on void, we can only configure mainstream. We should also be able to access mainstream from inner mode
-//the only instante where mainstream is not available is when user is on orb stance and radiant mode. thats when mainstream
-//becomes orb stream, and it become susceptible to act language statements and conditions.
-//.mainstream.r  , g,  b  , a	Default Color stats of the stream
-//.mainstream.x
-//.mainstream.y
-//.mainstream.limit	Maximum number of lines of the stream
-//.mainstream.size	Font size
-//.mainstream.font
-//.mainstream.spacer	How much space between stream lines
-//.. we need to be able to scroll the stream and freeze it at will. would be nice for keyboard users to use arrows
-// up and down to scroll, left to detach, right to attach to last
-//and touchscreen users could simply swipe the stream up and down, and just touch to atach/detach
-//.mainstream.sup , .sdown, .freeze, .unfreeze
-//... so we need an object on user to hold mainstream history. Orbs can have an independent stream history object
-//we also need a way to clear and switch off mainstream....
-//it would be nice to see a vibrating coloring line or rect to frame the mainstream....
-//we also need to address the "line is too long to print" issue...
-
-//.mainstream	Print mainstream stats, modify stats using subcommands. Macro and subs only available from void and inner mode.
-			if(mc_a[1]=="mainstream"){
-				if(c_o){
-					if(c_o.radiant_mode==true){
-						//Dont allow mainstream control while on radiant mode
-						var dont = true;
-					}
-				}
-				if(dont){}else{
-					var us = U.mainstream;
-					if(mc_a[2]==undefined){
-						
-						//just print all mainstream stats
-						all.stream_a.push(
-				'___________________________________',
-				//'Use .mainstream.[property]:[new value] to change a property.',
-				'r: '+us.r, 'g: '+us.g, 'b: '+us.b, 'a: '+us.a,
-				'x: '+us.x, 'y: '+us.y, 'limit: '+us.limit,
-				'size: '+us.size, 'font: '+us.font, 'spacer: '+us.spacer,
-				'___________________________________'
-						);
-						all.screen_log();
-					}else{
-						//a somehow funky command to clear history... needs to use other history property
-						//if(mc_a[2]=='clear'){us.history=[]; var done = true;}
-					
-						if(dont){}else{//its a parameter change command..
-							if(mc_a[2]=='font'){
-								var p = mcp_a[1]
-							}else{
-								var p = parseFloat(mcp_a[1]);
-							}
-							all.n_param_com(mc_a[2], p ,U.mainstream);
-						}
-					}
-		//also needs to clear stream activity before changes occur...... !!!!
-				}
-			}//mainstream
-
-//BUTTON
-//!!!!!!!!!!!!!
-//keep for refference but this is mostly deprecat
-//commands to create buttons for touchscreen users. these button are shortcuts
-//for commands
-//.button	Print all buttons stored. If on void recall user keys. If on orb stance, print keys according to orb mode.
-//.button:[name]
-//.button.[name].name:[new name]
-//.button.[name].key:[new key]
-//.button.[name].com1:[new com1] //One fast touch calls com1
-//.button.[name].com2:[new com2] //One long press touch calls com2
-//.button.[name].persist:[new persist value] //'persist'/'desist'
-//.button.[name].delete
-//.button.[name].asign:[oscillator name]  A vox special command. Turns button into a
-//										musical instrument key
-//we should be able to customize buttons size color etc..add this
-			if(mc_a[1]=="button"){
-					//locate mbox memory box
-			//deprecat !!!!!!!! c_o doesnt exist anymore
-				if(c_o){
-					if(c_o.inner_mode){var mbox= U.inner_ks;}
-					if(c_o.radiant_mode){var mbox= U.radiant_ks;}
-					if(c_o.edit_img_mode){var mbox= U.img_ks;}
-					if(c_o.edit_audio_mode){var mbox= U.audio_ks;}
-					if(c_o.edit_txt_mode){var mbox= U.txt_ks;}
-					if(c_o.edit_circle_mode){var mbox= U.circle_ks;}
-					if(c_o.edit_rect_mode){var mbox= U.rect_ks;}
-					if(c_o.edit_osc_mode){var mbox= U.osc_ks;}
-					if(c_o.vox_mode){var mbox= U.vox_ks;}
-
-					//add others//
-				}
-				//ehhhhhhh we got a problem here.
-				if(c_o==undefined){var mbox= U.void_ks;}
-				//if(comav=='husk'){} //.... where do ghostship buttons go?
-				//nevermind. ghostship cant see this command.. for now
-	
-				if(mc_a[2]==undefined){
-					if(mcp_a[1]==undefined){
-					//.button
-		//stream buttons and keys. its all on mbox
-		//a loop to print buttons properties
-						var ml = mbox.length;
-						all.stream_a.push('___________________________________________________________');
-						while(ml--){
-							var mbt = mbox[ml];
-							all.stream_a.push(
-		`${mbt.key}, | com1: ${mbt.com1}, name: ${mbt.name},  com2: ${mbt.com2}, X: ${mbt.X}, Y: ${mbt.Y}`//, key: ${mbt.key}`
-							);
-						}
-						all.stream_a.push('___________________________________________________________');
-						all.screen_log();
-					}else{
-					//.button:[new button name]
-						var newbtn = {
-							key:undefined, name:mcp_a[1], com1:'.type:', com2:'.type:',
-							X:50, Y:50, persist:'desist'
-						}
-						mbox.push(newbtn);
-					}
-				}else{
-				//.button.[button name].parameter:[new param value]
-					var ta = str.split(":"); ta.shift(); var nv = ta.join(":");
-					//ta = undefined;
-					//use mc_a[2] to locate key
-					var btalr = Fting(mbox, "name", mc_a[2]);
-					if(btalr){
-						if(mc_a[3]=='name'){btalr.name=nv;}
-						if(mc_a[3]=='com1'){btalr.com1=nv;}
-						if(mc_a[3]=='com2'){btalr.com2=nv;}
-						if(mc_a[3]=='persist'){btalr.persist=nv;}//persist, desist
-					//persist should have a boolean value instead of the literal words persist/desist for consistency
-						if(mc_a[3]=='key'){btalr.key=nv;}
-						if(mc_a[3]=='delete'){
-							var index = mbox.indexOf(btalr);
-							mbox.splice(index,1);
-						}//indexOf something
-						if(c_o){
-							if(c_o.vox_mode){
-								if(mc_a[3]=='asign'){
-									btalr.asigned_osc=nv;//
-									btalr.persist='persist';//
-									//console.log(nv);
-									//btalr.tch='k';
-									//c_o.init=true;
-									c_o.op5=1;
-								}
-							
-								if(mc_a[3]=='unasign'){
-									btalr.asigned_osc=undefined;//
-									btalr.persist='desist';//
-									//console.log(nv);
-									//btalr.tch='k';
-									//c_o.init=true;
-									c_o.op5=1;
-	
-								}
-							}//vox k commands
-						}
-					}
-				}
-			}//.button
-		}//vessel and void commands
-*/
-
-
-/*
-//void stance commands . 			 /////VOID/////
-//these should mostly be easy to asign keys
-//VOID exclusive commands
-//We should be able to manually create waves from orb inner mode..? WAVES
-		if(comav=='void'){
-
-
-//USER kinda deprecat. this needs to create an output signal
-//while in void, U properties directly affect the void stance experience.
-//We need a command to manage user properties, print user information on screen etc
-//user needs to be able to modify;
-//mainstream properties, user displacement speed trough void, name..
-//.. for consistency  s sake, maybe we just need .user to print all user related data and use subcommands to change
-//properties. just like we do with mainstream and estream
-//.user
-//.user.name:[new name]
-//Change name at will. Void only. Offline only.
-//.user.speed:[new speed]
-//Modify speed at will. This speed parameter affects user displacement speed trough the void. 
-//Available from void only.
-//we probly need a location. x and y coordinates for user location..?
-//we probly also need a .user.out to print a json from user. later its gonna be useful
-//VO
-			if(mc_a[1]=='user'){
-				if(mc_a[2]==undefined){
-					//print user data	
-					all.stream_a.push(
-				'---------',
-				//'Use .user.[property]:[new value] to change a property.',
-				'name: '+U.name,
-				'birthday: '+U.birthday,
-				'speed: '+U.speed,
-				'x: ',+U.x,
-				'y: ',+U.y,
-				'----------'
-					);
-					all.screen_log();
-				}
-				if(mc_a[2]=='name'){
-					//accept mcp_a[1] as new name
-					all.n_param_com('name', mcp_a[1] ,U);
-				}
-
-
-//a command to remember a user
-//.user.in:[userjsontext]
-				if(mc_a[2]=='in'){
-				//import a json text into sunya
-					var ta = str.split(":"); ta.shift(); 
-					var txt = ta.join(":");
-					var obj_user = JSON.parse(txt);
-					//
-			//besides changing U parameters, we need to translate to its position
-					U = obj_user;
-					ctx0.translate(U.x,U.y);
-
-					//var orb = {name: obj_orb.name}
-					//obj_orb.birth_init= true;
-				//!!!!!!!!!!!!!!!!!!!!!!!!!!!
-					//all.user.orbs.push(orb);
-					//all.up_objs.push(obj_orb);
-					all.stream_a.push("User is here again.. "); all.screen_log();
-					all.com_a = [];
-					return
-				}
-
-//a command to print a json of the user
-//.user.out
-				if(mc_a[2]=='out'){
-				//print out user in json
-					//var orb = Fting(all.up_objs, 'name', mc_a[2]);
-				//but first empty current img and audio files... problem here is i need to put these back again lol
-					//orb.current_img_file={}
-					//orb.current_audio_file={}
-						
-					var txt = JSON.stringify(U);
-					all.chat_on = true; chat_in.focus();
-					chat_in.style.display="inLine";
-					chat_in.value = txt;
-
-					all.com_a = [];
-					return
-				}
-			}//user
-
-//ORB
-//an orb primordial form will depend on its experience , its animations stored, its data, its jobs etc
-//REDEFINING RADIANCE
-	//Orbs can only interact with other orbs trough acts.
-//void navigation speed from void stance is limited
-//The displace command can also be accessed swiping in the direction user whishes to move
-
-//deprecat . we wont create orbs like this anymore but we will asign names to empty vessels to turn them into orbs
-//a command to create an empty Orb vessel. Orbs need to have at least a name to be
-//referenced.. no
-//... the only way we can start controling a vessel is by naming it and so we must cast an impulse that surrounds an empty vessel
-//to create a control wave that will now allow us to enter the husk and be able to name it, turning it into a vessel for an orb
-//deprecat . we will name orbs, not create them using this command
-//We will be able to fast travel to a vessel position and control it using a command
-//.... i still dont know how to deal with .orb.in: .. should we be able to put a json orb inside a husk.. what if orb requires
-//a big vessel. Well then a message will appear to alert user. if the husk is too big, then orb will just use the required space
-//and will peel off the unused husk volume.
-//to name a husk , we just need to press ENTER and write down what will become the new orb name. If we want to load a json orb
-//we can just paste it on the prompt directly and press enter again.
-//needs revision.............!!!!!!!!!!!!!!!!!
-//the command to create an orb takes one user parameter which is the orb name so it goes:
-//.orb:name
-//This part here should just advocate for the commands access, 
-//we are in the instance , the moment we can call this particular command
-//I can modularize the logic of the commands, and the access
-//When this command is available, it can be called using these methods
-//1 Typing the power word on the keyboard or
-//2 Touching something on the screen
-//if touch anything but an orb while on void once, open up "create" button
-//if user touches an orb, buttons to pop up, "control", "stream", "act". Also,
-//orb more specific data should be recalled on touch.
-//...... WELL now orbs are not created just by typing in a command so... all this.. is .. deprecated .. here for reff
-		//
-//actually most of these commands are good, only the orb creation will be different now.
-//users should be able to issue commands to owned orbs from the void.
-//ORB
-//.orb	List all owned orbs for user to see. position and name
-//!!!!!!!!!!!!!!!!!!!
-//so this is more like a vessel thing instead of an orb
-//.vessel
- 			if(mc_a[1]=="orb"){ 
-				if(mc_a[2]==undefined){
-					//look for owned orbs
-					var lso = all.fleet_a.length;
-					while(lso--){
-						var oo = all.fleet_a[lso];
-			//we need a way to identify owned orbs ?
-						if(oo.name!=undefined){
-							all.stream_a.push(
-								'name: '+oo.name+' X: '+oo.x+' Y: '+oo.y
-							);
-						}
-					}
-					all.screen_log();//maybe here would be cool to mess around with params
-				}else{
-					//mc_a[2] is orb name
-					switch(mc_a[3]){
-//now we need , orb owner, orb name should not always be accesible, orb current stance, 
-//number of edits contained and what type, orb birth date, name of img file if any, name of audio file if any
-//access to scripts read only, 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! needs update
-						case 'status'://.orb.[name].status
-						//"status" should be called on prim touched. ?
-							//var o_in_u = Fting(all.user.orbs, 'name', mc_a[2]);
-							var orb = Fting(all.fleet_a, 'name', mc_a[2]);
-							//img file check
-							if(orb.current_img_file.name==undefined){
-								var fi_name = 'NO FILE';
-								var fi_size = '0';
-							}else{
-								var fi_name = orb.current_img_file.name;
-								var fi_size = orb.current_img_file.size;
-							}
-							//audio file check
-							if(orb.current_audio_file.name==undefined){
-								var fa_name = 'NO FILE';
-								var fa_size = '0';
-							}else{
-								var fa_name = orb.current_audio_file.name;
-								var fa_size = orb.current_audio_file.size;
-							}						
-
-							all.stream_a.push("__________________");
-							all.stream_a.push(
-								'birthday: '+orb.vessel_id,
-								'img edits: '+orb.img.length,
-								'img file name: '+fi_name+' size: '+fi_size,
-								'audio edits: '+orb.audio.length,
-								'audio file name: '+fa_name+' size: '+fa_size,
-								'txt edits: '+orb.txt.length,
-								'acts: ...',
-								'osc:...',
-								'circle:...',
-								'rect:...',
-								'orb mode:...'
-							);
-							all.stream_a.push("__________________");
-							all.screen_log();
-							break
-//OUT							
-						case 'out':
-				//print out orb in json
-							var orb = Fting(all.fleet_a, 'name', mc_a[2]);
-				//but first empty current img and audio files... problem here is i need to put these back again lol
-				//yeah this works
-							var c_i_f = orb.current_img_file;
-							var c_a_f = orb.current_audio_file;
-							orb.current_img_file={}
-							orb.current_audio_file={}
-
-							var txt = JSON.stringify(orb);
-							all.chat_on = true; chat_in.focus();
-							chat_in.style.display="inLine";
-							chat_in.value = txt;
-
-							orb.current_img_file=c_i_f;
-							orb.current_audio_file=c_a_f;
-
-							break
-							
-						case 'control':
-//CONTROL
-//a command to take control of an orb. right now there wont be more conditions but later
-//there should be a way to prevent users from taking control of orbs they are not suposed to have control of
-//sometimes users may participate on a mod
-//that involves trying to type in a specific orb name to take control
-//but its hard because name keeps changing or remains hiden. try to write an act to reveal an target orb name
-//sometimes a specific event triggers orb holding into a name. and thats
-//an oportunity for other users to take control etc
-//condition to control is all.user.orbs having specific orb data inside?
-//and typing in thetarget orb .. if you can type it its yours
-							//
-//consider all silences an oportunity to restart audio ctx. we dont want unnecesary
-//huge timetamps to be dragged around. all precise time operations need to manage their
-//values independently, this is, in refference to their own states or edits. user taking control of an orb is a good instance to restart
-					//AUDIO values
-					//leaving this here for now.... maybe transitions could take care of this !!!!!!
-							if(all.au){}else{all.au=all.audioser();} //safenet?
-//we should be able to just define stance global to make a refference to structure in control and changes will reflect on original
-//object as well
-							var orb = Fting(all.fleet_a, 'name', mc_a[2]);
-							//uinit='orb inwards';
-				//so i could pass on a different vessel to stancefrom if we wanted to travel from vessel to vessel
-							uinit={transition:'orb inwards',stancefrom:undefined}//,stanceto:orb};
-							stance=orb; 
-
-							all.stream_a.push("User in control of  "+ mc_a[2]);
-							all.screen_log();
-
-							break
-//ORB	
-			//crash and burn. first we burn the memories, then we crash the vessel
-						//.orb.[orb name].history.forget
-						case 'history':
-							if(mc_a[4]=='forget'){
-								var orb = Fting(all.fleet_a, 'name', mc_a[2]);
-								orb.stream.history = [];
-				all.stream_a.push('...'+mc_a[2]+' stream history has vanished for ever.'); all.screen_log();
-							}
-							break
-
-
-						//.orb.[orb name].destroy	To delete whole orb at once?
-						//this needs a really cool animation.
-						case 'destroy':
-							var orb = Fting(all.fleet_a, 'name', mc_a[2]);
-							var orbi = all.fleet_a.indexOf(orb);
-							all.fleet_a.splice(orbi,1);
-				all.stream_a.push('...'+mc_a[2]+' is just a string of words now.'); all.screen_log();
-							break
-						//.orb.[orb name].perform
-						//this needs a really cool animation as well
-						case 'perform':
-							var orb = Fting(all.fleet_a, 'name', mc_a[2]);
-							orb.radiant_mode=true;
-					//maybe we could call a se to its prim vessel in here
-				all.stream_a.push(mc_a[2]+' is performing.'); all.screen_log();
-							break
-
-						//case 'travel'
-						//case 'vision'?
-
-						//add default case.. ?
-
-
-
-					}//switch
-
-//.play
-//How about users running commands that run orbs acts...
-//... to make orb run an  act from void, orb needs to be in radiant mode!!!!
-//Even tho a user wont see the effects from act scripts to a full extent while on void, there might be some visual changes
-//on primordials. users might just want to leave scripts running for other users on broadcasting.
-//.orb.nameoforb.nameofact.play
-
-						//we need to loop txt edits to find a matching txt name. this is our script
-						//we probly need a mechanism to prevent using non script txts.. but i think its done not sure
-					if(mc_a[4]=='play'){
-						var orb = Fting(all.fleet_a, 'name', mc_a[2]);
-				//dont allow operation if orb is nor on radiant mode
-						if(orb.radiant_mode){
-						var txl = orb.txt.length;
-						while(txl--){
-							var atxt = orb.txt[txl];
-							if(atxt[0].name==mc_a[3]){ //name of txt is on line1
-								var lr = all.res_acts.length;
-								while(lr--){
-									var script = all.res_acts[lr];
-									if(atxt[0].name==script.name){
-										var playing_already = true;
-										break
-									}
-								}
-								var lac = orb.actors.length;
-								while(lac--){
-									var script = orb.actors[lac];
-									if(a[0].name==script.name){
-										var playing_already = true;
-										break
-									}
-								}
-
-								if(playing_already!=undefined){
-									all.stream_a.push("Already playing.. "+mc_a[3]);
-									all.screen_log();
-								}else{
-									//named_act.running = true;
-									var act = all.actuator(atxt, orb); //actuator call
-	//after actuator, act is pushed into all.res_acts array or into orb.actors array depending on "is" value
-									if(act.is=='resource'){
-										all.res_acts.push(act);
-									}
-									if(act.is=='actor'){
-										orb.actors.push(act);
-									}
-									all.stream_a.push("Playing.. "+mc_a[3]);
-									all.screen_log();
-								}
-							}//mc_a[3] match
-						}//txt loop
-
-						}//radiant mode safe
-
-					} //play on mc_a[4]
-				
-				}//mc_a[2] orb access
-
-			}//.orb   //.vessel?
-
-
-
-
-
-		}//void commands
-*/
-
-/*
-//vessel exclusive commands
-		if(comav=='vessel'){
-//STANCE
-//orb inner eye stance COMMANDs				/////VESSEL/////
-		//
-//inner_mode for when we want to be idling in and
-//no edit mode activated. however all edits are still considered user stance vessel
-//... no more orb stance. Now stance value holds the name of the vessel or husk in control. If stance is undefined , we are on void stance
-
-//.estream 
-//a command to tweak edit feedback stream settings ESTREAM
-//.estream	Print estream stats, modify stats using subcommands. Macro and subs only available from orb stance. all modes that use feed
-			if(mc_a[1]=="estream"){
-				if(mc_a[2]==undefined){
-					//just print all estream stats
-					var us = U.estream;
-					all.stream_a.push(
-				'___________________________________',
-				'Use .estream.[property]:[new value] to change a property.',
-				'r: '+us.r, 'g: '+us.g, 'b: '+us.b, 'a: '+us.a,
-				'x: '+us.x, 'y: '+us.y,
-				'size: '+us.size, 'font: '+us.font, 'spacer: '+us.spacer,
-				'___________________________________'
-					);
-					all.screen_log();
-				}else{
-					if(mc_a[2]=='font'){
-						var p = mcp_a[1]
-					}else{
-						var p = parseFloat(mcp_a[1]);
-					}
-					all.n_param_com(mc_a[2], p , U.estream);
-				}
-			//probly needs to clear stream activity when changes occur
-			}
-
-//SIGNAL
-//calls diferent operations acording to orb mode
-//op1, op2, op3 op4 and op5. Option, operation. signal should always just use op3
-//.signal:[value]
-//... so maybe we dont really need to use mc_a[2] to indicate op3 , we can simply use the parameter, this function should always affect op3
-//other operations are reserved for edits inner mechanics, those dont need to be able to be changed from here....
-//			if(mc_a[1]=='signal'){
-//				c_o.op3=mcp_a[1];
-//			}
-//VOX
-//a command to enter vox mode. In vox mode, keys are all now tied to vox interaction
-//rules. Users can now asign osc anims to run
-//when keys are pressed. The keyboard becomes a musical instrument. 
-//phone users have a different experience but the idea is the same.
-//An interface to asign previously stored oscilators to keys in order to play sounds
-//using keyboard(k buttons)
-//while in vox mode, users may choose to record the musical performance to be stored
-//and become available for acts to recall
-//vox can be run while on inner and radiant mode
-			//.vox
-			//if(mc_a[1]=="vox"){
-				//if(mc_a[2]=="in"){
-					//all.user.stance="vox.in";
-			//	c_orb.inner_mode=false; c_orb.vox_mode=true; all.user.init = true;
-			//	all.stream_a.push("vox.in mode on.."); all.screen_log();
-				//}
-				//if(mc_a[2]=="out"){
-				//	all.user.stance="vox.out";
-				//}
-			//}
-
-//INNER mode COMMANDS
-			if(c_o.inner_mode){
-				
-//a command to load an image and a command to load an audio into the current
-//inhabited Orb. currently only png and mp3 formats are available
-//Orbs can only have 1 image and 1 audio loaded at any time... for now
-//COMMANDS UPLOAD IMG AUDIO EVENT
-//!!!!!!!!!!!!!!!!!!!!
-//So the way these will work now is: We create an img or audio memory orb with no asigned file. Once we are on the memory stance,
-//we can just call these commands, and files will be stored on the memory orbs.
-				if(mc_a[1]=="load"){ //load should be a macro for later load other things besides images as well
-					//needs a mechanism to let user know if file didnt load correctly
-					if(mc_a[2]=="img"){
-						img_in.click();	
-					}
-					//loads an audio file to run or edit
-					if(mc_a[2]=="audio"){
-						audio_in.click();
-					}
-	
-				}
-//maybe we could use .void to go to void from inner mode..
-
-//EDIT animations using forms, texts  or files.
-//...
-//ALl these Edit commands will now work differently. We will be able to create memories with independant prims and manipulate
-//their position. Memory Orbs(edit elements) will now be able to endure only when inside a Husk or a vessel.
-//... so what about loaded files..? Should be independant prims too. Maybe we could distinguish a type of Memory by color.
-//memory Prims will have a running form, an edit mode and an idling mode. Each memory will have its own offset from which they will
-//project themselves.
-
-//needs revision....
-//AUDIO , EDIT
-//.audio 
-//.audio:[audio name]
-//.audio.[audio name].delete
-//.audio.[audio name].run //not ready..
-//.audio.purge
-
-				if(mc_a[1]=="audio"){
-					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
-					if(mc_a[2]!=undefined){
-						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
-						var l = c_o.audio.length;
-						while(l--){
-							var a = c_o.audio[l];
-							if(a.name==mc_a[2]){
-								if(mc_a[3]=='out'){
-									var txt = JSON.stringify(a);
-									all.chat_on = true; chat_in.focus();
-									chat_in.style.display="inLine";
-									chat_in.value = txt;
-									break
-								}
-								if(mc_a[3]=='delete'){
-									var index = c_o.audio.indexOf(a);
-									c_o.audio.splice(index,1);
-					all.stream_a.push(a.name+" has been deleted"); all.screen_log();
-									break
-								}
-							}
-						}//audio loop
-					
-					}
-					if(mcp_a[1]==''&&mc_a[2]==undefined){
-						mcp_a[1]=undefined; var noname = true;
-					}
-					//ask here if there is no audio file loaded. 
-					//dont allow audio edit if there isnt
-					if(mcp_a[1]!=undefined&&c_o.audio_access.length==undefined){
-						var noaccess = true;
-					}
-					if(mcp_a[1]!=undefined&&c_o.audio_access.length!=undefined){
-						var proceed = true;
-					}
-					if(purge){
-						c_o.audio= [];
-						all.stream_a.push('audio edits container has been cleared..');
-						all.screen_log();
-					}
-					if(list){
-					//list audio anims and a brief description, which event is tied to etc
-						var l = c_o.audio.length;
-						while(l--){
-							//var aud = c_o.audio[l];
-							//all.stream_a.push(aud.name+" .. audio snip... ");
-							//all.screen_log();
-						}			
-					}
-					if(noname){
-						all.stream_a.push("Please asign a name for this audio edit..");
-						all.screen_log();
-					}
-					if(noaccess){
-						all.stream_a.push("Cant create audio snipet without an audio file loaded");
-						all.screen_log();
-					}
-					if(proceed){
-						//var name_ok = all.c_unl(mcp_a[1],'audio');
-						//if(name_ok){}else{}
-						c_o.inner_mode=false; c_o.edit_audio_mode = true;  
-						uinit = {transition:'orb edit',stancefrom:c_o};
-
-		//this works because audio anim is just an object not an array
-						var named_aud = Fting(c_o.audio, "name", mcp_a[1]);
-						if(named_aud){
-							c_o.op1 = c_o.audio.indexOf(named_aud); 
-							all.stream_a.push("Recalling...   " + mcp_a[1]);
-							all.screen_log();
-						}else{	
-
-
-							var a = {};
-							a.name = mcp_a[1];
-							a.audio_file_name= c_o.current_audio_file.name;
-							a.gain=0.07; a.fade=0.3;
-							a.start = 0; a.end = c_o.audio_access.duration;
-							c_o.audio.push(a);
-							
-							c_o.op1 = c_o.audio.length-1;
-							all.stream_a.push("Editing...audio..  " +mcp_a[1]); all.screen_log();
-						}
-					}
-				}//audio
-
-//IMG, EDIT
-//.img
-//.img:[img name]
-//.img.[img name].delete
-//.img.[img name].run
-//.img.purge
-				if(mc_a[1]=="img"){
-					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
-					if(mc_a[2]!=undefined){
-						//.img.purge
-						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						//search for name match..
-						var l = c_o.img.length;
-						while(l--){
-							var a = c_o.img[l];
-							if(a){
-								if(a[0].name==mc_a[2]){
-									if(mc_a[3]=='out'){
-										var txt = JSON.stringify(a);
-										all.chat_on = true; chat_in.focus();
-										chat_in.style.display="inLine";
-										chat_in.value = txt;
-									}
-									if(mc_a[3]=='delete'){
-										var index = c_o.img.indexOf(a);
-										c_o.img.splice(index,1);
-						all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
-									}
-						//use parameter to rename
-									if(mcp_a[1]!=undefined){
-								a[0].name = mcp_a[1];
-								all.stream_a.push('Changed img name from '+mc_a[2]+' to '+mcp_a[1]);
-								all.screen_log();
-									}
-//here goes img run on inner mode RUN
-									if(mc_a[3]=='run'){
- 				var sr = Fting(all.anim_a, 'name', a[0].name+c_o.name+"__r");
-				if(sr){
-					if(sr.loop){
-						sr.is='rm';
-						a[0].running='FALSE';
-					}
-				}else{
-				//ask if img file is loaded here...
-					if(c_o.current_img_file.name==a[0].img_file_name){
-						//var ceX=c_o.primX; var ceY=c_o.primY;//grid zero
-						var sr = all.ims_s_new(a[0].name+c_o.name+"__r", c_o.img_access);
-						var sret = all.getetv(a);
-						sr.anim=a; //sr.ctx=ctx1;
-						sr.tx=c_o.primX; sr.ty=c_o.primY;
-						sr.is='c_img'; //sr.t=1;
-						sr.et=sret; sr.rt=sr.et; sr.loop=true; sr.run=true;
-						a[0].running='TRUE';
-						all.anim_a.push(sr);
-					}
-			
-				}
-										all.shadow_mode(c_o);
-									}//run
-								}//anim access
-							}//if a
-						}//while
-					}//
-					
-					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
-					//ask here if there is no img file loaded. dont allow img edit if there isnt
-					if(mcp_a[1]!=undefined&&c_o.img_access.width==undefined){
-						var noaccess = true;
-					}
-					if(mcp_a[1]!=undefined&&c_o.img_access.width!=undefined&&mc_a[2]==undefined){
-						var proceed = true;
-					}
-					//clear is too much a light word to do this... purge is better
-					if(purge){
-						var rl = c_o.img.length;
-						while(rl--){
-							var a = c_o.img[rl];
-							var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-							if(sr){
-								sr.u_d.push('is','rm');
-								sr.is='c_img'; sr.t=1; sr.et = -1;
-							}
-						}
-						c_o.img= [];
-						all.stream_a.push("All img animations have been deleted."); all.screen_log();
-
-					}
-					if(list){
-//list img animations and a brief description. number of frames, which event is tied to etc
-	//same problem. 
-						var l = c_o.img.length; //c_o.img.length;
-						if(c_o.current_img_file==undefined){
-							var imgf = 'NO IMAGE UPLOADED';
-						}else{
-				var imgf =`loaded img file name:${c_o.current_img_file.name}, size: ${c_o.current_img_file.size}`
-						}
-						all.stream_a.push(
-							"------------------------------","IMG EDITS", imgf	
-						);
-
-						while(l--){
-							//if(l<0){break}
-							var a = c_o.img[l];
-							if(a){if(a[0]){var ok = true;}}
-							if(ok){
- 							var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-							if(sr){var runin = 'TRUE';}else{var runin = 'FALSE';}
-								all.stream_a.push(
-					`edit name:${a[0].name}, img file name:${a[0].img_file_name}, running: ${runin}`
-								);
-								all.screen_log();
-							}
-						}					
-						all.stream_a.push("-------------------------------");
-						all.screen_log();
-					}
-					if(noname){
-						all.stream_a.push("Please asign a name to this animation..");
-						all.screen_log();
-					}
-					if(noaccess){
-						all.stream_a.push("Cant animate img without a img file loaded");
-						all.screen_log();
-					}
-					if(proceed){
-						//var name_ok = all.c_unl(mcp_a[1],'img');
-						//if(name_ok){}else{}
-						c_o.inner_mode=false; c_o.edit_img_mode=true; 
-						//uinit = "orb edit";
-						uinit={transition:'orb edit',stancefrom:c_o}//,stanceto:c_o};
-						//
-						var lim = c_o.img.length;
-						while(lim--){
-							var a = c_o.img[lim];
-							if(a){
-								if(a[0].name==mcp_a[1]){
-									var index = c_o.img.indexOf(a);
-									c_o.op1 = index;
-								all.stream_a.push("Recalling...   " + mcp_a[1]); all.screen_log();
-									var found = true;
-									break
-								}
-							}
-						}
-						if(found){a.push({});}else{ //we push an empty frame to start editing
-							var na = [];
-							var f = {};
-							f.x=0; f.y=0; f.w=100; f.h=100; f.f=0;
-							f.px=0; f.py=0; f.pw=100; f.ph=100;
-							f.ft=15; f.a=1;
-							f.name=mcp_a[1];
-							f.img_file_name=c_o.current_img_file.name;
-							f.running='FALSE';
-							na.push(f);
-							c_o.img.push(na);
-							
-							c_o.op1 = c_o.img.length-1;
-							all.stream_a.push("Editing...img..  " +mcp_a[1]); all.screen_log();
-						}
-					}//proceed
-				}//img
-
-
-
-//CIRCLE , EDIT
-//.circle
-//.circle:[circle name]
-//.circle.[circle name].delete
-//.circle.[circle name].run
-//.circle.[circle name]:[new name]
-//.circle.purge
-				if(mc_a[1]=="circle"){
-					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
-					if(mc_a[2]!=undefined){
-						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						//its an orb name, find it
-						var l = c_o.circle.length;
-						while(l--){
-							var a = c_o.circle[l];
-							if(a[0].name==mc_a[2]){
-								if(mc_a[3]=='out'){
-							//whats the problem with this circle structure?
-									var txt = JSON.stringify(a);
-									all.chat_on = true; chat_in.focus();
-									chat_in.style.display="inLine";
-									chat_in.value = txt;
-								}
-								if(mc_a[3]=='delete'){
-									var index = c_o.circle.indexOf(a);
-									c_o.circle.splice(index,1);
-			all.stream_a.push(a[0]+" has been deleted"); all.screen_log();
-	
-								}
-						//use parameter to rename
-								//.circle.[circle name]:[new name]
-								if(mcp_a[1]!=undefined){
-									a[0].name = mcp_a[1];
-								all.stream_a.push('Changed circle name from '+mc_a[2]+' to '+mcp_a[1]);
-									all.screen_log();
-								}
-	//.circle.[edit name].run
-	//a command to run the edit on loop while on inner mode :) . Use command again to stop the animation.
-	//we need to tag the animation to let us know it should be ON while user is on inner mode in control of this orb.
-								if(mc_a[3]=='run'){
- 				var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-				if(sr){
-					if(sr.loop){
-						sr.u_d.push('is','rm');
-						sr.is='c_circle'; //sr.t=1; sr.et = -1;
-						a[0].running = 'FALSE';
-					}
-				}else{
-					var sr = all.circle_s_new(a[0].name+"__r");
-					var sret = all.getetv(a);
-					sr.anim=a; //sr.ctx=ctx1;
-					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-					sr.et=sret; sr.rt=sr.et;  sr.loop=true;
-					sr.is='c_circle';  
-					a[0].running = 'TRUE';
-					all.anim_a.push(sr);
-				} 
-
-								}//run
-							}//named edit
-						}
-						
-					}//mc_a[2] not undefined
-	
-					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
-					if(mcp_a[1]!=undefined&&mc_a[2]==undefined){var proceed = true;}
-					if(purge){
-						var rl = c_o.circle.length;
-						while(rl--){
-							var a = c_o.circle[rl];
-							var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-							if(sr){
-								sr.u_d.push('is','rm');
-								sr.is='c_circle'; sr.rt=-1; //sr.et = -1;
-							}
-						}
-						c_o.circle= [];
-						all.stream_a.push("All circle animations have been deleted."); all.screen_log();
-					}
-					if(list){
-						var l = c_o.circle.length;
-						all.stream_a.push("---------------------------");
-						while(l--){
-							var a = c_o.circle[l];
- 							var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-							if(sr){var runin = 'TRUE';}else{var runin = 'FALSE';}
-							all.stream_a.push(
-								"name: "+a[0].name+" running: "+runin
-							);
-							all.screen_log();
-						}
-						all.stream_a.push("---------------------------");
-						all.screen_log();
-					}
-					if(noname){
-						all.stream_a.push("Please asign a name for this circle animation."); 
-						all.screen_log();
-					}
-					if(proceed){
-						//var name_ok = all.c_unl(mcp_a[1],'circle');
-						//if(name_ok){}else{}
-						c_o.inner_mode=false; c_o.edit_circle_mode = true; //uinit = 'orb edit';
-						uinit={transition:'orb edit',stancefrom:c_o}//'same',stanceto:c_o};
-						var l = c_o.circle.length;
-						while(l--){
-							var a = c_o.circle[l];
-							if(a){
-								if(a[0].name==mcp_a[1]){
-									var index = c_o.circle.indexOf(a);
-									c_o.op1 = index;
-							all.stream_a.push("Recalling...   " + mcp_a[1]); all.screen_log();
-									var found = true; break
-								}
-							}
-						}
-						if(found){a.push({});}else{
-							var new_anim = [];
-							//var new_anim = {};
-							
-							var an = {};
-							an.x=100; an.y=50; an.radius=40; an.r=220; an.g=220; an.b=220;
-							an.a=1; an.ft=20; //an.st=0; an.f=0; 
-							an.inside='empty'; an.running='FALSE';
-							//an.rand = [];
-							an.name=mcp_a[1];
-							
-							//new_anim.push(an);
-							new_anim[0]=an;
-							c_o.circle.push(new_anim);
-							c_o.op1 = c_o.circle.length-1;
-						all.stream_a.push("Editing.. circle..  " +mcp_a[1]); all.screen_log();
-						}
-					}//proceed
-					
-				}//circle
-
-//RECT, EDIT
-//.rect
-//.rect:[rect name]
-//.rect.[rect name].run
-//.rect.[rect name].delete
-//.rect.purge
-				if(mc_a[1]=="rect"){
-					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
-					if(mc_a[2]!=undefined){
-						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						var l = c_o.rect.length;
-						while(l--){
-							var a = c_o.rect[l];
-							if(a[0].name==mc_a[2]){
-								if(mc_a[3]=='out'){
-									var txt = JSON.stringify(a);
-									all.chat_on = true; chat_in.focus();
-									chat_in.style.display="inLine";
-									chat_in.value = txt;
-								}
-								if(mc_a[3]=='delete'){
-									var index = c_o.rect.indexOf(a);
-									c_o.rect.splice(index,1);
-					all.stream_a.push(a[0].name+" has been deleted"); all.screen_log();
-								}
-						//use parameter to rename
-								//.rect.[rect name]:[new name]
-								if(mcp_a[1]!=undefined){
-									a[0].name = mcp_a[1];
-								all.stream_a.push('Changed rect name from '+mc_a[2]+' to '+mcp_a[1]);
-									all.screen_log();
-								}
-			 //a command to run the edit on loop while on inner mode :)
-								if(mc_a[3]=='run'){
-
- 				var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-				if(sr){
-					if(sr.loop){
-						sr.u_d.push('is','rm');
-						sr.is='c_rect'; sr.rt = -1;
-						a[0].running = 'FALSE';
-					}
-				}else{
-					var sr = all.rect_s_new(a[0].name+"__r");
-					var sret = all.getetv(a);
-					sr.anim=a; //sr.ctx=ctx1;
-					sr.tx=window.innerWidth/2; sr.ty=window.innerHeight/2; 
-					sr.is='c_rect'; //sr.t=1; 
-					sr.et=sret; sr.run=true; sr.rt=sr.et; sr.loop=true;
-					a[0].running = 'TRUE';
-					all.anim_a.push(sr);
-			
-				}
-
-								}//run							
-
-							}//named orb
-						}
-					}
-	
-					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
-					if(mcp_a[1]!=undefined&&mc_a[2]==undefined){var proceed = true;}
-					if(purge){
-						var rl = c_o.rect.length;
-						while(rl--){
-							var a = c_o.rect[rl];
-							var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-							if(sr){
-								sr.u_d.push('is','rm');
-								sr.is='c_rect'; //sr.t=1; 
-								sr.et = -1;
-							}
-						}
-						c_o.rect= [];
-						all.stream_a.push("All rect animations have been deleted."); all.screen_log();
-
-					}
-					if(list){
-						var l = c_o.rect.length;
-						all.stream_a.push("---------------------------");
-						while(l--){
-							var a = c_o.rect[l];
- 							var sr = Fting(all.anim_a, 'name', a[0].name+"__r");
-							if(sr){var runin = 'TRUE';}else{var runin = 'FALSE';}
-							all.stream_a.push(
-								"name: "+a[0].name+" running: "+runin
-							);
-							all.screen_log();
-						}
-						all.stream_a.push("---------------------------");
-						all.screen_log();
-					}
-	
-					if(noname){all.stream_a.push("Please asign a name for this rect animation."); all.screen_log();}
-					if(proceed){
-						c_o.inner_mode=false; c_o.edit_rect_mode = true; //uinit = 'orb edit';
-						uinit={transition:'orb edit',stancefrom:c_o}//'same',stanceto:c_o};
-						var l = c_o.rect.length;
-						while(l--){
-							var a = c_o.rect[l];
-							if(a){
-								if(a[0].name==mcp_a[1]){
-									var index = c_o.rect.indexOf(a);
-									c_o.op1 = index;
-							all.stream_a.push("Recalling...   " + mcp_a[1]); all.screen_log();
-									var found = true; break
-								}
-							}
-						}
-						if(found){a.push({});}else{
-							var new_anim = [];
-							//var new_anim = {};
-							
-							var an = {};
-							an.x=100; an.y=50; an.w=50; an.h=50;
-							an.r=220; an.g=220; an.b=220; an.a=1;
-							an.ft=20; //an.st=0;
-							//an.f=0; 
-							an.inside='empty'; an.running='FALSE';
-							an.name=mcp_a[1];
-							
-							//new_anim.push(an);
-							new_anim[0]=an;
-							c_o.rect.push(new_anim);
-							c_o.op1 = c_o.rect.length-1;
-						all.stream_a.push("Editing.. rect..  " +mcp_a[1]); all.screen_log();
-						}
-					}//proceed
-					
-				}//rect
-//needs revision...
-//OSC , EDIT
-//.osc
-//.osc:[osc name]
-//.osc.[osc name].delete
-//.osc.[osc name].run
-//.osc.[osc name]:[new name]
-//.osc.purge
-				if(mc_a[1]=="osc"){
-					if(mc_a[2]==undefined&&mcp_a[1]==undefined){var list = true;}
-					if(mc_a[2]!=undefined){
-						if(mc_a[2]=="purge"){mcp_a[1]=undefined; var purge = true;}
-						var l = c_o.osc.length;
-						while(l--){
-							var a = c_o.osc[l];
-							if(a.name==mc_a[2]){
-								if(mc_a[3]=='out'){
-									var txt = JSON.stringify(a);
-									all.chat_on = true; chat_in.focus();
-									chat_in.style.display="inLine";
-									chat_in.value = txt;
-								}
-								if(mc_a[3]=='delete'){
-									var index = c_o.osc.indexOf(a);
-									c_o.osc.splice(index,1);
-					all.stream_a.push(a.name+" has been deleted"); all.screen_log();
-								}
-						//use parameter to rename
-								//.osc.[osc name]:[new name]
-								if(mcp_a[1]!=undefined){
-									a.name = mcp_a[1];
-								all.stream_a.push('Changed osc name from '+mc_a[2]+' to '+mcp_a[1]);
-									all.screen_log();
-								}
-							}
-						}
-					
-					}
-					if(mcp_a[1]==''&&mc_a[2]==undefined){
-						mcp_a[1]=undefined; var noname = true;
-					}
-					if(mcp_a[1]!=undefined&&mc_a[2]==undefined){var proceed = true;}
-					//needs revision..
-					if(purge){c_o.osc= [];}
-					if(list){
-						//list rect anims and a brief description, which event is tied to etc
-						var l = c_o.osc.length;
-						while(l--){
-							var osc = c_o.osc[l];
-							all.stream_a.push(osc.name+" .. an oscilator... ");
-							all.screen_log();
-						}			
-					}
-					if(noname){all.stream_a.push("Please asign a name for this oscillator.."); all.screen_log();}
-					if(proceed){
-						//var name_ok = all.c_unl(mcp_a[1],'audio');
-						//if(name_ok){}else{}
-						c_o.inner_mode=false; c_o.edit_osc_mode = true; //uinit = 'orb edit';
-						uinit={transition:'orb edit',stancefrom:c_o}//'same',stanceto:c_o};
-						var named_osc = Fting(c_o.osc, "name", mcp_a[1]);
-						if(named_osc){
-							c_o.op1 = c_o.osc.indexOf(named_osc); 
-							all.stream_a.push("Recalling...   " + mcp_a[1]); all.screen_log();
-						}else{	
-
-//use R to play the sound. numbers and T to asign a frequency. U sine,  I square, O sawtooth, P triangle
-//Y volume +, G volume -, Q quits,  F and C to increase fade out. should also be able to increase/decrease fade in
-//use H and B to go 1 hertz up or down on frequency
-					//cant end and splice inmediately after, must disconnect now and then splice
-					if(a_s){
-						a_s.osc_n.stop();a_s.osc_n.disconnect();
-	//so one touch could simply do _1 and long press types signal ending on _
-//screentouch could definitely benefit from swipe control over frequency adjust.. ...
-				if(delta.signal=='hz up'||delta.signal=='hz down'){
-					if(delta.signal=='hz up'){
-						a.freq=a.freq+delta.value;
-						if(a_s){
-						a_s.osc_n.frequency.value=a_s.osc_n.frequency.value+delta.value;
-						}
-					}
-					if(delta.signal=='hz down'){
-						a.freq=a.freq-delta.value;
-						if(a_s){
-						a_s.osc_n.frequency.value=a_s.osc_n.frequency.value-delta.value;
-						}
-					}
-				}
-				
-				if(delta.signal=='sine'){
-					a.type='sine';if(a_s){a_s.osc_n.type='sine';}
-				}
-				
-				if(delta.signal=='square'){
-					a.type='square';if(a_s){a_s.osc_n.type='square';}
-				}
-				
-				if(delta.signal=='saw'){
-					a.type='sawtooth';if(a_s){a_s.osc_n.type='sawtooth';}
-				}
-				
-				if(delta.signal=='triangle'){
-					a.type='triangle';if(a_s){a_s.osc_n.type='triangle';}
-				}
-				
-				//all.stream_a.push("New waveform has been set."); all.screen_log();
-				//what about custom waveforms ?
-					
-//gain
-				if(delta.signal=='gain'){
-					if(delta.operation=='+'){
-						a.gain=a.gain+0.01;
-						if(a_s){a_s.gain_n.gain.value=a_s.gain_n.gain.value+0.01;}
-					}
-					if(delta.operation=='-'){
-						a.gain=a.gain-0.01;
-						if(a_s){a_s.gain_n.gain.value=a_s.gain_n.gain.value-0.01;}
-					}
-					all.stream_a.push("Gain adjusted"); all.screen_log();
-				}//gain
-							var a = {}; 
-							a.name = mcp_a[1];
-							a.freq= 435; a.gain=0.07;
-							a.type='sine'; a.fade=0.3;
-							a.on_a = [];//array for multi calls
-	
-							c_o.osc.push(a);
-							c_o.op1 = c_o.osc.length-1;
-							all.stream_a.push("Editing...oscillator..  " +mcp_a[1]); all.screen_log();
-						}
-					}
-				}//.osc
-
-//PERFORM . ACT
-//open outer eye animation. orb is now ready to perform
-//this means user will be able to see all effects created by currently playing scripts
-//.perform
-				if(mc_a[1]=='perform'){
-					//a stream message here before we get into radiant mode
-					//all.stream_a.push("Curtain recedes..."); all.screen_log();
-					c_o.inner_mode=false; c_o.radiant_mode=true;
-					uinit={transition:'orb perform', stancefrom:c_o}
-
-
-
-				}//perform
-				
-				
-			}//inner mode commands
-
-//RADIANCE . ACT RADIANT MODE   ////RADIANCE
-//whats the point of orb.out stance now? Acts will run and create instances for orbs to
-//interact. the same acts will make instances for orbs
-//to do things on their own as well. We only need a stance to check for acts activity... we should be able to do this from void.
-//hmmmm... maybe this IS the radiance. always has been :0
-//.. maybe this IS the orb.out stance in the end +.+u ... but its an orb mode acshuallly
-// but wait.. acts must be able to be checked on inner mode as well. .? no.. because
-//inner mode is the instance we use to customize and edit.
-//radiant orbs dont even need ml up. inner mode orbs cant run acts. radiant orbs
-//performing acts do. checkmate brain ;)
-
-			if(c_o.radiant_mode){
-//REFORM .ACT
-//a command to go back to inner mode from radiant mode
-//.reform
-				if(mc_a[1]=="reform"){
-					c_o.inner_mode=true; c_o.radiant_mode=false;
-					uinit={transition:'orb reform',stancefrom:c_o}
-
-//we really are deprecating the whole act system.. didnt even get to test it omg.
-//i l just keep an old copy on.. old act script system sunya etc...
-//reform needs to make a call to remove all resources , actors and states asociated with it. If broadcasting, a signal is sent to other users
-//to let them know states produced using this orb resources no longer can access the resource and so on..
-
-					//loop own actors box to
-					var l1 = c_o.actors.length;
-					while(l1--){
-						var actor = c_o.actors[l1];
-
-						var l2 = all.anim_a.length; 
-						//clear and remove all asociated states
-						var rname = '_lks_'+actor.name+c_o.name;
-						while(l2--){
-							var s = all.anim_a[l2]; 
-							var ename = s.name.substr(-rname.length);
-							if(ename == rname){
-								s.u_d.push('is','rm','rt',-1);
-								s.is='c_'+s.s; 
-							}
-						}//states loop
-						//and remove this actor from orb.actors
-						//var rmactor = c_orb.actors.indexOf(actor);
-						c_o.actors.splice(l1,1);
-					}//actors loop
-//now we need to remove resources. loop all.res_acts
-					var l1 = all.res_acts.length;
-					while(l1--){
-						var res = all.res_acts[l1];
-						if(res.orb==c_o.name){
-							all.res_acts.splice(l1,1);
-						}
-					}
-					all.stream_a.push("Curtain drops...");
-					all.screen_log();
-
-
-				}//reform command
-
-//ORB WAVES
-//Here goes new waves?
-//radiants can manifest 3 more waves apart from the basic ones, but all waves center created by radiants must be inside its field.
-//IMPULSE
-//also impulses scan data and stores it on orb caster to be used by its logic
-				if(mc_a[1]=='impulse'){
-					var vf = Fting(all.anim_a, 'name', c_o.vessel_id+'___atfield');
-					var vr = vf.radius;
-			//we now use vessel location as center, and coordinates we want to create the wave on will reffere this center
-			//accept only 1 parameter to cast impulse in the center of the orb
-					if(mcp_a[2]==undefined){
-						var xnum = vf.x;
-						var ynum = vf.y;
-						var radnum = parseFloat(mcp_a[1]);
-						if(radnum>=vr){var no = true;}//radnum=vr;}
-					}else{
-						var xnum = vf.x+parseFloat(mcp_a[1]); //var xlim = vf.x+vf.radius;
-						var ynum = vf.y+parseFloat(mcp_a[2]); //var ylim = vf.y+vf.radius;
-						var radnum = parseFloat(mcp_a[3]);
-						
-						if(xnum>=vf.x+vr){var no = true;}//xnum=vf.x+vr;} if(xnum<=vf.x-vr){xnum=vf.x-vr;}
-						if(ynum>=vf.y+vr){var no = true;}//ynum=vf.y+vr;} if(ynum<=vf.y-vr){ynum=vf.y-vr;}
-						if(radnum>=vr){var no = true;}//radnum=vr;}
-
-					}
-					var id = Date.now();
-					var im = all.circle_s_new(id+'___suc');
-					im.entity = U.name; im.orb = c_o.name; im.im_id = id;
-					im.x=xnum; im.y=ynum; im.radius=radnum;
-					im.chargeq = 0;
-					im.se='suc';
-					im.form='wave';
-					im.is='c_circle';
-
-					all.anim_a.push(im);
-				}//impulse
-
-//PULSE
-//.pulse:x:y:rad   , .pulse:rad
-				if(mc_a[1]=='pulse'){
-					var vf = Fting(all.anim_a, 'name', c_o.vessel_id+'___atfield');
-					var vr = vf.radius;
-			//we now use vessel location as center, and coordinates we want to create the wave on will reffere this center
-			//accept only 1 parameters to cast impulse in the center of the orb
-					if(mcp_a[2]==undefined){
-						var xnum = vf.x; var ynum = vf.y;
-						var radnum = parseFloat(mcp_a[1]);
-						if(radnum>=vr){var no = true;}//radnum=vr;}
-					}else{
-//so a problem here is that, if given x and y coordinates are far beyond radius, the center will still be outside the radius of vf
-//we need to solve this.. for now we could simply cancel the command if numbers are not inside orb radius.
-//what about isinpath method from canvas
-						var xnum = vf.x+parseFloat(mcp_a[1]); //var xlim = vf.x+vf.radius;
-						var ynum = vf.y+parseFloat(mcp_a[2]); //var ylim = vf.y+vf.radius;
-						var radnum = parseFloat(mcp_a[3]);
-						
-						if(xnum>=vf.x+vr){var no = true;}//xnum=vf.x+vr;} if(xnum<=vf.x-vr){xnum=vf.x-vr;}
-						if(ynum>=vf.y+vr){var no = true;}//ynum=vf.y+vr;} if(ynum<=vf.y-vr){ynum=vf.y-vr;}
-						if(radnum>=vr){var no = true;}//radnum=vr;}
-					}
-					if(no){}else{
-						var id = Date.now();
-						var p = all.circle_s_new(id+'___pump');
-						p.entity = U.name; p.orb = c_o.name; p.p_id = id;
-						p.x=xnum; p.y=ynum; p.maxrad = radnum;
-						p.radius = 1; p.chargeq = 0; p.intensity = 1;
-						p.se='pump';
-						p.form='wave';
-						p.is='c_circle';
-
-						all.anim_a.push(p);
-					}
-				}//pulse
-
-
-//PLAY . ACT		
-//yeah so whats up with acts.. how to stop resource acts
-//So yeah one important thing i want to achieve is that
-//acts need to be running
-//in the bg. user can reform and go into the void while orbs carry on their
-//acts. All effects should be effective but graphics of these animations
-//interacting should not be displayed on user screen.
-//a command to run an act
-//only radiant orbs can perform. yes we can also run acts from orbs not in control
-//as long as such orbs are on orb.out stance?, on radiant mode
-//... so update this ... hmmm should not have a second parameter here.. while on radiant mode, users can only play acts from currently
-//controled orb
-//.play Should offer some kind of information..?
-//but Its good that radiant orbs can only run 1 command "play", because they are now commited to scripts and not commands from the void.
-//.. well we also have .reform , to go back to inner mode..
-//.play:[name of act]
-				if(mc_a[1]=="play"){
-					//if(mc_a[2]=="list"){mcp_a[1]=undefined; var list = true;}
-					if(mcp_a[1]==''&&mc_a[2]==undefined){mcp_a[1]=undefined; var noname = true;}
-					if(mcp_a[1]!=undefined){var proceed = true;}
-		//.. i dont think we need a list command here, we can learn about play with the .help command
-					if(list){
-						var running=undefined;
-//list all running acts
-//just ask if txt anim name match all.res_acts names or actors
-						var l1 = c_orb.txt.length;
-						while(l1--){
-							var a = c_orb.txt[l];
-							var l2 = all.act_d.length;
-							while(l2--){
-								var act = all.act_d[l2];
-								if(a[0].name==act.name){
-									all.stream_a.push(a[0].name+" is currently playing.");
-									var playing = true;
-									break
-								}
-							}//check act
-						}//check txt
-						if(playing){
-							all.screen_log(); 
-							//var running = undefined; 
-						}
-					}//list
-					if(noname){
-						//all.stream_a.push("No act to play selected.");
-						//all.screen_log();
-					}
-					if(proceed){
-						var l = c_o.txt.length;
-						while(l--){
-							var a = c_o.txt[l];
-							if(a){
-								if(a[0].name==mcp_a[1]){
-									var found = true;
-									//console.log(a);
-									break
-								}
-							}
-						}
-						if(found){//if found
-		//check res_acts and c_orb.actors
-							var l1 = all.res_acts.length;
-							while(l1--){
-								var script = all.res_acts[l1];
-								if(a[0].name==script.name){
-									var playing_already = true;
-									break
-								}
-							}
-							
-							var l1 = c_o.actors.length;
-							while(l1--){
-								var script = c_o.actors[l1];
-								if(a[0].name==script.name){
-									var playing_already = true;
-									break
-								}
-							}
-
-							if(playing_already!=undefined){
-								//all.stream_a.push("Already playing.. "+mcp_a[1]);
-								//all.screen_log();
-							}else{
-								//named_act.running = true;
-								var act = all.actuator(a, c_o); //actuator call
-		//after actuator, act is pushed into all.res_acts array or into orb.actors array depending on "is" value
-								if(act.is=='resource'){
-									all.res_acts.push(act);
-								}
-								if(act.is=='actor'){
-									c_o.actors.push(act);
-								}
-								//all.stream_a.push("Playing.. "+mcp_a[1]);
-								//all.screen_log();
-							}
-						}else{
-							all.stream_a.push("No such act has been found.");
-							all.screen_log();
-						}
-					}//proceed
-				}//.play
-		
-			
-			}//radiant mode commands
-
-//VOX			
-//store property links between keys and audio animations to call on vox 
-//this "asign" works well in here, even tho it feels a bit out ofplace
-//... maybe this whole vox deal should be implemented trough act language only..
-			//if(c_orb.vox_mode){
-			//	if(mc_a[1]=="asign"){
-			//		var a_a = Fting(c_orb.osc, "name", mcp_a[1]);
-			//		a_a.asigned_key = all.sstr;
-					//normalize feedback
-			//		all.s_s_t_r = []; all.sstr = ' '; all.sstr_l = ' ';
-			//		all.stream_a.push("Osc asigned to key"); all.screen_log();
-			//	}
-
-			//}//vox mode commands
-
-		}//vessel commands
-*/
-
-/*
-//HUSK STANCE only one command available.. actualy we also need orb.in to bring the memory of another orb.
-//if any of this commands run, we need to change to orb stance
-//!!!! no commands on husk now.... so... deprecat... ok lets have these commands available for my own sanity for now
-//husk exclusive commands
-		if(comav=='husk'){
-			//var gs = Fting(all.anim_a, 'aka', 'ghostship');
-			//.name:[new name]
-			if(mc_a[1]=="name"){
-//we need to send a se to the ghostship so it reacts to its new soul.
-//husk now merges with the orb and becomes a vessel
-				if(mcp_a[1]==undefined){}else{//if no name this becomes a nameless husk?
-					var newo = all.orb_new(mcp_a[1]);
-					//var ghostship = {name:undefined, form:'husk', birth_date:s.husk_date}
-					//newo.form='vessel';
-			//oes.x=gs.x; oes.y=gs.y; oes.limitrad = gs.limitrad;
-					newo.primY=c_o.y//primY;
-					newo.primX=c_o.x//primX;
-					newo.limitrad=c_o.limitrad;
-					newo.limitdis=c_o.limitdis;
-					//newo.im_id=c_o.im_id;
-					//newo.husk_id=c_o.husk_id;
-					//newo.vessel_id=c_o.id;
-					//newo.prim=
-					newo.vessel_id=Date.now();
-			//we need to transform husk prim into a vessel
-					//var hi = all.fleet_a.indexOf(c_o);
-					//all.fleet_a.splice(hi,1);
-					all.fleet_a.push(newo);
-					stance=all.fleet_a[all.fleet_a.length-1]; //uinit='orb born';
-					uinit={transition:'orb born',stancefrom:c_o}//,stanceto:stance};
-					//uinit='orb born';
-					//gs.se='soul in'; //all.user.init=true;
-					//gs.soul=obj_orb.name;
-					//gs.aka='newborn';
-					all.stream_a.push("A new name for a new vessel ... "+mcp_a[1]); all.screen_log();
-				}
-			}
-			//.in:json orb	
-			if(mc_a[1]=='in'){
-			//import a json orb text into sunya
-				var ta = str.split(":"); ta.shift(); 
-				var txt = ta.join(":");
-				var oldo = JSON.parse(txt);
-				//
-				oldo.primY=c_o.y//primY;
-				oldo.primX=c_o.x//primX;
-				oldo.limitrad=c_o.limitrad;
-				oldo.limitdis=c_o.limitdis;
-				//oldo.imp_date=c_o.imp_date;
-				//oldo.husk_id=c_o.husk_id;
-				//oldo.id=c_o.id;
-				oldo.vessel_id=Date.now();
-
-				//var hi = all.fleet_a.indexOf(c_o);
-				//all.fleet_a.splice(hi,1);
-				all.fleet_a.push(oldo);
-				stance=all.fleet_a[all.fleet_a.length-1]; //uinit='orb born';//"orb reborn"
-				uinit={transition:'orb born',stancefrom:c_o}//,stanceto:stance};
-
-				all.stream_a.push("Orb memory recovered.. " + oldo.name); all.screen_log();
-				//i could just clear com_a and return?
-				//all.com_a = [];
-				//return
-			}
-
-			//a command to leave husk for now
-			if(mc_a[1]=="exit"){
-				//uinit='husk outwards';
-				uinit={transition:'husk outwards',stancefrom:c_o}
-				stance=undefined;
-				all.stream_a.push("abandon ship.. "); all.screen_log();
-			}
-
-		}//husk stance
-*/		
-	all.com_a=undefined;
-	//all.c_input='';
-		//all.com_a.splice(0);//remove command logic from com_a array..m
-	}//else{}//no commands on array condition
-}//c_com
-
-
-
-
-
-
-
-
-
-
-//yeah this should even be a function?
-//returns an audio context. Normally should go into all.au . Am thinking it may be
-//helpful to allow instances to clear up context and
-//create a new one once and then so it doesnt carry gigantic numbers to create
-//timestamps. might be good for optimization
-//this should not be a function..? 
-//
-all.audioser = function(){
-	//var a_ctx = new(
-	//	AudioContext || webkitAudioContext || window.webkitAudiocontext
-	//)();
-	var a_ctx = new AudioContext();
-	return a_ctx
-}
-
-//Most of these functions structure should take a previous object from an Orb or a
-//void element or user data and return a state in order to run the audio
-//maybe a command on demand could clear buffs to manage performance
-
-//returns a sounding oscilator
-//this function uses parameters from the audio animation(oscilator editor),
-//it just creates osc and gain node, puts them into the audio state
-//and conects them, and returns a state ready to be pushed on anim_a. anim_a should
-//check when to end the sound and will use proper
-//methods so it doesnt literaly pop out of existance, but gradually decreases its
-//gain until is self removed. 
-all.osc_s = function(audio_ctx,name, a_a){//audio_ctx, a_a
-	var a_s = {}; //a_s.birth_t = all.au.currentTime;
-	a_s.anim_name=a_a.name; a_s.name = name; a_s.fade = a_a.fade; a_s.end=undefined;
-	a_s.is="osc"; a_s.s = "osc";
-	//osc_node
-	var osc_n = audio_ctx.createOscillator(); //a_a.osc
-	a_s.osc_n = osc_n;
-	a_s.osc_n.frequency.value=a_a.freq; //a_a.freq
-	a_s.osc_n.type=a_a.type; //audio.type
-	//gain node
-	var gain_n = audio_ctx.createGain(); //audio.gain_n
-	a_s.gain_n = gain_n;
-	a_s.gain_n.gain.value=a_a.gain;//audio.gain
-	a_s.osc_n.connect(a_s.gain_n);//0.07 is low volume  .  audio.osc_n.connect(audio.gain_n);
-	a_s.gain_n.connect(audio_ctx.destination); //audio.gain_n.connect(audio_ctx.destination);
-	//var st = st;
-	a_s.osc_n.start();//audio.osc_n.start();
-	return a_s //return audio state
-}
-
-
-
-//Get an AudioBufferSourceNode.
-//This is the AudioNode to use when we want to play an AudioBuffer. createBufferSource
-//we use this with local files loaded as well !!
-//this snipet here should return a state, which holds a source node , and also can hold
-//filter nodes, and compressor nodes as deem neccesary. definitly will need a gain node
-//should return a state to run a buffer
-all.buffer_s = function(custom_buffer, audio_ctx, name, a_a){
-	var s = {}; 
-	s.name = name;  s.is="audio"; s.s = "audio"; s.end='not';
-	var src_node = all.au.createBufferSource();
-	//set the buffer in the AudioBufferSourceNode
-	src_node.buffer = custom_buffer;
-	s.src_node = src_node;
-	//use a_a to set intial params
-	s.src_node.loopStart = a_a.start; s.src_node.loopEnd = a_a.end;
-	s.fade = a_a.fade;
-	//gain node
-	var gain_n = audio_ctx.createGain(); //audio.gain_n
-	s.gain_n = gain_n;
-	s.gain_n.gain.value = a_a.gain;
-	s.src_node.connect(s.gain_n);
-	s.gain_n.connect(audio_ctx.destination);
-	//connect the AudioBufferSourceNode to the destination so we can hear the sound
-	//s.src_node.connect(audio_ctx.destination); //all.au.destination
-	//s.src_node.start();
-
-	return s
-}
-//to start the source playing
-//s.src_node.start();
-//use the boolean on loop property to set a loop. there is also loopStart and loopEnd to determine where the loop starts and ends
-//s.src_node.loop = true;
-
-
-//this buffer should be located on an audio source node. create a source using all.au.createBufferSource
-//use param1 now to randomize buffer channels
-//.. let param1 be an instruction to return a type of buffer ?
-//.. needs params to control buffer size. . .
-//a function to return an empty audio buffer source. Users should be able to fill in buffer manually to create their own waves
-//also, sunya can call these buffers to create white noise and other sound effects
-all.c_custom_buffer = function(w_n){ 
-	//the type of buffer will change acording to param..
-	var a_buffer = all.au.createBuffer(2, all.au.sampleRate * 3, all.au.sampleRate);//these params control the size of the buffer
-
-	if(w_n == "w_n"){
-		//randomize channels to create white noise
-		for (let channel = 0; channel < a_buffer.numberOfChannels; channel++) {
-		  //This gives us the actual ArrayBuffer that contains the data
-			const nowBuffering = a_buffer.getChannelData(channel);
-			for (let i = 0; i < a_buffer.length; i++) {
-  		 	 // Math.random() is in [0; 1.0]
-  			 // audio needs to be in [-1.0; 1.0]
-			nowBuffering[i] = Math.random() * 2 - 1;
-			}
-		}
-	}
-	return a_buffer
-}
-
-//a function to load an audio file from server into an orb.. it delivers an audio buffer
-//Maybe orbs should be able to hold multiple audio files.....
-//so to load audio from server static directory
-all.url_audio = function(url){
-	var audio_buffer = new Audio(url);
-	//var media_src = all.au.createMediaElementSource(audio_buffer);
-	return audio_buffer
-}
-	//
-//return an audio file state. accepts a previously buffed media audio file as param
-all.media_s = function(url_audio, destination){
-	var s = {};
-	var src_node = all.au.createMediaElementSource(url_audio);	
-	s.src_node = src_node;
-	s.src_node.connect(destination);
-	return s
-}
-//now we can affect the audio using Web Audio API but we keep using url_audio.play(), url_audio.pause()
-//currentTime = number , a property that allows us to instantly start playing from number
-//duration  , A read-only double-precision floating-point value indicating the total duration of the media in seconds.
-//ended , Returns a boolean that indicates whether the media element has finished playing
-//loop ,  boolean that reflects the loop HTML attribute, which indicates whether the media element should start over when
-//it reaches the end.
-//preservesPitch , A boolean value that determines if the pitch of the sound will be preserved. If set to false, 
-//the pitch will adjust to the speed of the audio
-//volume , A double indicating the audio volume, from 0.0 (silent) to 1.0 (
-//other methods from the audio element
-//This media element source can be connected to other nodes to change audio wave
-//before reaching audio context destination
-//hence, the second param can accept any other audio node destination besides
-//all.au.destination
-
-
-
-//returns a compressor for audio context all.au?
-//need a proper interface to experiment with
-//All these audio nodes should take parameters from independetn audio objects so
-//the same nodes can be created many times
-//A state should hold a returned compressor so it affects the audio source that inhabits it
-//s.compressor_node , s.src_node, and so on
-//use an object to return a configured compressor. states will probly use it
-all.c_audio_compressor = function(){
-	var compressor = all.au.createDynamicsCompressor();
-	compressor.threshold.setValueAtTime(-20, all.au.currentTime);
-	compressor.knee.setValueAtTime(30, all.au.currentTime);
-	compressor.ratio.setValueAtTime(5, all.au.currentTime);
-	compressor.attack.setValueAtTime(.05, all.au.currentTime);
-	compressor.release.setValueAtTime(.25, all.au.currentTime);
-	return compressor
-}
-
-
-
-
-
 
 
 /////////PHONE users
 //bro study this for phone
-/*
-// Listen for mouse moves
-	// canvas.addEventListener("mousemove", (event) => {
-	//   // Check whether point is inside ellipse's stroke
-	//     const isPointInStroke = ctx.isPointInStroke(
-	//         ellipse,
-	//             event.offsetX,
-	//                 event.offsetY,
-	//                   );
-	//                     ctx.strokeStyle = isPointInStroke ? "green" : "red";
-	//
-	//                       // Draw ellipse
-	//                         ctx.clearRect(0, 0, canvas.width, canvas.height);
-	//                           ctx.fill(ellipse);
-	//                             ctx.stroke(ellipse);
-	//                             });
-
-
-
-
-*/
 
 /*	
 //Learn about touchevents for phone interface   .  .  .
@@ -10443,7 +4092,7 @@ const tstart = function(e){
 	//if(e.touches.length>2){e.touches.splice(2);}
 	//if(e.touches.length>2){console.log(all.anim_a.length);}//nothing
 	
-	if(all.chat_on){return}
+	if(chatOn){return}
 
 	e.preventDefault();//
 //really fun bug ahead.. solved
@@ -10465,9 +4114,9 @@ const tstart = function(e){
 			while(l--){
 				var s = all.anim_a[l]; 
 		//bt already ting
-				if(all.bt_alr){
+				if(btAlr){
 					if(s.tch=='bt'){
-						var dist = all.get_dist(clX,s.tx,clY,s.ty);
+						var dist = getDist(clX,s.tx,clY,s.ty);
 						if(dist<22){
 							s.gesID=touch.identifier; s.gesEND=false;
 							s.ges=[{X:clX, Y:clY}]; s.gesPRESS=0;
@@ -10481,7 +4130,7 @@ const tstart = function(e){
 		
 //any other state that needs tch interaction just needs tch property defined.. hm
 					if(s.tch=='prim'){
-						var dist = all.get_dist(clX,s.tx,clY,s.ty);
+						var dist = getDist(clX,s.tx,clY,s.ty);
 						if(dist<22){
 							s.gesID=touch.identifier; s.gesEND=false;
 							s.ges=[{X:clX, Y:clY}]; s.gesPRESS=0;
@@ -10496,7 +4145,7 @@ const tstart = function(e){
 //k could really benefit from calling osc right from here. we want these to act as
 //fast as posible
 					if(s.tch=='k'){
-						var dist = all.get_dist(clX,s.tx,clY,s.ty);
+						var dist = getDist(clX,s.tx,clY,s.ty);
 						if(dist<22){
 ///*
 ////////////
@@ -10585,7 +4234,7 @@ const tmove = function(e){
 		//console.log(e.touches.length+'  insanity');
 	//}
 
-	if(all.chat_on){return}
+	if(chatOn){return}
 
 	e.preventDefault();//
 
@@ -10624,7 +4273,7 @@ const tend= function(e){
 	//this dont seem to do much
 	//if(e.touches.length>2){e.touches.splice(2);}
 
-	if(all.chat_on){return}
+	if(chatOn){return}
 
 	e.preventDefault();//
 
@@ -10674,7 +4323,7 @@ const tcancel= function(e){
 	//return
 	//if(e.touches.length>2){e.touches.splice(2);}
 
-	if(all.chat_on){return}
+	if(chatOn){return}
 
 	e.preventDefault();//
 	
@@ -10692,7 +4341,7 @@ const NS = function(){//normalize system
 	window.addEventListener('keydown', kdown);
 	window.addEventListener('keyup', kup);
 	
-	all.heartbeat =	setInterval(update,60); //100 //70
+	heartBeat =	setInterval(update,60); //100 //70
 
 }		
 
@@ -10865,12 +4514,12 @@ all.c_tch = function(){
 					var aprev_dY = (aprev_pos.Y+22); var aprev_uY = (aprev_pos.Y-22);
 		
 					if(ltga.Y>aprev_dY){
-						all.ges_seq.push('down','t0');
+						gesSeq.push('down','t0');
 						t0.ges=[]; //t0.ges.push({id:0});
 						all.stream_a.push('t0 down'); all.screen_log();
 					}
 					if(ltga.Y<aprev_uY){
-						all.ges_seq.push('up','t0');
+						gesSeq.push('up','t0');
 						t0.ges=[]; //t0.ges.push({id:0});
 						all.stream_a.push('t0 up'); all.screen_log();
 					}
@@ -10881,12 +4530,12 @@ all.c_tch = function(){
 					var bprev_pos = t1.ges[ligb-24];
 					var bprev_dY = (bprev_pos.Y+22); var bprev_uY = (bprev_pos.Y-22);
 					if(ltgb.Y>bprev_dY){
-						all.ges_seq.push('down','t1');
+						gesSeq.push('down','t1');
 						t1.ges=[]; //t[1].ges.push({id:1});
 						all.stream_a.push('t1 down'); all.screen_log();
 					}
 					if(ltgb.Y<bprev_uY){
-						all.ges_seq.push('up','t1');
+						gesSeq.push('up','t1');
 						t1.ges=[]; //t[1].ges.push({id:1});
 						all.stream_a.push('t1 up'); all.screen_log();
 					}
@@ -10894,14 +4543,14 @@ all.c_tch = function(){
 				//temporary..
 				if(t0.gesEND==true||t1.gesEND==true){
 				
-					if(all.ges_seq[0]=='down'&&all.ges_seq[2]=='down'&&
-					all.ges_seq[4]=='up'&&all.ges_seq[6]=='up'){
+					if(gesSeq[0]=='down'&&gesSeq[2]=='down'&&
+					gesSeq[4]=='up'&&gesSeq[6]=='up'){
 						var command = {is_a:"c", str:'.type:'}; all.com_a.push(command);
 					}
 					
 					t0.is='rm';
 					t1.is='rm';
-					all.ges_seq=[]; //all.touches_a=[];
+					gesSeq=[]; //all.touches_a=[];
 				}
 
 				return
@@ -10913,7 +4562,7 @@ all.c_tch = function(){
 //2 touch mess
 				//if(seq.length==1){
 				if(t0.gesEND==true){
-					if(all.bt_alr==true){var clear_bt=true;}else{
+					if(btAlr==true){var clear_bt=true;}else{
 	// key_s						
 						var lbt = all.user.key_s.length;
 						while(lbt--){
@@ -10928,7 +4577,7 @@ all.c_tch = function(){
 							all.anim_a.push(bts.bt, bts.txt);
 						}//void tch list loop
 						
-						all.bt_alr = true; //var end=true;
+						btAlr = true; //var end=true;
 					}
 				}//end
 				
@@ -10943,7 +4592,7 @@ all.c_tch = function(){
 					if(t0.gesEND==true){
 //button caller could be a function..
 //a simple touch on any background calls for buttons on buttons memory array
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.inner_ks.length;
 							while(lbt--){
 								var b = co.inner_ks[lbt];
@@ -10957,7 +4606,7 @@ all.c_tch = function(){
 								all.anim_a.push(bts.bt, bts.txt);
 							}//inner tch list loop
 							
-							all.bt_alr = true;
+							btAlr = true;
 						}//button call
 					}//end
 					
@@ -10968,7 +4617,7 @@ all.c_tch = function(){
 					if(t0.gesEND==true){
 //button caller could be a function..
 //a simple touch on any background calls for buttons on buttons memory array
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.radiant_ks.length;
 							while(lbt--){
 								var b = co.radiant_ks[lbt];
@@ -10982,7 +4631,7 @@ all.c_tch = function(){
 								all.anim_a.push(bts.bt, bts.txt);
 							}//inner tch list loop
 							
-							all.bt_alr = true;
+							btAlr = true;
 						}//button call
 					}//end
 					
@@ -11031,7 +4680,7 @@ irec.is='c_rect'; irec.t=1;
 					if(t0.gesEND==true){
 						if(t0.ges.length>5){var clear_bt = true;}else{//
 						//if(t0.swiped){var clear_bt = true;}else{//
-							if(all.bt_alr==true){var clear_bt = true;}else{
+							if(btAlr==true){var clear_bt = true;}else{
 								var lbt = co.img_ks.length;
 								while(lbt--){
 									var b = co.img_ks[lbt];
@@ -11041,7 +4690,7 @@ irec.is='c_rect'; irec.t=1;
 									bts.bt.reff=b;
 									all.anim_a.push(bts.bt, bts.txt);
 								}//inner tch list loop
-								all.bt_alr = true;
+								btAlr = true;
 	
 							}//button call	
 						}//swiped
@@ -11053,7 +4702,7 @@ irec.is='c_rect'; irec.t=1;
 
 				if(co.edit_txt_mode==true){
 					if(t0.gesEND){
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.txt_ks.length;
 							while(lbt--){
 								var b = co.txt_ks[lbt];
@@ -11064,7 +4713,7 @@ irec.is='c_rect'; irec.t=1;
 	//unshift seem to give drawing priority but ctx still messes up with text
 								all.anim_a.push(bts.bt, bts.txt);
 							}//inner tch list loop
-							all.bt_alr = true;
+							btAlr = true;
 						}//button call
 					}//end
 				}//txt
@@ -11072,7 +4721,7 @@ irec.is='c_rect'; irec.t=1;
 				if(co.edit_circle_mode==true){
 					if(t0.gesEND){
 					//call buttons
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.circle_ks.length;
 							while(lbt--){
 								var b = co.circle_ks[lbt];
@@ -11082,7 +4731,7 @@ irec.is='c_rect'; irec.t=1;
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
 							}//circle tch list loop
-							all.bt_alr = true;
+							btAlr = true;
 						}//button call
 					}//end
 				}//circle mode
@@ -11090,7 +4739,7 @@ irec.is='c_rect'; irec.t=1;
 				if(co.edit_rect_mode==true){
 					if(t0.gesEND){
 					//call buttons
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.rect_ks.length;
 							while(lbt--){
 								var b = co.rect_ks[lbt];
@@ -11100,7 +4749,7 @@ irec.is='c_rect'; irec.t=1;
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
 							}//rect tch list loop
-							all.bt_alr = true;
+							btAlr = true;
 						}//button call					
 					}//end
 					
@@ -11109,7 +4758,7 @@ irec.is='c_rect'; irec.t=1;
 				if(co.edit_osc_mode==true){
 					if(t0.gesEND){
 					//call buttons
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.osc_ks.length;
 							while(lbt--){
 								var b = co.osc_ks[lbt];
@@ -11119,7 +4768,7 @@ irec.is='c_rect'; irec.t=1;
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
 							}//circle tch list loop
-							all.bt_alr = true;
+							btAlr = true;
 						}//buttons call
 					}//end
 					
@@ -11128,7 +4777,7 @@ irec.is='c_rect'; irec.t=1;
 				if(co.edit_audio_mode==true){
 					if(t0.gesEND){
 					//call buttons
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.audio_ks.length;
 							while(lbt--){
 								var b = co.audio_ks[lbt];
@@ -11138,7 +4787,7 @@ irec.is='c_rect'; irec.t=1;
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
 							}//audio tch list loop
-							all.bt_alr = true;
+							btAlr = true;
 						}//button call					
 					}//end
 					
@@ -11147,7 +4796,7 @@ irec.is='c_rect'; irec.t=1;
 				if(co.vox_mode==true){
 					if(t0.gesEND){
 					//call buttons
-						if(all.bt_alr==true){var clear_bt = true;}else{
+						if(btAlr==true){var clear_bt = true;}else{
 							var lbt = co.vox_ks.length;
 							while(lbt--){
 								var b = co.vox_ks[lbt];
@@ -11158,7 +4807,7 @@ irec.is='c_rect'; irec.t=1;
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
 							}//vox tch list loop
-							all.bt_alr = true;
+							btAlr = true;
 						}//button call					
 					}//end
 	
@@ -11293,7 +4942,7 @@ irec.is='c_rect'; irec.t=1;
 				t0.tchev=false; t0.ges=[]; 
 				t0.gesEND = false; t0.gesPRESS = 0; t0.gesID = undefined;
 				
-				all.bt_alr = true;
+				btAlr = true;
 	
 			}//end
 			
@@ -11355,7 +5004,7 @@ irec.is='c_rect'; irec.t=1;
 			//all.redraw_ms=true;
 		}//
 		
-		all.bt_alr = false;
+		btAlr = false;
 	}
 
 }//all.c_tch
@@ -11392,411 +5041,6 @@ all.chant = function(obj){
 //});
 
 */
-
-
-//___________________________________________________________________________________
-
-
-//STANCE UPDATES
-//here goes all reactions to commands while user(or any other entity?) is inside any stance. These need to run before animf.
-//!!!!!!!!!!!!
-//i think c_com doesnt need to be separated from input evaluation.........
-all.stance_up = function(){
-	var st = stance;
-	if(st.form=='Void'||st.form=='Husk'){
-//if all.c_input is not empty. Input listenning.
-//When we type on void, default behavior is creating a txt orb to hold the input... so what if another txt orb is listenning already..?
-//.. stilll needs  a bit of thinking. How should txt orbs react to inputs and outputs... maybe default behavior should be stream mode..
-//.. yeah that would make sense. Dont just go into edit mode. Orb needs stream mode and edit mode.. and maybe no reacting mode..?
-
-//When we call .edit command, we show all lines , and we also create a new stream to print edit commands output only by default
-//Screen centers on selected line when on edit mode mode:'edit' /'stream'
-//we need to select the stream to start typing into it so it picks up entity input.
-//We also need to select the stream for it to print commands output? no, output packets can select where to go
-//output packets should be different than input packets... yes they are different. We want input to be simple human lines
-//output packets are a thing
-//output packets include instructions on which line to go to, and which stream to go to as well.
-//we can use these mchanics for edit feedback but they can be explored even further with scripts
-//like this ; {txt'some data', target:stream id , line:target line}
-		if(all.c_input!=''){
-//so we put input in the first line of a nameless txt orb. we change stance to the new orb. orb is in stream mode listenning
-//for entities input. make stream mode default behavior
-//default behavior is displaying 10 lines, storing all messages, and listen to input.
-
-			var id = Date.now();//just use id to locate its prim
-			var tO = all.txtOrb();
-			if(st.form=='Husk'){
-//we need the Husk to keep track of memories contained. .. we can use tab to move between memories contained on a Husk, or a Fire
-				//st.residents.push({id:tO.id, x: ,y:});
-				tO.husk=st.id; //tO.hx = st.x; tO.hy = st.y;
-			}
-			tO.id=id;
-			tO.mode='stream'; //should be stream but lets work with edit for now i am burnt
-			tO.selL=1;
-			//prim and animation base points? yes this is convenient
-			//we should try keeping a refference here directly to the prim huh
-			//we definitely dont want to have to chance both x and y values twice everytime we move the memory position
-			//
-			tO.primX =-U.x+window.innerWidth/2 ; tO.primY = -U.y+window.innerHeight/2;
-			//tO.animX =-U.x+150 ; tO.animY =-U.y+150;
-			tO.limitL=5;
-			tO.lines=[
-				{txt:all.c_input, cus:[[220,'r',220,'g',220,'b',1,'a']]}//we need entity cus here too !!!!!!!!!!
-			];
-			stance = tO;
-			all.orbs.push(tO);
-
-			var prim = all.circle_s_new(id+'___orb');
-			prim.x= tO.primX; prim.y= tO.primY;
-			prim.inside='empty';
-			prim.radius=20;
-			prim.display='custom';//for now
-			prim.custom_a=[[0.4,'a'],0,0,0,0,[0.2,'a'],0,0];//for now
-			prim.is='c_circle';
-			all.anim_a.push(prim);
-
-			all.printo(tO,'stream');
-			//var command = {is_a:'c', str:'.txt:all.c_input'}; all.com_a.push(command);
-			all.c_input='';
-			return
-		}
-	}//Void
-//TXT?
-//while on edit text mode, we can .name:new name to name the memory.... not sure what goes here. all.c_com handles commands..
-//..thinking about making memories just run by default.
-//we use .displace to move the memory orb. The x and y locations of the memory frames and lines use other commands.
-//txt orb memories will react to entities commands inputs and outputs differently when they are being stanciated? yeah probly
-//orbs will react to edit commands and generate edit feedback.. however maybe we can do that from all.c_com.. !!!!!!
-//when not stanciated, txt orbs will react only when they are
-//configured to react to signals in their proximity
-//... wait we do need to listen to  all.c_input here and create new lines.. input is not a command!! but we should process
-//commands and input in the same function.!!!??
-	if(st.form=='Text'){ //text Orb?
-//TXT EDIT MODE
-		if(st.mode=='edit'){
-//a new input should send a packet to let stream out update feedback on edit mode
-				//
-//printo simply uses spacer and primXY to locate text where it should be.
-//lines could take align on custom_a tho, yeah that might be handy
-
-/*//reference
-			if(all.c_input!=''){
-				if(st.insOp=='new line'){
-					var place = st.selL-1;
-					st.lines.splice(
-						place,0,
-						{txt:all.c_input, cus:[[220,'r',220,'g',220,'b',1,'a']]} //let lines be simpler bro
-					);
-					all.printo(st,'edit');
-					//var op = {msg:'txt edit new line', x:st.primX ,y:st.primY}; all.c_out.push(op);
-
-				}
-
-				if(st.insOp=='modify'){
-					var place = st.selL-1;
-					st.lines[place].txt=all.c_input;
-					//st.lines.splice(
-					//	place,1,{txt:all.c_input, cus:[[1,'a'],0]} //let lines be simpler bro
-					//);				
-					st.insOp='new line';
-					all.printo(st,'edit');
-					//var op = {msg:'txt edit modify line', x:st.primX ,y:st.primY}; all.c_out.push(op);
-				}
-			}//input
-			all.c_input='';//normalize input
-
-*/
-
-//output packets observation !!!!
-//orbs on edit mode do all these feedback updates right here
-//feedback output feed.. ok i was thinking , any event can create an outout packet so maybe states on animf can also
-//send data like current fram or beat t... that would make a lot of sense...!!!!! instead of having to access a state everytime.?
-//might be interesting for animation synch on scripts.. YES ME FROM THE PAST, THIS IS A BANGER OF AN IDEA. AM ACTUALLY DOING IT NOW
-//IN THE FUTURE
-//
-
-/*
-//This was also a pretty idea. its a little asci ting
-//we need to see changes of beat selected and an animation to illustrate beats in time |start| 00000100007 |end|
-			var c_b = st.selB; //current beat
-			//we need to access the line state not the line in memory... maybe we can avoid these all.find loops
-			var line = Fting(all.anim_a, 'id', st.id+'_line'+st.selL);
-			if(line){
-				//create a little asci animation to depict current beat position at any time . beatit
-				var blen = line.custom_a.length;
-				b_n_a = [];
-				var c_t = line.t;
-				while(blen--){
-					var B = 0;
-					if(blen==c_b){var B = 1;}
-					if(blen==c_t){var B = 7;}
-					b_n_a.push(B);
-				}
-				var beatit = b_n_a.join('');
-
-				var be = Fting(all.anim_a, 'id', st.id+'_lineBEATS');
-				if(be){
-					be.txt=beatit;
-					be.is='c_txt';
-				}else{
-					//the beatit asci tingy
-					var be = all.txtLine();
-					be.id=st.id+'_lineBEATS';
-					be.align='center';//should react to line align
-					be.layer=st.layer; 
-					be.txt=beatit;
-					be.custom_a=[[1,'a'],0]; be.r=23; be.g=200; be.b=23;
-					be.x=st.primX; be.y=line.y-150;
-					be.is='c_txt';
-					all.anim_a.push(be);
-				}
-			}else{
-		//if no line in here, then we could create a place holder like; 'new line..' blinking. in here? !!!!!!!!!!
-				//remove beatit
-				var be = Fting(all.anim_a, 'name', st.id+'___beats');
-				if(be){be.is='rm';}
-			}// if line
-
-*/
-
-
-		}//edit mode
-
-//TXT STREAM MODE
-		if(st.mode=='stream'){
-//stream mode makes the orb listen to input when is selected by an entity, the new line goes at the end
-//also, stream always shows the last limit lines but the user screen doesnt move.
-//if a txt stream is stanciated, screen should lock into txt stream prim center..?
-//we dont want to create output packets when stance is in this mode
-			if(all.c_input!=''){
-				st.lines.push(
-					//we could use cus from entity here..
-					{txt:all.c_input, cus:[[220,'r',220,'g',220,'b',1,'a']]} //let lines be simpler bro
-				);
-				all.printo(st,'stream');
-			}//input
-
-			all.c_input='';//normalize input
-				
-		}//stream in
-		//}//input processing
-
-		//all.c_input='';//normalize input
-
-	}//Text
-
-
-//FIRE
-	if(st.form=='Fire'){
-//!!!!!!!!!!!!!!!!!!1
-//We should also be able to create memory txt orbs while traveling in a wave!!! Actually waves should be grabing all memories
-//found in its surge and drag them in the wave rim along with the entity. memories with sound should travel along the wave
-//so entities can hear them faintly if on the other side of the circunference
-//we know the angle of entity point from the center point. when we find a memory, we trace a line from, entity to memory.
-//we then only need to close the triangle to see the angle line...
-		//
-//another angle...
-//when we find a memory point , we can just trace a line to center ,so this line and the line from the center to the entity
-//form an angle, this is the angle we need?
-//PHANTHASM A way to misinterpret the world by proyecting our feelings on to it
-//A Husk can Acomodate memories as it seems fit. But any entity can do so. In order to create harmonic animations we must all agree
-//on where do animations go, or we just manage to have the Husk for one entity to decide everything.
-//!!!!!!!!!!!!!!!!!
-//We will only be able to cast 1 Firewave at a time. Firewaves are pretty much entities movility
-//mechanics, Firewaves dont need to ask for other Firewaves to add up and increase intensity, that just happens when the entity
-//casts a Firewave over a previous Firewave.
-	//Lets increase radius at the beggining. See how it goes.
-		var add = Math.round(st.intensity/10);
-		st.radius=(st.radius+1)+add;//s.intensity//2;
-
-//ok so given a radius, an angle and a centerX and a centerY, we can calculate xy of a point in the circle rim
-//works perfectly. Now we need to control the angle with Arrows and use this point to calculate user position on every beat.
-		///*bu
-		var angle = U.rangle;
-		var ridex = st.radius * Math.cos(angle)+st.x;
-		var ridey = st.radius * Math.sin(angle)+st.y;
-		ctx0.translate((-U.x),(-U.y));//this should put user on 0
-		var rpx = Math.round(-ridex+(window.innerWidth/2)); var rpy = Math.round(-ridey+(window.innerHeight/2));
-		ctx0.translate(rpx,rpy);
-		U.x=rpx; U.y=rpy;
-		//
-		pupil.x=-U.x+window.innerWidth/2; pupil.y=-U.y+window.innerHeight/2;
-		//console.log('Ux:'+(-U.x+window.innerWidth/2)+'  Uy:'+(-U.y+window.innerHeight/2));
-
-		//we could ask ispointinpath to the wave and just use memories in proximity....
-//i think it makes sense to make prims fields maybe able to scan . so a txt memory can have a third mode, edit, stream, scan
-//scan would simply ask for data packets in area on demand maybe? or at every hearbeat. memories in proximity can talk to each other.
-//So a scan mode will listen to data packets inside its husk field or inside its fire line. we could simply access data scanned and
-//put it into .lines or pass it on into another stance in the husk?
-/*
-			var pl = p.data.length;
-			if(pl>0){
-				//console.log(p.data);
-//ok we want to work with this data.. maybe we should be able to select a filter from the listenning orb instead of
-//the output packet itself... or maybe the packet could sugest what to do with it but let orb decide what to do anyway
-//maybe run a loop to annalyze every data packet found first
-				while(pl--){
-					var pd = p.data[pl];
-//so data packets need msg , cus , line , origin...its interesting because we can ask for anything. .
-//do whatever we want with these data packets
-//So maybe packets here could have a tag to let output orb know what to do with it
-//on new line selected, we need the line and the id to find it on anim_a and create a txt state to illustrate  a line number nextotheline
-					//if(pd.)
-					//lets just console log to see if its working. its good
-					console.log(pd.msg);
-
-				}//p loop
-
-				p.data = []; //am flushing out prim here...
-			}
-*/
-		//again. how to ask just memories near and not all memories in the black sea...!!
-//.. so maybe not all memories need to announce their prescence... 
-		//so given a point xy, and a center xy, how can we calculate the angle? we can calculat the distance from center to
-		//point xy too.. .. i feel like cheating. lets find another way.
-//When Fire encounters a memory, we mark its point. we then just try all angles until we match the point.
-/*
-		var isang = U.rangle;
-		while(true){
-			isang=isang+0.1;
-			var isx = st.radius * Math.cos(isang)+st.x;
-			var isy = st.radius * Math.sin(isang)+st.y;
-			var dist = all.get_dist(memx,isx,memy,isy);
-			if(dist<5){
-				//asign this angle to the memory and break
-				memang = isang;
-				break
-			}else{
-				if(isang>6.2){isang=0;}
-			}
-		}
-*/
-		
-		if(st.radius>=st.maxrad){
-			st.is='rm'; st.form='formless7'; st.display=false; 
-			stance = {form:'Void'}
-		}
-
-		return
-	}//Fire
-
-//Husk
-	if(st.form=='Husk'){
-//Entities can displace themselves and other memories freely using the arrow keys.
-
-	}
-
-
-
-}//stance updates
-
-
-//check for all structures that are not stanciated but are performing an activity
-all.nostance_up = function(){
-//we probably need to loop all.orbs... husks... Firewaves from other entities if any... Vessels.. we probably need to loop everything
-//and just ask if its stanciated here as well. and run stance_up here instead of having a separated function.
-	var ol = all.orbs.length;
-	while(ol--){
-		var o = all.orbs[ol];
-//so orbs will listen to outputs in the area. they need a field to listen. maybe we can simply use the prim size. make it a little
-//bigger for them
-//maybe output could sometimes select a line to be printed, or not, for efficiency, just push into a listenning orb
-//ouput data may be a big deal for automated vessel reactions. scripts will probly take full advantage.. 
-//stream mode makes the orb listen to output data. the new outputline goes where the ouputs requests
-//..so actually stream out mode should not listen to input, only commands outputs.. and scripts probly
-//how to listen. output may have a point coordinate and so, all we do is ask if point is in path?... this works just fine
-//!!!!!!!!!!!!! now am thinking maybe .scan could produce a txt memory that only listen for output packets in its radius and
-//so by default , it prints out in stream fashion? not even that. the data could be redirected using scripts...... yeah that sounds good
-//these scan orbs should be fully equiped to take the data and print it anywhere in the screen or just keep the data and store it
-//somewhere else even. This needs to be a very versatile process. Maybe beatit could be functionally extracted to be used to visualize
-//other data
-		//not sure if this one needs to be an orb..
-		if(o.mode=='edit txt feed'){ //edit feed... lets have edit feed mode and maybe other modes to work with scripts
-//so stream out mode might just need a submode to understand that it is working as an edit feedback for text. lets just do that
-//for now , edit feed
-//we want to access the selected line on every beat and create beatit........... omg i just realized something
-//maybe edit txt feed is a job the memory could perfectly do on itself, no need to create outputs and another whole orb to
-//do all this.... yeah this is good for scripts but makes no sense to do on edit mode. lets just make editor orb create all
-//txt states and all to create and control to depict user feedback
-
-			//so this orb needs to ask its prim..
-			//maybe i can just let the prim refference live in o
-			var p = Fting(all.anim_a, 'name', o.id+'___orb');
-			var pl = p.data.length;
-			if(pl>0){
-				//console.log(p.data);
-//ok we want to work with this data.. maybe we should be able to select a filter from the listenning orb instead of
-//the output packet itself... or maybe the packet could sugest what to do with it but let orb decide what to do anyway
-//if o.accept_edit_feed then use packet format? maybe this should be default and scripts only could apply different filters.
-//maybe run a loop to annalyze every data packet found first
-				while(pl--){
-					var pd = p.data[pl];
-//so data packets need msg , cus , line , origin...its interesting because we can ask for anything. .
-//output feedback will need t so it can illustrate beats in time
-//var op = {msg:'Line: '+st.selL, cus:[[0.8,'a'],0,0[250,'r',10,'b']], line:2}; all.c_out.push(op);?
-//.. so we could use splice only when line is requested... dont request line if you want more performance
-//BETTER YET, dont even use printo by default here. Just take the packet and process it in a unique way depending on the packet
-//and the instructions on the script. but since we dont want to use scripts here just yet, we are going to implement instructions
-//to display proper feedback using packets received from editors signals
-//.. everytime the entity changes a beat, selects a new line, adds a new line with input of a new frame
-//or even at every heartbeat we could update some feed animation like beatit.
-//let printo be a function to work with lines. its good for edit mode and stream mode but dont rely always on it, we can
-//do whatever we want with these data packets
-//So maybe packets here could have a tag to let output orb know what to do with it
-//on new line selected, we need the line and the id to find it on anim_a and create a txt state to illustrate  a line number nextotheline
-//we also want to illustrate beatit. but we want to update beatit on everyheartbeat even when no new command or input is executed..
-					//if(pd.)
-					//lets just console log to see if its working. its good
-					console.log(pd.msg);
-
-				}//p loop
-
-				//all.printo(o,'stream');
-				p.data = []; //am flushing out prim here...
-			}
-
-
-
-		}//edit txt feed
-
-	}//orbs loop
-
-}//nostance up
-
-//PEAK DRAW CIRCLE
-const drawC = function(s){
-	var c = ctx0;
-	c.save();
-	c.beginPath();
-//also, we can do
-//c.fillStyle="white"; c.strokeStyle="red"; and then we fill and stroke to get different colors inside and on stroke radius
-//we can also change the c.lineWidth=some number .. so yeah this needs to go somewhere. Lines can do other things like dashing etc
-	//if(s.inside=="empty"){
-		c.strokeStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
-		c.arc(s.x,s.y,s.radius,0,Math.PI*2,true);
-		c.stroke();
-	//}
-	//if(s.inside=="filled"){
-	//	c.fillStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
-	//	c.arc(s.x,s.y,s.radius,0,Math.PI*2,true);
-//ok so we can actually just ask in here. but we use an array to ask for all requested points.?
-//so if this state is a txt orb prim, it could simply ask to an array holding outputs
-//we could just push all outputs into an array and flush it at the end of the heartbeat
-	//	if(s.mode=='scan'){
-	//		var lso = all.c_out.length;
-	//		while(lso--){
-	//			let point = all.c_out[lso];
-	//			let inArea = c.isPointInPath(point.x,point.y);
-	//			if(inArea){s.data.push(point);}
-	//		}
-	//	}
-	//	c.fill();
-	//}
-	c.restore();
-}
-
-
-
 
 
 
@@ -11878,7 +5122,7 @@ function update(){ //PEAK
 //in,
 //out
 
-	if(all.sstr == ' '){}else{all.keys_feed();} //needs to be independant from anim_f
+	if(Sstr == ' '){}else{all.keys_feed();} //needs to be independant from anim_f
 	//these functions are more related to hardware
 	repeatSys(); //this ok?
 
@@ -12172,6 +5416,8 @@ function update(){ //PEAK
 
 }//update
 
+
+
 /*
 //I think annalyzer works only with animation request .. we are not doing that i think
 	if(analyzer){
@@ -12228,7 +5474,7 @@ function update(){ //PEAK
 
 
 //SUNYA INIT
-all.sunya_init = function(device, tutorial){//tutorial no need to go here
+var SunyaInit = function(device, tutorial){//tutorial no need to go here
 	//keyboard
 	if(device=="keyboard"){
 /*
@@ -12299,35 +5545,6 @@ all.sunya_init = function(device, tutorial){//tutorial no need to go here
 	//all.au = new (AudioContext || webkitAudioContext)();
 	actx = audioser();
 
-//eye lids and pupil to animate transitions and other stuff
-	//pupil=all.circle_s_new('eye___pupil'); pupil.se='reset';
-	//pupil.radius=1; pupil.x=eX+window.innerWidth/2; pupil.y=eY+window.innerHeight/2;
-	//pupil.is='c_circle'; pupil.display='custom';
-	//pupil.custom_a=[0];
-	//pupil.id='0';
-
-
-	//elid2=all.rect_s_new('eye___lid2'); elid2.se='reset';
-//all.fadeall = function(){
-	//elid2.w=window.innerWidth; elid2.h=window.innerHeight;
-	//elid2.r=1;elid2.g=1;elid2.b=1; elid2.a=0.2; elid2.inside='filled';
-	//elid2.id='2';
-//}
-
-	//elid1=all.rect_s_new('eye___lid1'); elid1.se='reset';
-	//elid1.id='1';
-		
-	//ctx0.clearRect((-U.x),(-U.y),window.innerWidth, window.innerHeight);
-	
-//keys feedback text state. for keyboards users..
-	//kfeed=all.txt_s_new('k___feed');
-	//needs custom to create key vibes
-	//kfeed.x=eX+window.innerWidth/2; kfeed.y=eY+window.innerHeight/2; kfeed.font="30px Courier New"; kfeed.align='center';
-	//kfeed.r=220; kfeed.g=220; kfeed.b=220; kfeed.a=0.8; kfeed.display='normal';
-	//kfeed.id='3';
-
-	//all.anim_a.push(pupil, elid2, elid1);//,kfeed);
-
 	ctx0.translate(-eX+window.innerWidth/2, -eY+window.innerHeight/2);
 
 //if tutorial..
@@ -12353,8 +5570,8 @@ all.sunya_init = function(device, tutorial){//tutorial no need to go here
 //once everything is settled and the contract between user and server is done, 
 //out of prerender, start sunya
 //RENDER
-	clearInterval(all.heartbeat); 
-	all.heartbeat =	setInterval(update,60); //100 //70
+	clearInterval(heartBeat); 
+	heartBeat =	setInterval(update,60); //100 //70
 
 }//sunya_init SUNYA INIT
 
@@ -12362,21 +5579,21 @@ all.sunya_init = function(device, tutorial){//tutorial no need to go here
 
 //PRERENDERING
 //A pre renderind update function to wait for user to type enter or touch screen. i dont want a condition here.
-all.pre_rendering = function(){
+var preRendering = function(){
 	//after user has revealed input method, ask if sunya should send an assistant or not
 	//and only then run sunya . . 
 
-	if(all.keyboard_enabled){all.sunya_init("keyboard",true);}
-	if(all.touch_enabled){all.sunya_init("touch",true);}
+	if(all.keyboard_enabled){SunyaInit("keyboard",true);}
+	if(all.touch_enabled){SunyaInit("touch",true);}
 	
 	//all.anim_func();
-	//requestAnimationFrame(all.pre_rendering);
+	//requestAnimationFrame(preRendering);
 
 }//pre rendering
 
 
 
-all.heartbeat = setInterval(all.pre_rendering,60);
+heartBeat = setInterval(preRendering,60);
 //just add these events here?
 //window.addEventListener('keydown', kdown);
 //window.addEventListener('keyup', kup);
