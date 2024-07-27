@@ -19,6 +19,7 @@ ____
 
 
 
+var all = {};//this will go soon. keeping it for phone things refference
 
 //PEAK GLOBALS
 //Sunya Globals
@@ -65,16 +66,16 @@ var laYer = 0;//?									// /layer
 var dsignat = [ //data signature							// /dsignat
 			//["r",230,"g",230,"b",230], //white
 			["r",176,"g",215,"b",235], //celeste
-			["r",91,"g",157,"b",237], //azure
-			["r",0,"g",4,"b",233], //blue
-			["r",97,"g",28,"b",188], //purple blue
+			["r",91,"g",157,"b",237] //azure
+			//["r",0,"g",4,"b",233], //blue
+			//["r",97,"g",28,"b",188], //purple blue
 			//["r",138,"g",12,"b",152], //purple
 			//["r",0,"g",0,"b",0], //black
 			//["r",255,"g",10,"b",6], //red
 			//["r",255,"g",152,"b",1], //orange
 			//["r",255,"g",221,"b",38], //yellow
-			["r",163,"g",238,"b",4], //green
-			["r",127,"g",224,"b",191] //calypso
+			//["r",163,"g",238,"b",4], //green
+			//["r",127,"g",224,"b",191] //calypso
 
 	//['r',20,'g',230,'b',120,'a',1],
 	//['r',230,'g',230,'b',200,'a',0.5]
@@ -85,7 +86,7 @@ var dfontSize = 18;
 //ok lets define MSp. We have radius, memorycap ? size? limit? current?
 var MSpX = 0;//memspace rad center							// /mspx
 var MSpY = 0;										// /mspy
-var MSpRad = 1;										// /msprad
+var MSpRad = 700;										// /msprad
 var MSpSize = 1;//The number of max allocated space in radius 				// /Mcounter
 const MSp = {
 	B : 1,	layer:0, 								// /msB...
@@ -104,39 +105,47 @@ const MSp = {
 
 //Entity shortcuts. backspace memory interface needs update.
 var EkeyS = [										// /keys
+/*
+Ok we want a single orb to follow entity and monitor: current entity position , currently selected orb, current selected line
+if text aspect active, current circle form position
+*/
+
 	//some temporal shorts for developing..
+	//{name:"begin", key:"begin", com1:
+//"@MAINS<>:@LOG1<>left200>>LOG1 #LOG1>>~/drag #~>>LOG1/script<>#loop>>LOG1/script/run>>MAINS/text"
+//"@MAINS<>:@LOG1 #~>>LOG1/script #loop>>LOG1/script/run>>MAINS/text"
+	//},
+	{name:"ZZ", key:"ZZ", com1:"#~>>~/stance"},
 //Roy keeps growing
-	{name:"o1", key:"o1", com1:"@Roy<>#Roy>>Roy/text"},//Roy/name>>~/stance"},
+	{name:"o1", key:"o1", com1:"@Roy<>left100>>Roy"},
+	{name:"o2", key:"o2", com1:"@Carl<>right200>>Carl"},
+	{name:"o3", key:"o3", com1:"@Jupiter<>up80>>Jupiter"},//<>#Jupiter>>Jupiter/text"},
+	{name:"o4", key:"o4", com1:"@Vespa<>down90>>Vespa"},
+	{name:"o5", key:"o5", com1:"@Never<>left300>>Never"},
 	{name:"grow", key:"grow", com1:"#msgrow>>Roy/script<>#loop>>Roy/script/run"},//Roy/name>>~/stance"},
 //Carl could keep track of line selected and stance and others. also we want Carl on Drag
-	{name:"o2", key:"o2", com1:"@Carl"},
+	
 	{name:"follow", key:"follow", com1:"#Carl>>~/drag<>#20>>Carl/gspeed"},
+	//{name:"chain", key:"chain", com1:"#Carl>>~/drag<>#20>>Carl/gspeed"},
 	//{name:"track", key:"track", com1:">>Carl/text<>#20>>Carl/gspeed"},
 	//drag/add ... we dont want toalways putall drag orbs at once wealso wanto add
-//Jupiter... am thinking babe
-	{name:"o3", key:"o3", com1:"@Jupiter"},//<>#Jupiter>>Jupiter/text"},
-
-	{name:"o4", key:"o4", com1:"@Vespa<>#Vespa>>Vespa/text"},
-	{name:"o5", key:"o5", com1:"@Never"},
+	{name:"focus", key:"focus", com1:"#~>>Carl/script<>#loop>>Carl/script/run"},
+	{name:"army", key:"army", com1:"~/orbs>>Vespa/script<>#loop>>Vespa/script/run"},
+	//........
+	//{name:"track", key:"track", com1:"$/text/cn>>Jupiter/script<>#loop>>Jupiter/script/run"},
 
 //so iw as thinkin Jupiter, maybe you dont want to do text and thats cool babe. xD . Jupiter you are not real btw 
 
-	{name:"m", key:"m", com1:"+>>~/stance<>~/stance>>Carl/text/1"},
-	{name:"z", key:"z", com1:"->>~/stance<>~/stance>>Carl/text/1"},
+	{name:"mm", key:"mm", com1:"+>>~/stance"},
+	{name:"zz", key:"zz", com1:"->>~/stance"},
 
-	{name:"b", key:"b", com1:"->>$/text/cn<>$/text/cn>>Carl/text/2"},
-	{name:"n", key:"n", com1:"+>>$/text/cn<>$/text/cn>>Carl/text/2"},
+	{name:"bv", key:"bv", com1:"->>$/text/cn"},
+	{name:"nm", key:"nm", com1:"+>>$/text/cn"},
 
 //use Jupiter 
-	{name:"s1", key:"s1", com1:'Jupiter/text/1>>~/gspeed'},
-	{name:"s2", key:"s2", com1:'Jupiter/text/2>>~/gspeed'},
-//ok so we want to run a little script to change the speed of the current stance for one beat and then go back to previus speed
-//and yeah we need to at least being able to load a text.... and doing 'A literal line'>>orb/text would not be bad either
-//we could just do something like 'A line','another one','anoter one'>>orb/text . That would be sick. We could create many instructions
-//with a single instruction called with a simple key combination asigned previously. Give it one more thought before implementing this.
-//loadtxt
-//#What about hashtag sinthax for literals>>orb/text  .. i think its more #helegant lol . a left side exclusive thing. Yeah this
-//Also , the sleep command. idle.. sleep[number] . maybe another symbol.. &? <<100  .12.12 .. what if ->>$/script/cn
+	//{name:"s1", key:"s1", com1:'Jupiter/text/1>>~/gspeed'},
+	//{name:"s2", key:"s2", com1:'Jupiter/text/2>>~/gspeed'},
+
 /*
 so we can create a script that listen to the names of new orbs created and when a specific name matches it processes it in a specific
 way . embed circle form to Jin when created, and call run on a script to process Jin
@@ -146,17 +155,13 @@ somehow..
 */
 	{name:"rml", key:"rml", com1:'rmline>>$'},
 	{name:"coml", key:"coml", com1:'$/text/current>>~/comline'},
-	{name:"inl", key:"inl", com1:'$/text/current>>~/inline'},
+	{name:"inl", key:"inl", com1:'$/text/current>>~/inline'}
 
 //!!!!!!!! interesting. Having caps keys allow the possibility to lock the key on repeat when we let go shift. To remove from key_d
 //we just have to use shift to call the key again and let go while still pressing shift. 
-	{name:"G", key:"G", com1:"msgrow"},
-	{name:"H", key:"H", com1:"msshrink"}
+	//{name:"G", key:"G", com1:"msgrow"},
+	//{name:"H", key:"H", com1:"msshrink"}
 
-//ok one more idea here. What about random selection between a specific array of values. beats can be instructed to pick random
-//number with the sinthax ..12-34 , we could say , ..1-3 and use that number to call events
-//i just noticed we cant see random values se wee ..1-23 when we call the value to apear on text so... yeah we also want to be able
-//to see a number changing randomly , we want to see the effect not the instruction... and maybe cn could accept random and B too
 ]
 
 
@@ -244,6 +249,7 @@ SO commands could have a cost depending on their  effect.. but how could be simp
 
 
 */
+//whats up with defauls orbs huh? 
 const OrbSoul = function(){
 	var id = Date.now(); var idn = id.toFixed(0);
 	o = {
@@ -279,7 +285,7 @@ const SoulSeal = function(o){
 //striferight , advance, recede, for focus. if no focus, then these commands dont do anything.
 
 		//
-		o.dismode='grid'; //'wheel'
+		o.dismode='grid'; //'wheel' ... maybe we dont really need a dismode since focus movements will not be asociated to arrows
 		//o.focus=undefined;
 		///o.x=0; o.y=0;
 		o.cursor='text'; 
@@ -692,28 +698,29 @@ const CircleForm = function(){
 //but might be useful to create complementary images to the animations in the form of visual feedback...
 //ok if we do this, then we really dont care about the number after the line.... so we dont need to access beats directly like that
 //we just care about the line text and layer... ok no we want a state to work on so we need to point at a beat and call mirror
-//on it: orb/circle/3/mirror etc
+//on it: orb/circle/3/mirror etc ... no i think its just orb/circle/mirror
+//text is different. orb/text/current/mirror
 //but we can create a fully custom state from here the mirror
 //so for game mechanics this mirror concept is interesting because now orbs can create visual decoys.
 //we can write a function to do mirror on last, current and by number
-const Mirror = function(rsout,sm,layer){
-	var nb = txtToB(rsout);
+const Mirror = function(txtb,sm,layer){
+	var nb = txtToB(txtb);
 	var BL = nb.length;
 	//if(BL==0){}else{
-		for (var i = 0; i <= BL-2; i+=2) { //BL-2
-			var p = nb[i]; var v = nb[i+1]; var nv = v;
-			if(v.length==undefined){}else{
-			//a random notation system.. i like this one
-				var dots = v.substr(0,2);
-				if(dots=='..'){
-					var cded = v.substr(2); var cdeda = cded.split("-");
-					var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
-					var n_rand = getRandom(min,max);
-					nv = n_rand;
-				}
+	for (var i = 0; i <= BL-2; i+=2) { //BL-2
+		var p = nb[i]; var v = nb[i+1]; var nv = v;
+		if(v.length==undefined){}else{
+		//a random notation system.. i like this one
+			var dots = v.substr(0,2);
+			if(dots=='..'){
+				var cded = v.substr(2); var cdeda = cded.split("-");
+				var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
+				var n_rand = getRandom(min,max);
+				nv = n_rand;
 			}
-			sm[p] = nv;
 		}
+		sm[p] = nv;
+	}
 	//}
 	if(layer==0){visual_q0.push(sm);} 
 	if(layer==1){visual_q1.push(sm);}
@@ -810,36 +817,21 @@ const repeatSys = function(){
 
 				case 'left':
 					///var cline='left'+Egspeed+'>>'+stancE
-					//var cline = 'disleft>>'+stancE;
 					var cline='left>>'+stancE;
 					comA(undefined,cline);
-					//Entry = kd.str;
-					//comA('~',kd.str);
-					//displacE('~','left');
 					break
 				case 'right':
-					//var cline = 'disright>>'+stancE;
 					var cline='right>>'+stancE;
 					comA(undefined,cline);
-					//Entry = kd.str;
-					//comA('~',kd.str);
-					//displacE('~','right');
 					break
 				case 'up':
-					//var cline = 'disup>>'+stancE;
 					var cline = 'up>>'+stancE;
 					comA(undefined,cline);
-					//Entry = kd.str;
-					//comA('~',kd.str);
-					//displacE('~','up');
+
 					break
 				case 'down':
-					//var cline = 'disdown>>'+stancE;
 					var cline = 'down>>'+stancE;
 					comA(undefined, cline);
-					//Entry = kd.str;
-					//comA('~',kd.str);
-					//displacE('~','down');
 					break
 //keyD.push({ins:'com', str:key_short.com1});
 			//we can now fast repeat any command... but one a t a time... this is not bad but... arrows could be an exception
@@ -875,12 +867,27 @@ const diff = (a, b) => {
 const diff = (a, b) => {return Math.abs(a - b);}
 */
 
-//a function to calculate theta using 2 points
-const getTheta = function(casterX,casterY,targetX,targetY){
-	var a = Diff(casterY,targetY); var c = getDist(casterX,targetX,casterY,targetY); var sin = a/c;
-	var thet = Math.asin(sin); //returns angle in radians..
-	var theta = parseFloat(thet.toFixed(2));
-	return theta
+//a function to calculate theta in radians using 2 points... however we need to modify this. Because cuadrants
+//if casterx > 0 >>> if castery > 0 , down right , if castery < 0 , up right
+//if casterx < 0 >>> if castery > 0 , down left, if castery < 0 , up left
+//if cuadrant right up, we just use getTheta
+//if cuadrant left up,  PI/2 - theta, and we add PI/2
+//if cuadrant is left down, PI/2 + theta and we add PI
+//if cuadrant is right down, PI/2 - theta and we add PI/2*3
+//ok.. this is fine
+const getAngle = function(caX,caY,taX,taY){ //caster and target
+
+	var a = Diff(caY,taY); var c = getDist(caX,taX,caY,taY); //var c = Math.round(cc);
+	var sin = a/c; var thet = Math.asin(sin); var theta = parseFloat(thet.toFixed(2));
+//now use theta and cuadrants to get the angle
+	if(caX>=0){if(caY>=0){var cuad = 'downr';} if(caY<=0){var cuad = 'upr';}}
+	if(caX<=0){if(caY>=0){var cuad = 'downl';} if(caY<=0){var cuad = 'upl';}}
+
+	if(cuad=='upr'){return theta}
+	if(cuad=='upl'){return (Math.PI/2-theta)+Math.PI/2}
+	if(cuad=='downl'){return theta+Math.PI}
+	if(cuad=='downr'){return (Math.PI/2-theta)+(Math.PI/2)*3}
+	//return theta
 }
 
 /*
@@ -889,22 +896,26 @@ const getTheta = function(casterX,casterY,targetX,targetY){
 //const cos=b/c;
 //const sin=a/c;
 //const theta=Math.asin(sin); //returns angle in radians..
-//90 degrees is 1.57 radians, which is half PI , PI is 180 degrees  , 2 PI is 360 degrees
+//90 degrees is 1.57 radians, which is half PI , PI is 180 degrees  , 2 PI is 360 degrees. Math.PI*2
+//fullcircle = Math.PI*2 . we can get equidistant points around a circle by dividing this value.
 
 //SO focus needs to create some data to perform. When we focus a target, we will now calculate and hold the current angle
 //from caster to target at every heartbeat and we will use this angle to change location with strife commands.
 //to calculate the angle we can use Math.asin  , so we need sin. to calculate sin, we need 2 distances. a and c
-//theta will be the target.
 //castery - targety = a  , use get dist for c . there is your sin. now get theta. getTheta()
+//we need to consider cuadrants. This as is only works for right up cuadrant. We want to get the angle in radians, we dont simply want
+//theta
+	//
+//once we get theta, we can now store this value on caster. caster.angle always uses the focused target as theta, 
+//we now want to be able to relocate caster using this angle
 
 */
 
 //strife. 
 //ok we want to strife around a target which can be an orb or an entity
 //ok so given a radius, an angle and a centerX and a centerY, we can calculate xy of a point in the circle rim
-//NOW we want to be able to learn the angle given all other data.. nevermind we got it
-//var x = radius * Math.cos(angle)+centerX;
-//var y = radius * Math.sin(angle)+centerY;
+//var x = centerRadius * Math.cos(angleTheta)//+centerX;?
+//var y = centerRadius * Math.sin(angleTheta)//+centerY;?
 //but! we need to use the correct values. orb forms coordinates hold values in refference to MSp coordinates.. so we probly want
 //to add these... and yeah now that i see it with fresh rested eyes, i realize this is not what i want now.
 //we want the caster to start moving in a circular pattern around the target but from the current position.
@@ -912,9 +923,54 @@ const getTheta = function(casterX,casterY,targetX,targetY){
 //theta. Every time target or caster moves, we need to getTheta() as long as caster/focus holds the name of a memory or an entity
 //We can then calculate the distance from caster and target and calculate the point by increasing or decreasing the angle
 //
+//We also want to go back and forth from a focused target. we could use polarity.
+//... ihate when this happens. am just burned because this doesnt work and i dont know why. hate it
+//okoko i see now. we are just . no. i dont understand what the single fuck is wrong here, am toasted. am losing my shit, its a fucking day
+//i dont see where the fuck is the problem. i hate everything , this makes no fucking sense. its fucking insane. computers are shit
+//trigonometry is ass. formulas dont work, this is random as shit, i dont see the error, am really fucking pissed , i just want to move on
+//this fucking bug is fucking invisible, it makes no fucking sense. am really fucking pissed
 //
+//OK. am done with this shit. Its not even necesary.
+//4 directions gang. WASD for the win. FUCK RADIANS AND ANGLES
 
-const strifE = function(caster,dir,aspect,speed,target){
+/*	
+//const strifE = function(caster,dir,aspect,speed,target){
+const strifE = function(caster,dir,speed){
+		var cas = Fting(Orbs,'name',caster);
+		var tar = Fting(Orbs,'name',cas.focus);
+		if(dir=='right'){
+			var nang = cas.angle+speed;
+			//cas.angle = cas.angle+speed;
+			//
+			cas.angle = nang;
+			console.log(nang);
+			var radius = getDist(cas.cirS.x,tar.cirS.x,cas.cirS.y,tar.cirS.y);
+			console.log(radius);
+			var nx = radius * Math.cos(cas.angle);//+tar.cirS.x;
+			var ny = radius * Math.sin(cas.angle);//+tar.cirS.y;
+			console.log(nx,ny);
+		}
+		if(dir=='left'){
+			cas.angle = cas.angle-speed;
+			var radius = getDist(cas.cirS.x,tar.cirS.x,cas.cirS.y,tar.cirS.y);
+			var nx = radius * Math.cos(cas.angle);//+tar.cirS.x;
+			var ny = radius * Math.sin(cas.angle);//+tar.cirS.y;
+
+		}
+		//var nnx = nx.toFixed(0); nnnx = parseFloat(nnx);
+		//var nny = ny.toFixed(0); nnny = parseFloat(nny);
+		//console.log(nnnx,nnny);
+		//cas.cirS.x = nnnx;
+		//cas.cirS.y = nnny;
+		cas.cirS.x = nx;
+		cas.cirS.y = ny;
+
+		//const getAngle = function(caX,caY,taX,taY){ //caster and target
+		//var ang = getAngle(cas.cirS.x,cas.cirS.y,tar.cirS.x,tar.cirS.y);
+		//cas.angle = ang;
+
+//////////////
+// strifec>>~  strifE('~','right',undefined,undefined,Focus);
 	if(caster=='~'){
 		if(dir=='right'){
 			//var n = anglE-0.1; var ns = n.toFixed(1); anglE = parseFloat(ns);
@@ -945,9 +1001,13 @@ const strifE = function(caster,dir,aspect,speed,target){
 		}
 
 	}
+///////////
+//
+
 }//strifE
 
 
+*/
 
 const displacE = function(S,dir,aspect,speed){
 		
@@ -1287,7 +1347,7 @@ const drawAll = function(s){
 
 //deprecat
 //GLOBAL OLD
-const all = {};//will contain everything for now
+//const all = {};//will contain everything for now
 //const unl = []; // unique names list.. kinda deprecated. not very smart system
 var gameStart = Date.now();//sunya initialization time
 var heartBeat = undefined;//becomes hold return for heartbeat interval
@@ -1311,7 +1371,7 @@ var SstrBlue=220;
 var SstrAlpha=0.8;
 //all.k_feed=undefined;//a state to print keys feedback
 var waitCK=false; //key mem system flag
-
+var waitCKforget = true;
 //all.orb_track_l = undefined; //for prims wheel updates on new orb arrival
 
 //to start a timer just set timer_base to Date.now()  ? we should be able to call
@@ -1400,7 +1460,7 @@ all.blacksea = function(){
 //var ctxOff = all.blacksea();
 */
 
-all.canvaser = function(id, zIndex){
+const Canvaser = function(id, zIndex){
 	var j_b = document.createElement('canvas');
 	var toma = document.getElementById('everything');
 	toma.appendChild(j_b);
@@ -1424,26 +1484,26 @@ all.canvaser = function(id, zIndex){
 	//j_b.style.width=window.innerWidth+"px";
 	//j_b.style.height=window.innerHeight+"px";
 */
-all.canresize = function(width,height){
-canvas0.style.width=width+"px"; canvas0.style.height=height+"px"; canvas0.width=width; canvas0.height=height;
+//const Canresize = function(width,height){
+//canvas0.style.width=width+"px"; canvas0.style.height=height+"px"; canvas0.width=width; canvas0.height=height;
 //canvas1.style.width=width+"px"; canvas1.style.height=height+"px"; canvas1.width=width; canvas1.height=height;
 //canvas2.style.width=width+"px"; canvas2.style.height=height+"px"; canvas2.width=width; canvas2.height=height;
 //canvas3.style.width=width+"px"; canvas3.style.height=height+"px"; canvas3.width=width; canvas3.height=height;
 //canvas4.style.width=width+"px"; canvas4.style.height=height+"px"; canvas4.width=width; canvas4.height=height;
-}
+//}
 
 //currently working with 5 layers, a canvas is a layer.. but maybe we could
 //do just fine with 3 layers!!!!
 //.... or maybe we could just use one or 2.. if we implement offscreen canvas
 //
 //Its just one canvas we are good .
-all.canvaser('canvas0', 1);
-//all.canvaser('canvas1', 2);
-//all.canvaser('canvas2', 3);
-//all.canvaser('canvas3', 4);
+Canvaser('canvas0', 1);
+//Canvaser('canvas1', 2);
+//Canvaser('canvas2', 3);
+//Canvaser('canvas3', 4);
 //fifth layer for phone commands buttons.. anf keys feedback
 //keyboard users probly dont need this one.. or maybe keys feedback could use this layer actually
-//all.canvaser('canvas4', 5);
+//Canvaser('canvas4', 5);
 
 //____________________________________________________________
 //right now am thinking about not even putting everything on all var
@@ -1507,7 +1567,7 @@ const audio_in = document.getElementById('input_audio');
 
 
 //we need to modify keys feed now..instead of acting on kfeed, we need to modify Kfeed.state
-all.keys_feed = function(){
+const KeysFeed = function(){
 	SstrT++;	//timer count should run before clearing and before logic updates
 	if(waitCK==true){SstrT--;}//wait for command to save on key_s a lock
 	if(SstrT > 20){ //time limit for command feedback 
@@ -1927,15 +1987,15 @@ Patterns
 //NEW STRUCTURE. DEFINITELY FINAL FORM
 //return true on success, undefined if no match nor success
 const getCom = function(C){
-// @orbname
 	if(C[0]=='@'){
+// @orbname
 		var oname = C.substr(1);
 		//look if the name already has been asigned to an orb. what if it has
 		let l1 = staNce.length;
 		while(l1--){if(oname==staNce[l1]){return} }
 		var o = OrbSoul();
 	//for now we are having body aspect by default and text by default.. and others lol
-		o.body=true; o.text=true; o.script=true; o.circle=true;
+		o.body=true; o.text=true; o.script=true; //o.circle=true;
 		//o.rectangle=true; o.image=true; o.oscillator=true;//for now
 		//line
 		//audio
@@ -1948,8 +2008,8 @@ const getCom = function(C){
 		return true
 	}// @
 
-//memory space grow
 	if(C=='msgrow'){
+//msgrow
 		MSpRad++; MSp.state.radius++;
 		//var last = MSp.beats.length-1;
 		//MSp.beats[last].pop(); MSp.beats[last].pop(); MSp.beats[last].push('radius',msRad); 
@@ -1957,20 +2017,20 @@ const getCom = function(C){
 		Eout = 'msgrow';
 		return true
 	}
-//memory space shrink
 	if(C=='msshrink'){
+//msshrink
 		MSpRad--; MSp.state.radius--;
 		//var last = MSp.beats.length-1;
 		//MSp.beats[last].pop(); MSp.beats[last].pop(); MSp.beats[last].push('radius',msRad); 
 		Eout = 'msshrink';
 		return true
 	}
-//create a buffer for an image file on local machine 
-	if(C=='loadimg'){
+	if(C=='loadimage'){
+//loadimg . create a buffer for an image file on local machine 
 		img_in.click(); return true
 	}
-//local audio file buffer into the browser
 	if(C=='loadaudio'){
+//loadaudio . local audio file buffer into the browser
 		audio_in.click(); return true
 	}
 	return
@@ -1981,18 +2041,16 @@ const getCom = function(C){
 const comRiTarget = function(signal,target,St){
 // command>>target
 //annalize target on right side
-	var aspect = undefined; var speed = undefined; //let aspect, speed
+	var speed = undefined; //let aspect, speed
 	if(target[0]=='~'){var ent = true;}
-//so we may or may not have a '/' here.
-//if no aspect is specified, we move the form specified in o.cursor
+//so we may or may not have a '/' here. if no aspect is specified, we move the form specified in o.cursor on displaces
 	var CCS = target.split('/');  //
-	if(CCS.length==2){
-		var o = Fting(Orbs,'name',CCS[0]); var aspect = CCS[1];
-	} //is a specific aspect target on the orb
+	if(target[0]=='$'){var o = Fting(Orbs,'name',St);}else{var o = Fting(Orbs,'name',CCS[0]);} 
+	var aspect = CCS[1]; //aspect is simply undefined if there isnt
+//ent, o, signal, target
 
-	if(CCS.length==1){
-		if(target[0]=='$'){var o = Fting(Orbs,'name',St);}else{var o = Fting(Orbs,'name',target);}
-	} //its just an orb name as target
+	if(signal=='$'){return 'getv'}
+	if(signal=='~'){return 'getv'}
 
 //displacements
 	//get the displacement command by reading just the first 2 letters.. ok it works!!
@@ -2017,13 +2075,13 @@ const comRiTarget = function(signal,target,St){
 			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
 			displacE(o.name,'left',aspect,speed);
 //o drag is working but am still not sure if we want to really implement orb drag
-	/*
 			if(o.drag.length>0){
 				for (var i3 = 0; i3 < o.drag.length; i3++) {
-					displacE(o.drag[i3],'left',aspect,speed);
+					var to = o.drag[i3].split('/');
+					displacE(to[0],'left',to[1],speed);
+					//displacE(o.drag[i3],'left',aspect,speed);
 				}
 			}
-	*/
 			return
 
 		}
@@ -2046,7 +2104,14 @@ const comRiTarget = function(signal,target,St){
 // right>>orb  ,/aspect
 		if(o){
 			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
-			displacE(o.name,'right',aspect,speed); return
+			displacE(o.name,'right',aspect,speed);
+			if(o.drag.length>0){
+				for (var i3 = 0; i3 < o.drag.length; i3++) {
+					var to = o.drag[i3].split('/');
+					displacE(to[0],'right',to[1],speed);
+				}
+			}
+			return
 		}
 	}
 
@@ -2067,7 +2132,14 @@ const comRiTarget = function(signal,target,St){
 // up>>orb , /aspect
 		if(o){
 			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
-			displacE(o.name,'up',aspect,speed); return
+			displacE(o.name,'up',aspect,speed);
+			if(o.drag.length>0){
+				for (var i3 = 0; i3 < o.drag.length; i3++) {
+					var to = o.drag[i3].split('/');
+					displacE(to[0],'up',to[1],speed);
+				}
+			}
+			return
 		}
 	}
 
@@ -2089,26 +2161,41 @@ const comRiTarget = function(signal,target,St){
 // down>>orb , /aspect
 		if(o){
 			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
-			displacE(o.name,'down',aspect,speed); return
+			displacE(o.name,'down',aspect,speed);
+			if(o.drag.length>0){
+				for (var i3 = 0; i3 < o.drag.length; i3++) {
+					var to = o.drag[i3].split('/');
+					displacE(to[0],'down',to[1],speed);
+				}
+			}
+			return
 		}
 	}
 
+
+/*
+//fuck this shit
 //incomplete!!!!!!!!!!!!!!!!!!!!!!!!!
 //strife clockwise and counter clockwise
 //we want to be able to focus on a target circle form for now ... strife comands are incomplete!!!!!!!!!!
 	if(signal=='strifec'){
 // strifec>>~
 		if(ent){
-			strifE('~','right',undefined,undefined,Focus);
+			//strifE('~','right',undefined,undefined,Focus);
 		}
-		//if(o) ..
+		if(o){
+//why doesnt displacE also just use o instead of o.name...? !!!!!
+			strifE(o.name,'right',0.01);
+		}
 	}
 	if(signal=='strifecc'){
 // strifecc>>~
 		if(ent){
 			//strifE('~','left',aspect,speed);
 		}
-		//if(o) ..
+		if(o){
+			strifE(o.name,'left',0.01);
+		}
 	}
 
 	if(signal=='advance'){
@@ -2126,7 +2213,7 @@ const comRiTarget = function(signal,target,St){
 		}
 		//if(o) ..
 	}
-
+*/
 
 //a commnad to delete a target orb.. for now
 // delete>>orb
@@ -2194,35 +2281,79 @@ const getLeValue = function(LS,St){
 //LS might be : ~/cont  , orb/cont , orb/cont/key , orb/cont/key/sub . 
 	var SS = LS.split('/');
 	//check origin
+	//var o
 	if(SS[0]=='~'){var ent = true;}
+	//if(SS[0]=='%'){var o = Fting(Orbs,'name',stancE);
 	if(SS[0]=='$'){var o = Fting(Orbs,'name',St);}else{var o = Fting(Orbs,'name',SS[0]);}
+	//if(o==undefined){var o = Fting(Orbs,'name',SS[0]);}
 
 	if(SS.length==1){
+//?
+//help commands... we could have them... or just have a really good manual somewhere as a text file
+		//
 		if(ent){
 // ~
-//return access keys to entity structure
+//return access keys to entity structure... actually, we could just request all data in real time , same with orbs. 
 			var res = [
-				'~/name', '~/orbs', '~/stance', '~/dsignat', '~/in', '~/out', '~/gspeed', '~/wspeed',
-				'~/x', '~/y', '~/angle', '~/dismode'
+				//'~/name', '~/orbs', '~/stance', '~/dsignat', '~/in', '~/out', '~/gspeed', '~/wspeed',
+				//'~/x', '~/y', '~/angle', '~/mspx','~/mspy','~/mspsize','~/mspradius', '~/limage',
+				//'~/dismode'
+				'orbs: '+Orbs.length, 'stance: '+stancE, 
+				'name: '+Ename
 			]
 			return res
 		}
 
 		if(o){
 // $
-//return access keys for orb control $elected or $tanciated
-			var res = [
-					o.name+'/name', o.name+'/gspeed', o.name+'/wspeed', o.name+'/in', 
-					o.name+'/out', o.name+'/x', o.name+'/y', o.name+'/angle'
-					//o.name+'/elis'
-				];
-			if(o.text){res.push(o.name+'/text');}
-			if(o.script){res.push(o.name+'/script');}
-			if(o.circle){res.push(o.name+'/circle');}
-			if(o.rectangle){res.push(o.name+'/rectangle');}
-			if(o.oscillator){res.push(o.name+'/osc');}
-			if(o.image){res.push(o.name+'/image');}
+//return access keys for orb control $elected or $tanciated... yes actually we could just request all data in real time , we can even
+//highlight active line... when we request orb/cont ... but 'orb' on its own could just return a special monitoring data array with
+//all orb properties and values. if we request at every heartbeat we could see changes in real time. Yes.
+			var res = [];
 
+			if(o.text){
+				res.push(
+					'textX: '+o.txtX, 'textY: '+o.txtY, 'selected line: '+o.txtB
+					//o.name+'/text'
+				);
+			}
+			if(o.script){
+				res.push(
+					'scriptrun: '+o.scR
+					//o.name+'/script'
+				);
+			}
+			if(o.circle){
+				res.push(
+					'circleX: '+o.cirS.x, 'circleY: '+o.cirS.y, 'circleRadius: '+o.cirS.radius
+					//o.name+'/circle'
+				);
+			}
+			if(o.rectangle){
+				res.push(
+					o.name+'/rectangle'
+				);
+			}
+			if(o.oscillator){
+				res.push(
+					o.name+'/osc'
+				);
+			}
+			if(o.image){
+				res.push(
+					o.name+'/image'
+				);
+			}
+
+			res.push(
+				'gspeed: '+o.gspeed, 'cursor: '+o.cursor, 
+				//'angle: '+o.angle, 'focus: '+o.focus,
+				'name: '+o.name
+				//o.name+'/name', o.name+'/gspeed', o.name+'/wspeed', o.name+'/in', 
+				//o.name+'/out'
+				//o.name+'/x', o.name+'/y', o.name+'/angle'
+				//o.name+'/elis' , what about focus , 
+			);
 			return res
 
 		}
@@ -2434,9 +2565,7 @@ const getLeValue = function(LS,St){
 					return btt;
 				case 'text':
 //orb/text
-		//so, we can place multilines on a data container by passing in an array with lines on op
-		//text key on its own does not react to polarity. it returns all text lines in the orb.
-		//this command not only needs to clear previous data, but also return all lines
+
 					var dla = [];
 					var l = o.txtLi.length; 
 					while(l--){
@@ -2494,9 +2623,9 @@ const getLeValue = function(LS,St){
 					if(ckey=='current'){
 // orb/text/current
 						if(o.txtLi.length==0){return 'end'}//nothing here
-						var currentl = o.txtLi[o.txtB-1].txt;
+						var currentl = o.txtLi[o.txtB-1];
 						if(currentl==undefined){return 'end'}
-						return [currentl];
+						return [currentl.txt];
 					}
 
 					if(ckey=='cn'){
@@ -2599,15 +2728,15 @@ const getLeValue = function(LS,St){
 			if(cont=='rectangle'){
 				if(o.rectangle){
 					if(ckey=='run'){
-//orb/circle/run
+//orb/rectangle/run
 						return [o.rectR]	
 					}
 					if(ckey=='current'){
-//orb/circle/current
+//orb/rectangle/current
 						//return
 					}
 					if(ckey=='cn'){
-
+//orb/rectangle/cn
 					}
 				}
 			}
@@ -2618,6 +2747,9 @@ const getLeValue = function(LS,St){
 //orb/osc/run
 						return [o.oscR]	
 					}
+//.. osc and audio works differently. there is no current beat selected because all tone lines run at once and are monitored by hearall
+//however we want to be able to access each tone data individually and be able to modify and see whats going on using this sinthax
+//so orb/osc could simply return all tone lines..
 					if(ckey=='current'){
 
 					}
@@ -2831,8 +2963,8 @@ const putRiValue = function(op,RS,St,pol){
 					//read. write. A list of beats to all forms by default
 		//.. would be convenient to designate all the most common colours on default
 					var nba = [];
-					for (var i = 0; i <= RSout.length-1; i++) {
-						var rsob = txtToB(RSout[i]);
+					for (var i = 0; i <= op.length-1; i++) {
+						var rsob = txtToB(op[i]);
 						nba.push(rsob);
 					}
 					dsignat = nba;
@@ -2885,7 +3017,7 @@ const putRiValue = function(op,RS,St,pol){
 						return //[Egspeed]
 					}
 				//case 'follow':
-// ~/fowwow
+// ~/follow
 					//follow should be similar to stance. we just need to select an orb name or '~' in order to follow it
 					//we can probably toggle this one
 				//	break
@@ -2915,7 +3047,10 @@ const putRiValue = function(op,RS,St,pol){
 		//These commands rule. 
 				case 'inline':
 // ~/inline
-					chat_in.value = op[0]//we want RSout here
+					// and now we should be able to get a whole text on chat_in.value, eachline separated by ' ' and
+					// a ':' at the beggining? 
+					var alldata = op.join(' ');
+					chat_in.value = alldata;//op[0]//we want RSout here
 					chat_in.style.display="inLine";
 					chatOn = true; 
 					nLine = true; //inline prompt
@@ -2999,6 +3134,14 @@ const putRiValue = function(op,RS,St,pol){
 //this command not only needs to clear previous data, but also return all lines
 //op is the data we want to have now so we want to clear old data here and place op instead
 //we want RSout op to overide all data and replace it
+					//
+		//so, we can place multilines on a data container by passing in an array with lines on op
+		//text key on its own does not react to polarity. it returns all text lines in the orb.
+		//this command not only needs to clear previous data, but also return all lines.
+		//!! we also want to make beats go on and not just freeze when we run this instruction on every beat.
+		//!! also we want to highlight so maybe we could so something here..
+//so we need the beat from the orb or entity that produced op.. ? i think not anymore. we can probly highlight using mirror
+// orb/circle>>orb2/text<>#r,220,b,220,g,220>>orb/circle/current
 					o.txtLi = [];
 					var l = op.length; 
 		//so LSout is always espected to be a list of lines we can use to create a text.. format lines and push them into data
@@ -3064,7 +3207,7 @@ const putRiValue = function(op,RS,St,pol){
 	}
 
 	if(SS.length==3){
-//SS[1] is cont, SS[2] is contk
+//SS[1] is cont, SS[2] is ckey
 		if(ent){
 
 		}
@@ -3091,17 +3234,33 @@ const putRiValue = function(op,RS,St,pol){
 					}
 					if(ckey=='current'){
 //orb/text/current
-							//we want to put op[0] on the currently selected beat.. but what if beat has not line
-						if(o.txtLi[o.txtB-1]==undefined){
-							//var dli = DataLine(); dli.beats=dsignat; dli.txt=op[0];
-							//dli.x=o.x; dli.y=o.y;
-							//o.txtLi.push(dli);
-							//dESpacer(o);
-				//fo now lets return end.. it doesnt feel right to create a line on current when there isnt one..
-							return 'end'
+						if(o.txtB>o.txtLi.length){
+							//get the difference... i have a function to get diff now.. maybe use it here!!!!!!!!
+							var subs = Diff(o.txtB,o.txtLi.length);
+							//add empty DataLines to make up for the difference 
+							for (var i2 = 0; i2 < subs; i2++) {
+								var dli = DataLine();
+								dli.beats=dsignat; 
+								dli.txt='';
+								dli.x=o.txtX; dli.y=o.txtY;
+								//o.txtLi.splice(rln-1,0,dli);
+								o.txtLi.push(dli);
+							}
+							var ldli = o.txtLi[o.txtB-1];
+							ldli.txt = op[0];
+						}else{
+
+							var dli = DataLine();
+							dli.beats=dsignat; 
+							dli.txt=op[0];
+							dli.x=o.txtX; dli.y=o.txtY;
+							//this operation adds a line simply on selected place
+							//o.txtLi.splice(rln-1,0,dli);
+							//we could also replace the line from here like this:
+							o.txtLi.splice(o.txtB-1,1,dli);
 						}
-						o.txtLi[o.txtB-1].txt = op[0];
-						//o.o=[op[0]];
+
+						dESpacer(o);
 						return
 					}
 
@@ -3126,10 +3285,11 @@ const putRiValue = function(op,RS,St,pol){
 					let nan = isNaN(rln);
 					if(nan){return 'end'}
 
-					if(rln>=o.txtLi.length){
+					if(rln>o.txtLi.length){
 						//get the difference... i have a function to get diff now.. maybe use it here!!!!!!!!
-						var subs = rln-o.txtLi.length;
-						//add DataLines difference 
+						//var subs = rln-o.txtLi.length;
+						var subs = Diff(rln,o.txtLi.length);
+						//add empty DataLines to make up for the difference 
 						for (var i2 = 0; i2 < subs; i2++) {
 							var dli = DataLine();
 							dli.beats=dsignat; 
@@ -3177,12 +3337,15 @@ const putRiValue = function(op,RS,St,pol){
 						return
 					}
 
-					if(ckey=='current'){
+					//if(ckey=='current'){
 //orb/script/current
-		//this is a bit weird to have in here...
+		//this is a bit weird to have in here because current reffers to the currently executing instruction on the script
+		//.. yeah probably we want to read and annalyze the current running instruction but change it ...? no this doesnt feel
+		//right
 						//o.scC[o.scB-1] = op[0];
-						return
-					}
+						//return
+					//}
+
 					if(ckey=='cn'){
 //orb/script/cn
 			//we probly want cn to manage toggle ?
@@ -3192,13 +3355,13 @@ const putRiValue = function(op,RS,St,pol){
 						return
 					}
 //orb/script/number
+		//this command would put a new value on the target script instruction... feels kinda aggressive but might be usable
 					//we need to turn ckey into a number
 					var rln = parseFloat(ckey);
 					let nan = isNaN(rln);
-					if(nan){return}
-					if(rln>o.scC.length-1){return 'end'}
+					if(nan){return 'end'}
+					if(rln>=o.scC.length){return 'end'}
 					var rl = o.scC[rln-1];
-
 					if(rl){
 						o.scC[rln-1] = op[0];
 						return
@@ -3226,8 +3389,8 @@ const putRiValue = function(op,RS,St,pol){
 										'y',0,//o.y
 										'w',Img.img.width,'h',Img.img.height,
 	//!!!!!!!!!!!!!!! am using circle coordinates now here but ... i just have this realization... we probably need to use rect.
-										'px',o.cirS.x,//o.x
-										'py',o.cirS.y,//o.y
+										'px',MSpX,//o.cirS.x,//o.x
+										'py',MSpY,//o.cirS.y,//o.y
 										'pw',Img.img.width,'ph',Img.img.height
 									]
 								);
@@ -3253,13 +3416,15 @@ const putRiValue = function(op,RS,St,pol){
 					}
 					if(ckey=='current'){
 //orb/image/current
-			//current needs to return the current beat as text
-
+			//current needs to return the current image beat as text
+						var nb = txtToB(op[0]);
+						o.imgF[o.imgB-1] = nb;
+						return //CSout
 					}
 					if(ckey=='cn'){
 //orb/image/cn
-			//imgB
-
+						o.imgB = op[0];
+						return
 					}
 				}
 			}
@@ -3296,7 +3461,6 @@ const putRiValue = function(op,RS,St,pol){
 						o.cirB = op[0];
 						return
 					}
-		//a mirror for circle forms..... not so sure about this now
 					if(ckey=='mirror'){
 // ?>>orb/circle/mirror
 //mirror pretty much requires op because... what could mirror do on the left side RS? ... one sec $/circle/mirror>> ... maybe an instruction
@@ -3305,9 +3469,11 @@ const putRiValue = function(op,RS,St,pol){
 							is:'circle', radius:o.cirS.radius,
 							x:o.cirS.x,//+window.innerWidth/2,
 							y:o.cirS.y,//+window.innerHeight/2,
+							inside:o.cirS.inside,
 							r:o.cirS.r, g:o.cirS.g, b:o.cirS.b, a:o.cirS.a 
 						}
 						Mirror(op[0],mirror,o.cirL);
+						console.log(op[0],mirror,o.cirL);
 						o.o=op[0];
 						return
 
@@ -3334,11 +3500,16 @@ const putRiValue = function(op,RS,St,pol){
 					}
 					if(ckey=='current'){
 //orb/rectangle/current
-
+					//in here we need to transform text beat format into beat array
+						var nb = txtToB(op[0]);
+						o.rectF[o.rectB-1] = nb;
+						return //CSout
 					}
 					if(ckey=='cn'){
 //orb/rectangle/cn
-
+					//we want to make sure op[0] points to a valid value here....!!!!
+						o.rectB = op[0];
+						return
 					}
 				}
 			}
@@ -3350,7 +3521,7 @@ const putRiValue = function(op,RS,St,pol){
 							o.oscR=op[0];
 							return //[o.oscR]	
 						}else{
-							var run = ['off','once'];//,'loop','repeat']; 
+							var run = ['off','once','loop'];//,'loop','repeat']; 
 							var n = run.indexOf(o.oscR);
 							var res = n+pol;
 							if(res>=run.length){res--;} 
@@ -3359,9 +3530,12 @@ const putRiValue = function(op,RS,St,pol){
 							return //[run[res]]
 						}
 					}
+//osc are different. 
+					//...
 					if(ckey=='current'){
 
 					}
+					//...
 					if(ckey=='cn'){
 
 					}
@@ -3382,7 +3556,6 @@ const putRiValue = function(op,RS,St,pol){
 			var cont = SS[1]; var ckey = SS[2]; var sub = SS[3];
 			// o , pol, op , cont, ckey, sub . we are retrieving here CS[1] is cont , CS[2] is ckey
 
-// ?>>orb/con/conk/beats  , ?>>orb/con/conk/mirror
 			if(cont=='text'){
 				if(o.txtLi){
 					if(o.txtLi.length==0){return 'end'}//nothing here
@@ -3390,6 +3563,8 @@ const putRiValue = function(op,RS,St,pol){
 					if(ckey=='last'){
 
 						var lastl = o.txtLi[o.txtLi.length-1];
+					//this one also untested
+						if(lastl==undefined){return 'end'}
 
 						if(sub=='beats'){
 // ?>>orb/text/last/beats
@@ -3439,6 +3614,9 @@ const putRiValue = function(op,RS,St,pol){
 
 					if(ckey=='current'){
 						var currl = o.txtLi[o.txtB-1];
+					//i think this makes sense but maybe its breaking something.. not sure. need more testing
+						if(currl==undefined){return 'end'}
+
 						if(sub=='beats'){
 // ?>>orb/text/current/beats 
 							var nba = [];
@@ -3462,11 +3640,14 @@ const putRiValue = function(op,RS,St,pol){
 // ?>>orb/text/current/mirror
 							var mirror = {
 								is:'txt',
+					//when we select current line with no text it throws error
 								txt:currl.txt,
 								font:'18px Courier New', //do we need font here.. ?
 								align:'left', //by default could be left
-								x:o.txtX,//+window.innerWidth/2,
-								y:o.txtY,//+window.innerHeight/2,
+								//x:o.txtX,//+window.innerWidth/2,
+								//y:o.txtY,//+window.innerHeight/2,
+								x:currl.state.x,//+window.innerWidth/2,
+								y:currl.state.y,//+window.innerHeight/2,
 								r:currl.state.r, g:currl.state.g,
 								b:currl.state.b, a:currl.state.a 
 							}
@@ -3550,13 +3731,31 @@ const putRiValue = function(op,RS,St,pol){
 }//putRiValue
 
 
+//string beat text to array beat. neat . ok but we need to consider the random asignment sinthax '..12-23'
+//r,123,g,225,b..
+const txtToB = function(txt){
+	var beat = []; 
+	var ba = txt.split(','); var len = ba.length-1;
+	for (var i = 0; i <= len; i++) {
+		var nv = parseFloat(ba[i]); let numba = isNaN(nv);
+		if(numba==false){
+			beat.push(nv)
+		}else{
+			//.. here we could have '..'... but this is good okoko one sec
+			beat.push(ba[i]);
+		}
+	}
+	return beat
+}
+
+
 //COMMAND ANNALIZER PEAK
 const comA = function(S,C){ 
 //man you gotta stop changing this . you are fucking insane stop changing it. you will never finish the godamn thing.
 //its ok we are just refactoring
 	
 //we have '>>' , '==' , left side, right side, commands, '#' a function for each situation.
-// '#' only works when there is '>>' and left side is not a command
+// '#' only works when there is '>>' and left side is not a command . and we can do ':' now .
 //if >> , get value on left side, put it on right side or, use command to affect right side
 //if ==, get value on left side, get value on right side, compare
 //get command, annalize target
@@ -3569,11 +3768,28 @@ const comA = function(S,C){
 //instruction after '<>' if any, wont be executed
 	var MS = C.split('>>');
 	if(MS.length>1){
+
+//If we use ':' at left side of '>>', we can make multiple lines to go into a container. space is used to split into lines so
+//text must be properly formated to be picked by the system. returns and array with multilines on left side
+		if(MS[0][0]==':'){
+// :multiliner>>RS
+			var RSml = MS.pop(); var LSo = MS.join('>>');
+			var multiliner = LSo.substr(1); var mls = multiliner.split(' '); var LSout = [];
+			var ii = mls.length;
+			while(ii--){var ll = mls.pop(); LSout.push(ll);}
+			//var LSout = multiliner.split(' ');
+			//MS[1]=RSml;
+			var res = putRiValue(LSout,RSml,S,0);
+			return res //return end if operation wasnt succesful
+
+		}
+
 //check for '#'. this will return LS and RS , left side and right side. 
 		//
 //PEAK '#'
 //hashtag should allow everything in between '#' and the last '>>' . Literals require at least 1 '>>' . A command line starting
 //with '#' can be used to change any container or key value after '>>'. it produces LSout. working perfectly
+//what if we say '#sfverbdbdsrs>>#sfbdrsves#sdvdbdvfsvfsvrsi'.. i think this also works.
 		if(MS[0][0]=='#'){
 			if(MS.length==2){ 
 	// there is 1 '>>'
@@ -3607,11 +3823,17 @@ const comA = function(S,C){
 		if(MS[0][0]=='-'){var pol = -1;}
 
 //check if its a signal... well we could simply ask if there is '/' on MS[0].. signals dont have '/' on left side
-//...BUT it might be a toggle +>>? which is also length 1... but returning end here is preventing polarity to run on putRiValue!!!!!!
+//.. but its also evaluating  $>>orb/text and ~>>orb/text and returning end before we can reach getLeValue even...
+//thats why its ignoring $>>orb/text
 		if(pol==0){
 			var MSS = MS[0].split('/');
 			if(MSS.length==1){
-				return comRiTarget(MS[0],MS[1],S);
+				//return comRiTarget(MS[0],MS[1],S);
+				var res = comRiTarget(MS[0],MS[1],S);
+				//if end, return end, if done , return, if getv , continue
+				if(res=='end'){return 'end'}
+				if(res==undefined){return}
+				if(res=='getv'){}
 			}
 
 //if we get here, its a retrieve not a signal .We divide using '/' on getLeValue. it should return LSout .
@@ -3624,6 +3846,7 @@ const comA = function(S,C){
 
 	}//'>>'
 
+//conditions
 	var MS = C.split('=='); //... ok its also working
 	if(MS.length==2){
 //check for '#'. 
@@ -3634,15 +3857,7 @@ const comA = function(S,C){
 				var lit = MS[0].substr(1); var litn = parseFloat(lit); var nan = isNaN(litn);
 				if(nan){LSout.push(lit);}else{LSout.push(litn);}
 			}
-			//reff
-			//if(MS.length>2){
-	//we want to make LSout into everything until the last '>>'.. and RS must be the last '>>'
-			//	var RSh = MS.pop();
-			//	var LSo = MS.join('>>');
-			//	var rmhash = LSo.substr(1);
-			//	var LSout = [rmhash];
-			//	MS[1]=RSh;
-			//}
+
 		}else{
 			var LSout = getLeValue(MS[0],S);
 		}
@@ -3650,6 +3865,7 @@ const comA = function(S,C){
 		var RSout = getLeValue(MS[1],S);
 //check for left side as retrieve value.  check right side also as retrieve value. compare
 		//problem here is... arrays cant be compared... but maybe we can turn these outs into strings and just compare them
+		//.. and yes we can. no problem
 		var lsout = LSout.toString();	var rsout = RSout.toString();
 		if(lsout==rsout){return}else{return 'end'}
 		
@@ -3692,118 +3908,6 @@ const comA = function(S,C){
 
 
 }//command annalizer PEAK
-
-
-
-
-//string beat text to array beat. neat . ok but we need to consider the random asignment sinthax '..12-23'
-//r,123,g,225,b..
-const txtToB = function(txt){
-	var beat = []; 
-	var ba = txt.split(',');
-	var len = ba.length-1;
-	for (var i = 0; i <= len; i++) {
-		var nv = parseFloat(ba[i]); let numba = isNaN(nv);
-		if(numba==false){
-			beat.push(nv)
-		}else{
-			//.. here we could have '..'... but this is good okoko one sec
-			beat.push(ba[i]);
-		}
-	}
-	return beat
-}
-
-
-
-//HTML IMG FILE UPLOAD EVENT
-//input_img html element can deal with images to load from client side. img_in
-//input_audio html element can deal with sound to load from client side. audio_in
-//.. i forgot what to do when i want to request files from server lol
-//
-//listen for change events on img_in and audio_in
-//When user enters the load command, simulate a click on the input and let user  select the file.
-//This function should let user know the file is loading. Once finished, it should store the file buffer somewhere accesible.
-//
-//we only want to change where the buffers are stored in. We want fast access for memories. For now, we l just make all files
-//available for any memory.!!!!!!!!!!!!!!!!!!
-const handleImgFile = function(){
-	var selectedFile = img_in.files[0];//access file 0 from selected files array
-	if(img_in.files[0]==undefined){console.log("No File Uploaded"); return}
-	var reader  = new FileReader();
-	reader.onload = function(ev)  {
-		//all.stream_a.push('Image file successfully loaded.');
-		//all.screen_log();
-		//var orb = Fting(all.up_objs, "u_in_contrl", true);
-		//stance.img_access = all.img_adder(ev.target.result) //result is the property
-		var img = new Image(); img.src=ev.target.result;
-		//stance.img_access = img;
-/*
-//UPDATE THIS FOR PEAK PERFORMANCE
-*/
-		var imageobj = {
-			//file:selectedFile,
-			name: selectedFile.name, size: selectedFile.size, type: selectedFile.type,
-			img:img
-		}
-		LImg.push(imageobj);
-		//let orb have a parameter to store its currently loaded img file data
-		//stance.current_img_file = {
-		//	name: selectedFile.name,
-		//	size: selectedFile.size,
-		//	type: selectedFile.type
-		//}
-		
-	}
-	reader.readAsDataURL(selectedFile);// you have to declare the file loading
-
-	//
-	//all.stream_a.push(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);
-	//all.screen_log();
-	//console.log(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);//name, size, type of the file
-	//type string is empty is file cant be determined
-}
-//EVENT
-img_in.addEventListener("change", handleImgFile);
-
-//AUDIO
-//return a buffer into controled orb.audio_access using a file loaded by user
-//it needs to be located on a BufferSource
-const handleAudioFile = function(){
-	var selectedFile = audio_in.files[0];//access file 0 from selected files array
-	if(audio_in.files[0]==undefined){
-		//all.stream_a.push("No File Uploaded"); all.screen_log(); return
-	}
-	var reader = new FileReader();
-	reader.onload = function(ev){
-		//all.stream_a.push('Audio file successfully loaded.');
-		//all.screen_log();
-		//var orb = Fting(all.up_objs, "u_in_contrl", true);
-		all.au.decodeAudioData(ev.target.result).then(function(buffer) {
-	//then pattern i havent studied that, good 4 promises i think. but i can call
-	//this later
-			//buffer should be stored on the orb, createBufferSource should be
-			//called when audio is going to be played
-			//
-			//audio_access could be an array of many files
-			//stance.audio_access = buffer;
-			var audiobj = {
-				name: selectedFile.name, size: selectedFile.size, type: selectedFile.type,
-				buffer:buffer
-			}
-			LAudio.push(audiobj);
-
-    			//var soundSource = all.au.createBufferSource();
-			//soundSource.buffer = buffer;
-			//orb.audio_access= soundSource;
-		});
-	}
-	reader.readAsArrayBuffer(audio_in.files[0]);	// you have to declare the file loading
-	//all.stream_a.push(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);
-	//all.screen_log();
-}
-//EVENT
-audio_in.addEventListener("change", handleAudioFile);
 
 
 
@@ -3998,6 +4102,101 @@ const Fting = function(a,p,v){var i = 0; var len = a.length; while(len--){if(a[i
 
 
 
+//HTML IMG FILE UPLOAD EVENT
+//input_img html element can deal with images to load from client side. img_in
+//input_audio html element can deal with sound to load from client side. audio_in
+//.. i forgot what to do when i want to request files from server lol
+//
+//listen for change events on img_in and audio_in
+//When user enters the load command, simulate a click on the input and let user  select the file.
+//This function should let user know the file is loading. Once finished, it should store the file buffer somewhere accesible.
+//
+//we only want to change where the buffers are stored in. We want fast access for memories. For now, we l just make all files
+//available for any memory.!!!!!!!!!!!!!!!!!!
+const handleImgFile = function(){
+	var selectedFile = img_in.files[0];//access file 0 from selected files array
+	if(img_in.files[0]==undefined){console.log("No File Uploaded"); return}
+	var reader  = new FileReader();
+	reader.onload = function(ev)  {
+		//all.stream_a.push('Image file successfully loaded.');
+		//all.screen_log();
+		//var orb = Fting(all.up_objs, "u_in_contrl", true);
+		//stance.img_access = all.img_adder(ev.target.result) //result is the property
+		var img = new Image(); img.src=ev.target.result;
+		//stance.img_access = img;
+/*
+//UPDATE THIS FOR PEAK PERFORMANCE
+*/
+		var imageobj = {
+			//file:selectedFile,
+			name: selectedFile.name, size: selectedFile.size, type: selectedFile.type,
+			img:img
+		}
+		LImg.push(imageobj);
+		//let orb have a parameter to store its currently loaded img file data
+		//stance.current_img_file = {
+		//	name: selectedFile.name,
+		//	size: selectedFile.size,
+		//	type: selectedFile.type
+		//}
+		
+	}
+	reader.readAsDataURL(selectedFile);// you have to declare the file loading
+
+	//
+	//all.stream_a.push(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);
+	//all.screen_log();
+	//console.log(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);//name, size, type of the file
+	//type string is empty is file cant be determined
+}
+//EVENT
+img_in.addEventListener("change", handleImgFile);
+
+//AUDIO
+//return a buffer into controled orb.audio_access using a file loaded by user
+//it needs to be located on a BufferSource
+const handleAudioFile = function(){
+	var selectedFile = audio_in.files[0];//access file 0 from selected files array
+	if(audio_in.files[0]==undefined){
+		//all.stream_a.push("No File Uploaded"); all.screen_log(); return
+	}
+	var reader = new FileReader();
+	reader.onload = function(ev){
+		//all.stream_a.push('Audio file successfully loaded.');
+		//all.screen_log();
+		//var orb = Fting(all.up_objs, "u_in_contrl", true);
+		all.au.decodeAudioData(ev.target.result).then(function(buffer) {
+	//then pattern i havent studied that, good 4 promises i think. but i can call
+	//this later
+			//buffer should be stored on the orb, createBufferSource should be
+			//called when audio is going to be played
+			//
+			//audio_access could be an array of many files
+			//stance.audio_access = buffer;
+			var audiobj = {
+				name: selectedFile.name, size: selectedFile.size, type: selectedFile.type,
+				buffer:buffer
+			}
+			LAudio.push(audiobj);
+
+    			//var soundSource = all.au.createBufferSource();
+			//soundSource.buffer = buffer;
+			//orb.audio_access= soundSource;
+		});
+	}
+	reader.readAsArrayBuffer(audio_in.files[0]);	// you have to declare the file loading
+	//all.stream_a.push(selectedFile.name+"  "+selectedFile.size+"  "+selectedFile.type);
+	//all.screen_log();
+}
+//EVENT
+audio_in.addEventListener("change", handleAudioFile);
+
+
+
+
+
+
+//needs massive update..
 /////////PHONE users
 //bro study this for phone
 
@@ -4059,7 +4258,7 @@ const Fting = function(a,p,v){var i = 0; var len = a.length; while(len--){if(a[i
 //a function to create buttons . needs colors as well
 //parameters;ctx, name, command, com1 for long press touch,
 //X, Y, text boolean, persist/desist
-all.create_bt = function(ctx, name, com1, com2, X, Y, text, persist){
+const CreateBt = function(ctx, name, com1, com2, X, Y, text, persist){
 	var bt_obj = {};
 
 	var bt = all.circle_s_new(name+'_bt'); 
@@ -4346,7 +4545,7 @@ const NS = function(){//normalize system
 }		
 
 
-	
+//needs a lot of updates and rethinking... 	
 //TOUCH updates
 //tips:
 //console.log('Touches', e.touches.length)//all touches
@@ -4365,6 +4564,7 @@ const NS = function(){//normalize system
 //:)
 //.. maybe we dont even need seq... nah its good
 //unfinished....
+
 all.c_tch = function(){
 
 	var seq =[]; //
@@ -4570,7 +4770,7 @@ all.c_tch = function(){
 				//(name, command, com1, X,Y,text boolean, persist)
 							if(b.X==undefined){continue}
 							//b.name not b.key, ctx2 previously
-							var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+							var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 							b.X, b.Y, true, b.persist);
 							bts.bt.reff=b;
 							////add coordinates and text boolean
@@ -4599,7 +4799,7 @@ all.c_tch = function(){
 					//(name, com, X,Y,text boolean)
 								if(b.X==undefined){continue}
 								//b.name not b.key
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true,b.persist);
 								bts.bt.reff=b;
 								////add coordinates and text boolean
@@ -4624,7 +4824,7 @@ all.c_tch = function(){
 					//(name, com, X,Y,text boolean)
 								if(b.X==undefined){continue}
 								//b.name not b.key
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true,b.persist);
 								bts.bt.reff=b;
 								////add coordinates and text boolean
@@ -4685,7 +4885,7 @@ irec.is='c_rect'; irec.t=1;
 								while(lbt--){
 									var b = co.img_ks[lbt];
 									if(b.X==undefined){continue}//no coordinates
-									var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+									var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 									b.X, b.Y, true, b.persist ); //this works..
 									bts.bt.reff=b;
 									all.anim_a.push(bts.bt, bts.txt);
@@ -4707,7 +4907,7 @@ irec.is='c_rect'; irec.t=1;
 							while(lbt--){
 								var b = co.txt_ks[lbt];
 								if(b.X==undefined){continue}//no coordinates
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true, b.persist ); //this works..
 								bts.bt.reff=b;
 	//unshift seem to give drawing priority but ctx still messes up with text
@@ -4726,7 +4926,7 @@ irec.is='c_rect'; irec.t=1;
 							while(lbt--){
 								var b = co.circle_ks[lbt];
 								if(b.X==undefined){continue}//no coordinates
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true, b.persist ); //this works..
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
@@ -4744,7 +4944,7 @@ irec.is='c_rect'; irec.t=1;
 							while(lbt--){
 								var b = co.rect_ks[lbt];
 								if(b.X==undefined){continue}//no coordinates
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true, b.persist ); //this works..
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
@@ -4763,7 +4963,7 @@ irec.is='c_rect'; irec.t=1;
 							while(lbt--){
 								var b = co.osc_ks[lbt];
 								if(b.X==undefined){continue}//no coordinates
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true, b.persist ); //this works..
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
@@ -4782,7 +4982,7 @@ irec.is='c_rect'; irec.t=1;
 							while(lbt--){
 								var b = co.audio_ks[lbt];
 								if(b.X==undefined){continue}//no coordinates
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true, b.persist ); //this works..
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
@@ -4802,7 +5002,7 @@ irec.is='c_rect'; irec.t=1;
 								var b = co.vox_ks[lbt];
 								if(b.X==undefined){continue}//no coordinates
 								if(b.asigned_osc!=undefined){continue}//special k button
-								var bts = all.create_bt(ctx0, b.name,b.com1, b.com2,
+								var bts = CreateBt(ctx0, b.name,b.com1, b.com2,
 								b.X, b.Y, true, b.persist ); //this works..
 								bts.bt.reff=b;
 								all.anim_a.push(bts.bt, bts.txt);
@@ -4933,7 +5133,7 @@ irec.is='c_rect'; irec.t=1;
 				//create control button on 1 touch
 //maybe prims could ask some array to create buttons like bg does... on swip,
 //control bt doesnt have a bt reff to relocate itself
-				var bt = all.create_bt(
+				var bt = CreateBt(
 					ctx0, '...','.orb.'+t0.name.substr(7)+'.control',
 					undefined, t0.tx, t0.ty, true,'desist'
 				);
@@ -5122,7 +5322,7 @@ function update(){ //PEAK
 //in,
 //out
 
-	if(Sstr == ' '){}else{all.keys_feed();} //needs to be independant from anim_f
+	if(Sstr == ' '){}else{KeysFeed();} //needs to be independant from anim_f
 	//these functions are more related to hardware
 	repeatSys(); //this ok?
 
@@ -5151,6 +5351,8 @@ function update(){ //PEAK
 
 		var o = Orbs[i];
 		if(o==undefined){break} //safe
+
+
 
 //OSCILATOR ASPECT
 		if(o.oscillator){
@@ -5192,6 +5394,7 @@ function update(){ //PEAK
 
 //CIRCLE ASPECT
 		if(o.circle){
+
 			if(o.cirR=='off'){} 
 			if(o.cirR=='loop'){ 
 				beatUp(o.cirF,o.cirB,o.cirS); // o,o
@@ -5203,6 +5406,22 @@ function update(){ //PEAK
 				if(o.cirL==1){visual_q1.push(o.cirS);}
 				if(o.cirL==2){visual_q2.push(o.cirS);}
 			}
+
+//we need to keep angle updated.. but we are ignoring the changes on angle. we need to update somewhere else.... we need to update
+//everytime caster or target change location. Its easy to check for caster but we cant check on focused target...
+	//maybe we could ask for distance. if distance from target changes, we update the angle !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//THIS BUG MAKES ABSOLUTELY NO FUCKING SENSE AT ALL
+	/*
+			if(o.focus!=undefined){
+				var foc = Fting(Orbs,'name',o.focus);
+				if(foc){
+					//const getAngle = function(caX,caY,taX,taY) //caster and target
+					var ang = getAngle(o.cirS.x,o.cirS.y,foc.cirS.x,foc.cirS.y);
+					o.angle = ang;
+				}
+			}
+	*/
+
 
 		}
 
@@ -5355,37 +5574,43 @@ function update(){ //PEAK
 					if(RL<=0){o.scB++; continue}else{continue}
 				}
 		*/
-				var csplit = RL.split('<>'); //comands split
-				for (var i2 = 0; i2 <= csplit.length-1; i2++) {
-					var end = comA(o.name,csplit[i2]);
-					if(end==undefined){}else{break}
-					if(i2>=1){break}
+				if(RL){
+					var csplit = RL.split('<>'); //comands split
+					for (var i2 = 0; i2 <= csplit.length-1; i2++) {
+						var end = comA(o.name,csplit[i2]);
+						if(end==undefined){}else{break}
+						if(i2>=1){break}
+					}
+					o.scB++;
+					if(o.scB>o.scC.length){o.scB = 1; o.scR='off';}
 				}
-				o.scB++;
-				if(o.scB>o.scC.length){o.scB = 1; o.scR='off';}//o.script.length is always 1 more than last item index..?
 
 			}
 			if(o.scR=='loop'){ //run until o.L reaches end and then reinit and set run to 'off'
 				//console.log('asdcwvrwvwf');//ok here is the problem this loop is busted.. its working fine
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
 			//script has text lines now, we dont need a text line structure anymore
-				var csplit = RL.split('<>'); //comands split
-				for (var i2 = 0; i2 <= csplit.length-1; i2++) {
-					var end = comA(o.name,csplit[i2]); //o.name is the stance S
-					if(end==undefined){}else{break}
-					if(i2>=1){break}
+				if(RL){
+					var csplit = RL.split('<>'); //comands split
+					for (var i2 = 0; i2 <= csplit.length-1; i2++) {
+						var end = comA(o.name,csplit[i2]); //o.name is the stance S
+						if(end==undefined){}else{break}
+						if(i2>=1){break}
+					}
+					o.scB++;
+					if(o.scB>o.scC.length){o.scB = 1;} //o.scR='off';}
 				}
-				o.scB++;
-				if(o.scB>o.scC.length){o.scB = 1;} //o.scR='off';}
 
 			}
 			if(o.scR=='repeat'){ //run until o.L reaches end and then reinit and set run to 'off'
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
-				var csplit = RL.split('<>'); //comands split
-				for (var i2 = 0; i2 <= csplit.length-1; i2++) {
-					var end = comA(o.name,csplit[i2]);
-					if(end==undefined){}else{break}
-					if(i2>=1){break}
+				if(RL){
+					var csplit = RL.split('<>'); //comands split
+					for (var i2 = 0; i2 <= csplit.length-1; i2++) {
+						var end = comA(o.name,csplit[i2]);
+						if(end==undefined){}else{break}
+						if(i2>=1){break}
+					}
 				}
 			}
 
@@ -5477,46 +5702,7 @@ function update(){ //PEAK
 var SunyaInit = function(device, tutorial){//tutorial no need to go here
 	//keyboard
 	if(device=="keyboard"){
-/*
-		all.stream_a.push(
-			//'Greetings and salutations keyboard user. Welcome to this system. You have been expected!',
-			//' ',
-			//'This program is a realized dream.',// You could tell that already because Its hard to figure out',
-			//'...what is this all about? there are no instructions here! .. there are no menu buttons there are no',
-			//'Corporate Logos doing the fancy intro...there is just this!? SERIOUSLY??',
-			//'.. This is not an atempt to grab your atention and squeze it like a lemon...',
-			//' ...',
-			//'But i digress. ',
-			//'*awkward crickets in the distance ',
-			//' ',
-			'*ominous crickets--',
-			'Press the ESC button on your keyboard to. . . . . print some really useful information at any moment!',
-			'Arrow Keys on your keyboard can handle your stream! Yes , THIS stream of words you are reading right now!',
-			//'You know what is it for right? To read it! Of course! Yes!
-			'Do you like to read? ',
-			'... Of course not! Nobody like to read! Hahaha!',
-			'Anyways. ',
-*/
-/*
-			'Up and Down Arrows let you detach and scroll trough stream history.',
-			'Left Arrow turns OFF stream visibility.',
-			'Right Arrow turns back ON and re-atach. Pretty nice and fast.',
-			'Try it out! Try it out!',
-			'... ... d- ... did you--... ok so',
-			'this stream can always be re-atached to follow the last input by pressing the Right Arrow.',
-			'Got it?',
-			'Press ENTER now and type in all highlighted words you see to impress me with your speed.',
-			'Here is a way forward for you my friend',
-			'Just type in this word down bellow or press the ESC key to... you know, find out about this system ideas a bit more.',
-			'Your move.',
-			{msg:'tutorial',cus:[0,0,0,[0.2,'a'],0,0,0,0,[1,'a','..1-220','b']]},
-			'..',
-			'Ou i forgot to remind you about re-ataching your stream to follow the last input. Its the Right Arrow.',
-			'.. it ocurred me that you might have just missed that. I could be wrong of course. Am always wrong..',
-			'Have a Blast..! I-i mean.. Have a goood wave mate! heh..eeh.. Au revoi--entry incomplete--kzziSYSTEM DAMAGED PLEASE PROCEED TO EVACUATE FATAL ERROR FATAL ERROR '
 
-		); all.screen_log();
-*/
 	}//keyboard
 
 	//phone
