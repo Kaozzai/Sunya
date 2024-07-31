@@ -1,0 +1,29 @@
+Useful scripts for RUN orb. Place this text on Entry to create a script on RUN. Then do
+#once>>RUN/script/run  , to run the script.
+A script to log entity stats at everyheartbeat on LOG1
+
+:@LOG1<>left200>>LOG1
+#~>>LOG1/text>>LOG1/script
+#loop>>LOG1/script/run
+@LOG2<>right200>>LOG2
+#%>>LOG2/text>>LOG2/script
+#loop>>LOG2/script/run
+~/orbs>>RUN/text<>RUN/text>>~/drag
+rmline>>RUN/text/all
+>>RUN/script
+
+Scripts to edit animations using an image file from local machine.
+We use mirrors to proyect image orb and rect orb. 1 img mirror proyects the full image on x0 y0 .
+A second rect mirror is used to select the part of the image we want to extract and use.
+This rect selection is in synch with the image orb selected beat. So the original image proyected is in synch with the rect
+mirror selection position and size. We move the image with arrows, and we move the mirror rect with WASD.
+The orb image beat is running on repeat.
+
+
+
+
+
+
+
+
+

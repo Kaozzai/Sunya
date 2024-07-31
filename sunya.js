@@ -184,7 +184,8 @@ const Ecen = {
 	],
 	state:{
 		r:230, g:230, b:230, a:0.8, x:eX, y:eY, radius:1, is:'circle',		
-		inside:'filled'
+		inside:'filled',
+		layer:2
 	}
 }
 
@@ -207,7 +208,8 @@ const Elid = {
 	state:{
 		r:1, g:1, b:1, a:zai, x:eX-window.innerWidth/2, y:eY-window.innerHeight/2, is:'rect',
 		w:window.innerWidth, h:window.innerHeight,
-		inside:'filled'
+		inside:'filled',
+		layer:2
 	}//a special rect state.	
 }
 
@@ -223,7 +225,8 @@ const Kfeed = {
 		r:230, g:230, b:230, a:0.8, 
 		x:eX+window.innerWidth/2,
 		y:eY+window.innerHeight/2,
-		is:'txt', txt:''
+		is:'txt', txt:'',
+		layer:2 //not even using Kfeed layer tho
 
 	}//a special txt state.	
 }
@@ -365,7 +368,8 @@ const SoulSeal = function(o,asp){
 			o.imgF=[]; o.imgB=1; o.imgR='off'; o.imgL=0;
 			o.imgS={
 				img:undefined,  is:'img',
-				x:0, y:0, w:0, h:0, px:0, py:0, pw:0, ph:0, a:1
+				x:0, y:0, w:0, h:0, px:0, py:0, pw:0, ph:0, a:1,
+				layer:0
 			};
 			break
 
@@ -726,7 +730,8 @@ const DataLine = function(){
 			align:'left', //by default could be left
 			x:0,//+window.innerWidth/2,
 			y:0,//+window.innerHeight/2,
-			r:230, g:230, b:230, a:1 
+			r:230, g:230, b:230, a:1,
+			layer:2
 		}
 	}
 	return L
@@ -754,7 +759,7 @@ const CircleForm = function(){
 //but we can create a fully custom state from here the mirror
 //so for game mechanics this mirror concept is interesting because now orbs can create visual decoys.
 //we can write a function to do mirror on last, current and by number
-const Mirror = function(txtb,sm,layer){
+const Mirror = function(txtb,sm){//,layer){
 	var nb = txtToB(txtb);
 	var BL = nb.length;
 	//if(BL==0){}else{
@@ -773,11 +778,13 @@ const Mirror = function(txtb,sm,layer){
 		sm[p] = nv;
 	}
 	//}
+/*
 	if(layer==0){visual_q0.push(sm);} 
 	if(layer==1){visual_q1.push(sm);}
 	if(layer==2){visual_q2.push(sm);}
+*/
 	//o.o = nb;
-	return
+	return sm
 }//mirror
 
 
@@ -2225,7 +2232,6 @@ const comRiTarget = function(signal,target,St){
 	if(o){}else{return 'end'}
 
 /*
-//fuck this shit
 //incomplete!!!!!!!!!!!!!!!!!!!!!!!!!
 //strife clockwise and counter clockwise
 //we want to be able to focus on a target circle form for now ... strife comands are incomplete!!!!!!!!!!
@@ -2276,9 +2282,9 @@ const comRiTarget = function(signal,target,St){
 	if(signal=='delete'){
 		if(line){//line? more like, sub
 			//if(sub=='x') ... so we could say +>>orb/circle/x... yeah thats lovely. signals to states directly
-
+//use data on lines to select a target
 			if(line=='last'){
-// orb/text/last
+// delete>>orb/text/last
 				if(o.txtLi.length==0){return 'end'}//nothing here
 				var lastl = o.txtLi[o.txtLi.length-1].txt;
 				if(lastl==undefined){return 'end'}
@@ -2288,7 +2294,7 @@ const comRiTarget = function(signal,target,St){
 				//var not = Fting(Orbs,'name',lastl); //new orb target
 			}
 			if(line=='current'){
-// orb/text/current
+// delete>>orb/text/current
 				if(o.txtLi.length==0){return 'end'}//nothing here
 				var currentl = o.txtLi[o.txtB-1];
 				if(currentl==undefined){return 'end'}
@@ -2298,7 +2304,7 @@ const comRiTarget = function(signal,target,St){
 				//var not = Fting(Orbs,'name',currentl); //new orb target
 			}
 
-//orb/text/number
+// delete>>orb/text/number
 			//if stil here, we ask if this is a number we can work with
 		//but returning end here is preventing T from updating target!!!!!
 			if(not){}else{ //heh this kinda ugly but does the job
@@ -2327,6 +2333,7 @@ const comRiTarget = function(signal,target,St){
 //So with signals we can simply restrict the activity of orbs aspects without erasing all data. this might be an interesting mechanic.
 //well seal and unseal are both working. Maybe delete could remove alldata from specified aspect..!!!!!!
 		//incomplete
+// delete>>orb/aspect
 		if(aspect){ //remove an aspect from target orb
 			if(aspect=='circle'){o.circle=false;}
 			if(aspect=='rectangle'){o.rectangle=false;}
@@ -2410,6 +2417,7 @@ const comRiTarget = function(signal,target,St){
 		if(aspect=='text'){o.text=false; return}
 		if(aspect=='circle'){o.circle=false; return}
 		if(aspect=='rectangle'){o.rectangle=false; return}
+		if(aspect=='image'){o.image=false; return}
 	}
 	if(signal=='unseal'){SoulSeal(o,aspect); return}
 
@@ -2452,7 +2460,8 @@ const getLeValue = function(LS,St){
 				'~/mspsize: '+MSpSize,
 				'~/mspradius: '+MSpRad,
 				'~/out: '+Eout,
-				'~/in: '+Ein
+				'~/in: '+Ein,
+				'~/limage: ...'
 			]
 			return res
 		}
@@ -2505,7 +2514,8 @@ const getLeValue = function(LS,St){
 			if(o.rectangle){
 				//asp.push('rectangle');
 				res.push(
-					'/rectangle'
+					'/rectangle/x: '+o.rectS.x,
+					'/rectangle/y: '+o.rectS.y
 				);
 			}
 			if(o.oscillator){
@@ -2517,7 +2527,11 @@ const getLeValue = function(LS,St){
 			if(o.image){
 				//asp.push('image');
 				res.push(
-					'/image'
+					'/image/px: '+o.imgS.px,
+					'/image/py: '+o.imgS.py,
+					'/image/pw: '+o.imgS.pw,
+					'/image/ph: '+o.imgS.ph,
+					'/image/file: '+o.imgfile
 				);
 			}
 
@@ -2741,6 +2755,14 @@ const getLeValue = function(LS,St){
 						btt.push(bt);
 					}
 					return btt;
+				case 'image':
+//orb/image
+					var btt = [];
+					for (var i = 0; i <= o.imgF.length-1; i++) {
+						var bt = o.imgF[i].toString();
+						btt.push(bt);
+					}
+					return btt;
 				case 'text':
 //orb/text
 					var dla = [];
@@ -2781,8 +2803,8 @@ const getLeValue = function(LS,St){
 
 	if(SS.length==3){ //SS[2] is a contkey
 		if(ent){
+//not much here......
 // ~/cont/key
-
 		}
 
 		if(o){
@@ -3272,6 +3294,8 @@ const putRiValue = function(op,RS,St,pol){
 // ~/inline
 					// and now we should be able to get a whole text on chat_in.value, eachline separated by ' ' and
 					// a ':' at the beggining? 
+			//retrieving multiliners should be user friendly, it would be nice to be able to produce a text with each line
+			//separated... we l come back here later
 					var alldata = op.join(' ');
 					chat_in.value = alldata;//op[0]//we want RSout here
 					chat_in.style.display="inLine";
@@ -3324,7 +3348,7 @@ const putRiValue = function(op,RS,St,pol){
 				case 'script':
 // orb/script
 					//op should be an array with instructions
-					o.scC = op; return //[]  //not sure what to return here
+					o.scB=1; o.scC = op; return //[]  //not sure what to return here
 
 				case 'circle':
 //orb/circle
@@ -3334,9 +3358,7 @@ const putRiValue = function(op,RS,St,pol){
 						var ttb = txtToB(op[i]);
 						ncb.push(ttb);
 					}
-					o.cirF = ncb;
-					o.cirB = 1;
-					return //?
+					o.cirB = 1; o.cirF = ncb; return //?
 
 				case 'rectangle':
 //orb/rectangle
@@ -3345,9 +3367,16 @@ const putRiValue = function(op,RS,St,pol){
 						var ttb = txtToB(op[i]);
 						ncb.push(ttb);
 					}
-					o.rectF = ncb;
-					o.rectB = 1;
-					return //?
+					o.rectB = 1; o.rectF = ncb; return //?
+
+				case 'image':
+//orb/image
+					var ncb = [];
+					for (var i = 0; i <= op.length-1; i++) {
+						var ttb = txtToB(op[i]);
+						ncb.push(ttb);
+					}
+					o.imgB = 1; o.imgF = ncb; return //?
 
 				case 'text':
 //orb/text
@@ -3355,32 +3384,24 @@ const putRiValue = function(op,RS,St,pol){
 //text key on its own does not react to polarity. it returns all text lines in the orb.
 //this command not only needs to clear previous data, but also return all lines
 //op is the data we want to have now so we want to clear old data here and place op instead
-//we want RSout op to overide all data and replace it
+//we want RSout op to overide all data and replace it.... but we could ask if there is a line structure already and just use
+//that. we would only have to pass on the new text data only. in this way also we could just use the previous beat
 					//
-		//so, we can place multilines on a data container by passing in an array with lines on op
-		//text key on its own does not react to polarity. it returns all text lines in the orb.
-		//this command not only needs to clear previous data, but also return all lines.
-		//!! we also want to make beats go on and not just freeze when we run this instruction on every beat.
-		//!! also we want to highlight so maybe we could so something here..
 //so we need the beat from the orb or entity that produced op.. ? i think not anymore. we can probly highlight using mirror
 // orb/circle>>orb2/text<>#r,220,b,220,g,220>>orb/circle/current
-					o.txtLi = [];
-					//var l = op.length; 
-		//so LSout is always espected to be a list of lines we can use to create a text.. format lines and push them into data
+
+//so before clearing up o.txtLi, we check if there are as many datalines as op.length. yup this is good
+					//o.txtLi = [];
 					for (var i = 0; i <= op.length-1; i++) {
 						var text = op[i];
-						//call here a function to create as many lines as there are output data bits
-						var Line = DataLine();
-						//use dsignat to create default beats on the new line
-						Line.beats=dsignat;
-				//maybe we could pass entity layer here laYer ?
-						Line.x=o.txtX; Line.y=o.txtY;
-						//and push the text into Line.txt
-						Line.txt=text;
-						//only then we can push the Line
-						o.txtLi.push(Line);
+						if(o.txtLi[i]){o.txtLi[i].txt=text;}else{
+							var Line = DataLine();
+							Line.beats=dsignat;
+							Line.x=o.txtX; Line.y=o.txtY;
+							Line.txt=text;
+							o.txtLi.push(Line);
+						}
 					}
-
 
 					dESpacer(o);
 					return //[]  //not sure what to return here
@@ -3413,6 +3434,7 @@ const putRiValue = function(op,RS,St,pol){
 
 				case 'gspeed':
 //orb/gspeed
+//gspeed huh....
 					//to toggle between lines to select on a data container. should be easy
 					if(pol==0){
 						//op could be an array... with 1 line.. so thats why this didnt work
@@ -3420,7 +3442,7 @@ const putRiValue = function(op,RS,St,pol){
 						return //[o.gspeed]	
 					}
 					var res = o.gspeed+pol;
-					if(res>=60){res--;} 
+					if(res>=100){res--;} 
 					if(res<=0){res++;} 
 					o.gspeed=res;
 					return //[o.gspeed]
@@ -3431,7 +3453,7 @@ const putRiValue = function(op,RS,St,pol){
 	if(SS.length==3){
 //SS[1] is cont, SS[2] is ckey
 		if(ent){
-
+//not much here either....
 		}
 
 		if(o){
@@ -3446,7 +3468,40 @@ const putRiValue = function(op,RS,St,pol){
 //orb/text/y
 						o.txtY=op[0]; dESpacer(o); return
 					}
-		//so what if we want to put op[0] on a new line on target text..
+//so what if we want to put op[0] on a new line on target text.. or what if we want to say o1/text/1>>o2/text/3 and just replace
+//line 3 of o2 with line 1 of o1.. yea we probably want this. we also going to need a keyword to simply push new line into text container
+//so it specifically creates new lines without erasing anything previous.
+//yeah so by default these commands should replace target with op. we want text to fine control other scripts. use orb/text/new
+//to simply push all op into the text as new lines
+		//we should be able to toggle current number....!!!!!
+					if(ckey=='cn'){
+//orb/text/cn
+						if(pol==0){
+							//.. maybe we need to check here if op[0] is a number?
+							o.txtB=op[0];
+							return //[o.txtB]	
+						}else{
+							o.txtB = o.txtB+pol;
+							if(o.txtB<=0){o.txtB=1;} 
+							return
+						}
+
+					}
+					if(ckey=='new'){
+//orb/text/new
+       			//a loop to push new lines into the text without deleting any line previously there
+						for (var i2 = 0; i2 < op.length; i2++) {
+							var dli = DataLine();
+							dli.beats=dsignat; 
+							dli.txt=op[i2];
+							dli.x=o.txtX; dli.y=o.txtY;
+							//o.txtLi.splice(rln-1,0,dli);
+							o.txtLi.push(dli);
+						}
+						dESpacer(o);
+       						return
+					}
+//.... i dont think we need last tbh... i rememebr i included this for some reason... but that reason does not come into my mind now
 					if(ckey=='last'){
 //orb/text/last
 						//we want to put op[0] on the last line of the orb text
@@ -3462,6 +3517,9 @@ const putRiValue = function(op,RS,St,pol){
 							return
 						}
 					}
+//we want to replace the currently selected line with op[0].. right?. we could do o1/text/current>o2/text/current on a key so we can
+//transfer specific lines from one text to another. interesting ok done already
+//we create empty lines to reach the line number requested if there arent enough lines already
 					if(ckey=='current'){
 //orb/text/current
 						if(o.txtB>o.txtLi.length){
@@ -3479,7 +3537,9 @@ const putRiValue = function(op,RS,St,pol){
 							var ldli = o.txtLi[o.txtB-1];
 							ldli.txt = op[0];
 						}else{
-
+					//use prev dataline structure, just replace text
+							o.txtLi[o.txtB-1].txt=op[0];
+					/*
 							var dli = DataLine();
 							dli.beats=dsignat; 
 							dli.txt=op[0];
@@ -3488,28 +3548,16 @@ const putRiValue = function(op,RS,St,pol){
 							//o.txtLi.splice(rln-1,0,dli);
 							//we could also replace the line from here like this:
 							o.txtLi.splice(o.txtB-1,1,dli);
+     					*/
 						}
 
 						dESpacer(o);
 						return
 					}
 
-		//we should be able to toggle current number....!!!!!
-					if(ckey=='cn'){
-//orb/text/cn
-						if(pol==0){
-							//.. maybe we need to check here if op[0] is a number?
-							o.txtB=op[0];
-							return //[o.txtB]	
-						}else{
-							o.txtB = o.txtB+pol;
-							if(o.txtB<=0){o.txtB++;} 
-							return
-						}
 
-					}
 
-////orb/text/number
+//orb/text/number
 					var rln = parseFloat(ckey);//we need to turn ckey into a number
 					//if(rln==undefined){return 'end'}
 					let nan = isNaN(rln);
@@ -3525,14 +3573,14 @@ const putRiValue = function(op,RS,St,pol){
 							dli.beats=dsignat; 
 							dli.txt='';
 							dli.x=o.txtX; dli.y=o.txtY;
-							//o.txtLi.splice(rln-1,0,dli);
 							o.txtLi.push(dli);
 						}
 						//and place op[0] text on rln
 						var ldli = o.txtLi[rln-1];
 						ldli.txt = op[0];
 					}else{
-
+						o.txtLi[rln-1].txt=op[0];
+				/*
 						var dli = DataLine();
 						dli.beats=dsignat; 
 						dli.txt=op[0];//Ein;
@@ -3541,10 +3589,10 @@ const putRiValue = function(op,RS,St,pol){
 						//o.txtLi.splice(rln-1,0,dli);
 						//we could also replace the line from here like this:
 						o.txtLi.splice(rln-1,1,dli);
+				*/
 					}
 
 					dESpacer(o);
-					//o.txtLi[rln-1].txt = op[0];
 					return
 
 				}
@@ -3557,14 +3605,12 @@ const putRiValue = function(op,RS,St,pol){
 				//.. hmm polarity on run seems unnecesary.. but this is an interesting aproach
 					if(ckey=='run'){
 //orb/script/run
-						o.scR=op[0];
-						return
+						o.scR=op[0]; return
 					}
 
 					if(ckey=='last'){
 //orb/script/last
-						o.scC[o.scC.length-1] = op[0];
-						return
+						o.scC[o.scC.length-1] = op[0]; return
 					}
 
 					//if(ckey=='current'){
@@ -3581,8 +3627,7 @@ const putRiValue = function(op,RS,St,pol){
 			//we probly want cn to manage toggle ?
 						//should only accept numbers.. max is number of lines in script
 						//.... maybe we want to turn this into a number
-						o.scB = op[0];
-						return
+						o.scB = op[0]; return
 					}
 //orb/script/number
 		//this command would put a new value on the target script instruction... feels kinda aggressive but might be usable
@@ -3632,8 +3677,7 @@ const putRiValue = function(op,RS,St,pol){
 					if(ckey=='run'){
 //orb/image/run
 						if(pol==0){
-							o.imgR=op[0];
-							return
+							o.imgR=op[0]; return
 						}else{
 							var run = ['off','once','loop','repeat']; 
 							var n = run.indexOf(o.imgR);
@@ -3645,17 +3689,36 @@ const putRiValue = function(op,RS,St,pol){
 						}
 					}
 					if(ckey=='current'){
-//orb/image/current
-			//current needs to return the current image beat as text
+//>>orb/image/current
 						var nb = txtToB(op[0]);
 						o.imgF[o.imgB-1] = nb;
 						return //CSout
 					}
 					if(ckey=='cn'){
-//orb/image/cn
+//>>orb/image/cn
 						o.imgB = op[0];
 						return
 					}
+					if(ckey=='mirror'){
+//>>orb/image/mirror
+//mirror pretty much requires op because... what could mirror do on the left side RS? ... one sec $/image/mirror>> ... maybe an instruction
+//to copy a beat
+						var mirror = {
+							img:o.imgS.img,
+							is:'img',
+							x:0, y:0, w:0, h:0, px:0, py:0, pw:0, ph:0, a:1,
+							layer:0
+						}
+						var sm = Mirror(op[0],mirror);//,o.imgL);
+						if(sm.layer==0){visual_q0.push(sm);} 
+						if(sm.layer==1){visual_q1.push(sm);}
+						if(sm.layer==2){visual_q2.push(sm);}
+						//console.log(op[0],mirror,o.cirL);
+					//ouput returns the beat..
+						o.o=op[0];
+						return
+
+					}//mirror
 				}
 			}
 
@@ -3663,7 +3726,7 @@ const putRiValue = function(op,RS,St,pol){
 			if(cont=='circle'){
 				if(o.circle){
 					if(ckey=='x'){
-//orb/circle/x
+//>>orb/circle/x
 						o.cirS.x=op[0]; return
 					}
 					if(ckey=='y'){
@@ -3708,10 +3771,14 @@ const putRiValue = function(op,RS,St,pol){
 							x:o.cirS.x,//+window.innerWidth/2,
 							y:o.cirS.y,//+window.innerHeight/2,
 							inside:o.cirS.inside,
-							r:o.cirS.r, g:o.cirS.g, b:o.cirS.b, a:o.cirS.a 
+							r:o.cirS.r, g:o.cirS.g, b:o.cirS.b, a:o.cirS.a,
+							layer:o.cirS.layer
 						}
-						Mirror(op[0],mirror,o.cirL);
-						console.log(op[0],mirror,o.cirL);
+						//Mirror(op[0],mirror,o.cirL);
+						var sm = Mirror(op[0],mirror);//,o.imgL);
+						if(sm.layer==0){visual_q0.push(sm);} 
+						if(sm.layer==1){visual_q1.push(sm);}
+						if(sm.layer==2){visual_q2.push(sm);}
 						o.o=op[0];
 						return
 
@@ -3757,6 +3824,25 @@ const putRiValue = function(op,RS,St,pol){
 						o.rectB = op[0];
 						return
 					}
+
+					if(ckey=='mirror'){
+// ?>>orb/rectangle/mirror
+						var mirror = {
+							is:'rect', 
+							x:o.rectS.x, y:o.rectS.y, w:o.rectS.w, h:o.rectS.h,
+							inside:o.rectS.inside,
+							r:o.rectS.r, g:o.rectS.g, b:o.rectS.b, a:o.rectS.a,
+							layer:o.rectS.layer
+						}
+						//Mirror(op[0],mirror,o.cirL);
+						var sm = Mirror(op[0],mirror);//,o.imgL);
+						if(sm.layer==0){visual_q0.push(sm);} 
+						if(sm.layer==1){visual_q1.push(sm);}
+						if(sm.layer==2){visual_q2.push(sm);}
+						o.o=op[0];
+						return
+
+					}//mirror
 				}
 			}
 
@@ -3848,10 +3934,15 @@ const putRiValue = function(op,RS,St,pol){
 								x:o.txtX,//+window.innerWidth/2,
 								y:o.txtY,//+window.innerHeight/2,
 								r:lastl.state.r, g:lastl.state.g,
-								b:lastl.state.b, a:lastl.state.a 
+								b:lastl.state.b, a:lastl.state.a,
+								layer:lastl.state.layer
 							}
-							Mirror(op[0],mirror,o.txtL);
-							//o.o=RSout; 
+							Mirror(op[0],mirror);//,o.txtL);
+							var sm = Mirror(op[0],mirror);//,o.imgL);
+							if(sm.layer==0){visual_q0.push(sm);} 
+							if(sm.layer==1){visual_q1.push(sm);}
+							if(sm.layer==2){visual_q2.push(sm);}
+							o.o=op[0];
 							return
 
 						}//mirror
@@ -3895,10 +3986,18 @@ const putRiValue = function(op,RS,St,pol){
 								x:currl.state.x,//+window.innerWidth/2,
 								y:currl.state.y,//+window.innerHeight/2,
 								r:currl.state.r, g:currl.state.g,
-								b:currl.state.b, a:currl.state.a 
+								b:currl.state.b, a:currl.state.a,
+								layer:currl.state.layer
 							}
-							Mirror(op[0],mirror,o.txtL);
+							Mirror(op[0],mirror);//,o.txtL);
+							var sm = Mirror(op[0],mirror);//,o.imgL);
+							if(sm.layer==0){visual_q0.push(sm);} 
+							if(sm.layer==1){visual_q1.push(sm);}
+							if(sm.layer==2){visual_q2.push(sm);}
+							o.o=op[0];
 							return
+							//Mirror(op[0],mirror,o.txtL);
+							//return
 
 						}//mirror
 
@@ -3950,11 +4049,19 @@ const putRiValue = function(op,RS,St,pol){
 							x:o.txtX,//+window.innerWidth/2,
 							y:o.txtY,//+window.innerHeight/2,
 							r:irl.state.r, g:irl.state.g,
-							b:irl.state.b, a:irl.state.a 
+							b:irl.state.b, a:irl.state.a,
+							layer:irl.state.layer
 						}
-						Mirror(op[0],mirror,o.txtL);
-						//o.o=RSout; 
+						Mirror(op[0],mirror);//,o.txtL);
+						var sm = Mirror(op[0],mirror);//,o.imgL);
+						if(sm.layer==0){visual_q0.push(sm);} 
+						if(sm.layer==1){visual_q1.push(sm);}
+						if(sm.layer==2){visual_q2.push(sm);}
+						o.o=op[0];
 						return
+						//Mirror(op[0],mirror,o.txtL);
+						//o.o=RSout; 
+						//return
 
 					}//mirror
 // ?>>orb/text/1..2..3../1..2..3.. 
@@ -3963,7 +4070,7 @@ const putRiValue = function(op,RS,St,pol){
 					if(nan){return 'end'}
 					if(rln>irl.beats.length){return 'end'}
 					irl.beats[rln-1] = op[0];
-					//o.o = RSout[0];
+					o.o = op[0];
 					return
 				}//o.txtLi 
 			}//text
@@ -5512,9 +5619,9 @@ function update(){ //PEAK
 			if(Elid.B>=Elid.beats.length+1){Elid.B=1;}
 		}
 
-		if(Elid.layer==0){visual_q0.push(Elid.state);}
-		if(Elid.layer==1){visual_q1.push(Elid.state);}
-		if(Elid.layer==2){visual_q2.push(Elid.state);}
+		if(Elid.state.layer==0){visual_q0.push(Elid.state);}
+		if(Elid.state.layer==1){visual_q1.push(Elid.state);}
+		if(Elid.state.layer==2){visual_q2.push(Elid.state);}
 	}
 
 //graphics first.. graphics should simply draw, not even update frames
@@ -5548,9 +5655,9 @@ function update(){ //PEAK
 	if(MSp.B>=MSp.beats.length+1){MSp.B=1;}
 	//console.log(MSp.B);
 //we could probably use a switch here on layer system
-	if(MSp.layer==0){visual_q0.push(MSp.state);} //[B]?
-	if(MSp.layer==1){visual_q1.push(MSp.state);}
-	if(MSp.layer==2){visual_q2.push(MSp.state);}
+	if(MSp.state.layer==0){visual_q0.push(MSp.state);} //[B]?
+	if(MSp.state.layer==1){visual_q1.push(MSp.state);}
+	if(MSp.state.layer==2){visual_q2.push(MSp.state);}
 
 //update Ecen entity center cursor
 	beatUp(Ecen.beats,Ecen.B,Ecen.state);
@@ -5559,9 +5666,9 @@ function update(){ //PEAK
 	Ecen.B++;
 	if(Ecen.B>=Ecen.beats.length+1){Ecen.B=1;}
 	//console.log(MSp.B);
-	if(Ecen.layer==0){visual_q0.push(Ecen.state);} //[B]?
-	if(Ecen.layer==1){visual_q1.push(Ecen.state);}
-	if(Ecen.layer==2){visual_q2.push(Ecen.state);}
+	if(Ecen.state.layer==0){visual_q0.push(Ecen.state);} //[B]?
+	if(Ecen.state.layer==1){visual_q1.push(Ecen.state);}
+	if(Ecen.state.layer==2){visual_q2.push(Ecen.state);}
 
 
 //these functions are more related to hardware
@@ -5635,9 +5742,24 @@ function update(){ //PEAK
 				//o.imgS.px=o.cirS.x; o.imgS.py=o.cirS.y;
 				o.imgB++;
 				if(o.imgB>o.imgF.length){o.imgB=1;}
-				if(o.imgL==0){visual_q0.push(o.imgS);} //[B]?
-				if(o.imgL==1){visual_q1.push(o.imgS);}
-				if(o.imgL==2){visual_q2.push(o.imgS);}
+	//layer could be on state, this way state beats could also affect layer so we can specify layer when we create mirrors.
+				//if(o.imgL==0){visual_q0.push(o.imgS);} //[B]?
+				//if(o.imgL==1){visual_q1.push(o.imgS);}
+				//if(o.imgL==2){visual_q2.push(o.imgS);}
+				if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
+				if(o.imgS.layer==1){visual_q1.push(o.imgS);}
+				if(o.imgS.layer==2){visual_q2.push(o.imgS);}
+			}
+			if(o.imgR=='repeat'){ 
+				beatUp(o.imgF,o.imgB,o.imgS); // o,o
+				//if(o.imgB>o.imgF.length){o.imgB=1;}
+	//layer could be on state, this way state beats could also affect layer so we can specify layer when we create mirrors.
+				//if(o.imgL==0){visual_q0.push(o.imgS);} //[B]?
+				//if(o.imgL==1){visual_q1.push(o.imgS);}
+				//if(o.imgL==2){visual_q2.push(o.imgS);}
+				if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
+				if(o.imgS.layer==1){visual_q1.push(o.imgS);}
+				if(o.imgS.layer==2){visual_q2.push(o.imgS);}
 			}
 		}
 
@@ -5651,9 +5773,12 @@ function update(){ //PEAK
 				//o.cirS.x=o.x; o.cirS.y=o.y;
 				o.cirB++;
 				if(o.cirB>o.cirF.length){o.cirB=1;}
-				if(o.cirL==0){visual_q0.push(o.cirS);} //[B]?
-				if(o.cirL==1){visual_q1.push(o.cirS);}
-				if(o.cirL==2){visual_q2.push(o.cirS);}
+				//if(o.cirL==0){visual_q0.push(o.cirS);} //[B]?
+				//if(o.cirL==1){visual_q1.push(o.cirS);}
+				//if(o.cirL==2){visual_q2.push(o.cirS);}
+				if(o.cirS.layer==0){visual_q0.push(o.cirS);} //[B]?
+				if(o.cirS.layer==1){visual_q1.push(o.cirS);}
+				if(o.cirS.layer==2){visual_q2.push(o.cirS);}
 			}
 
 //we need to keep angle updated.. but we are ignoring the changes on angle. we need to update somewhere else.... we need to update
@@ -5683,9 +5808,12 @@ function update(){ //PEAK
 				//o.rectS.x=o.x; o.rectS.y=o.y;
 				o.rectB++;
 				if(o.rectB>o.rectF.length){o.rectB=1;}
-				if(o.rectL==0){visual_q0.push(o.rectS);} //[B]?
-				if(o.rectL==1){visual_q1.push(o.rectS);}
-				if(o.rectL==2){visual_q2.push(o.rectS);}
+				//if(o.rectL==0){visual_q0.push(o.rectS);} //[B]?
+				//if(o.rectL==1){visual_q1.push(o.rectS);}
+				//if(o.rectL==2){visual_q2.push(o.rectS);}
+				if(o.rectS.layer==0){visual_q0.push(o.rectS);} //[B]?
+				if(o.rectS.layer==1){visual_q1.push(o.rectS);}
+				if(o.rectS.layer==2){visual_q2.push(o.rectS);}
 			}
 
 		}
@@ -5731,6 +5859,8 @@ function update(){ //PEAK
 					o.txtLi.splice(o.txtB-1,0,dli);
 					//we could also replace the line from here like this:
 					//o.txtLi.splice(o.txtB-1,1,dli);
+		   		//but we dont want to replace the line by default when writing into a text from input.... do we
+		    		//nah.. because we want to be able to quicly insert a new line in place when we are here..
 				}
 
 //so before despacer, and here, only once per heartbeat, check if last line text is '', if so then remove.
@@ -5760,10 +5890,12 @@ function update(){ //PEAK
 					//if(o.L==i){}
 					//not sure where i want to keep txt. in state or directly in the data line structure
 					OL.state.txt=OL.txt;
-					//if(OL.layer==0){visual_q0.push(OL.state);}
-					if(o.txtL==0){visual_q0.push(OL.state);}
-					if(o.txtL==1){visual_q1.push(OL.state);}
-					if(o.txtL==2){visual_q2.push(OL.state);}
+					//if(o.txtL==0){visual_q0.push(OL.state);}
+					//if(o.txtL==1){visual_q1.push(OL.state);}
+					//if(o.txtL==2){visual_q2.push(OL.state);}
+					if(OL.state.layer==0){visual_q0.push(OL.state);} //[B]?
+					if(OL.state.layer==1){visual_q1.push(OL.state);}
+					if(OL.state.layer==2){visual_q2.push(OL.state);}
 				}
 			}
 		}//text
@@ -5835,6 +5967,7 @@ function update(){ //PEAK
 
 
 //ALOrbs hold commands that require Orbs array to be already updated
+//.. maybe this is the right instance to process signals comming from other entities.
 	for (var i = 0; i < ALOrbs.length; i++) {
 		var c = ALOrbs[i];
 		if(c==undefined){break} //safe
@@ -6065,7 +6198,5 @@ In the above snippet, a named function loop() is declared and is immediately exe
 after the logic has completed executing. While this pattern does not guarantee execution on a fixed interval, it does guarantee
 that the previous interval has completed before recursing.
 */
-
-
 
 
