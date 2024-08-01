@@ -106,7 +106,8 @@ const MSp = {
 	//],
 	state:{
 		r:230, g:230, b:230, a:0.8, x:MSpX, y:MSpY, radius:MSpRad, is:'circle',		// /domain?
-		inside:'empty'
+		inside:'empty',
+		layer:0
 	}//a special circle state.	
 }
 
@@ -347,7 +348,7 @@ const SoulSeal = function(o,asp){
 			o.i=undefined; 
 			o.txtB=1;
 			//o.print='static'; 
-			o.txtL=2;
+			//o.txtL=2;
 			o.txtLi=[];
 			break
 
@@ -357,7 +358,8 @@ const SoulSeal = function(o,asp){
 			o.rectF=dsignat; o.rectB=1; o.rectR='loop'; o.rectL=1;
 			o.rectS={
 				r:230, g:230, b:230, a:0.8, x:o.txtX, y:o.txtY, w:60, h:60, is:'rect',
-				inside:'empty'
+				inside:'empty',
+				layer:0
 			};
 			break
 
@@ -382,7 +384,8 @@ const SoulSeal = function(o,asp){
 				//x:o.txtX, y:o.txtY,
 				x:eX, y:eY,
 				radius:13, is:'circle',
-				inside:'empty'
+				inside:'empty',
+				layer:0
 			};
 			break
 
@@ -542,8 +545,8 @@ all.media_s = function(url_audio, destination){
 			o.oscillator=true;
 			o.oscTL=[
 	//lets have a tone for refference
-				//['start',0,'duration',2,'freq',439,'gain',0.07,'fadein',0.3,'fadeout',0.3]
-				'start,0,duration,2,freq,439,gain,0.07,fadein,0.3,fadeout,0.3'
+				['start',0,'duration',2,'freq',439,'gain',0.07,'fadein',0.3,'fadeout',0.3]
+				//'start,0,duration,2,freq,439,gain,0.07,fadein,0.3,fadeout,0.3'
 				//[]
 			];
 			//o.oscB=1; 
@@ -811,18 +814,19 @@ const KLTObj = function(kpair){
 //This function will run for form states and also for lines states? wait... lines can be beats?.. no beats are arrays..
 //Lines have data, B, beats, and state . Data has txt, beats have arrays... we have to convert txt into beat array if we want
 //to beat data. We also want to return lines of data formated as txt to work as beats when we ask for /orb/5/3 or /orb/4/beats
-//const beatUp = function(G){
 //We cant just say beats or state because orbs structure needs to have as few layers as posible. All form share the same depth
 //
 //OK we need to address the random thing.. what about txtToB
+//We need to prevent ilegal values to reach the drawing phase because that throws an error. we dont want the program to throw
+//console errors, we need to make ilegal configurations create a feedback for the user entity and just prevent the script execution
+//
 const beatUp = function(F,B,S){ //Frame, Beat, State
-	//var Del = G.beats[G.B-1];
-	var Del = F[B-1];
-	var BL = Del.length;
+	var beat = F[B-1];
+	var BL = beat.length;
 	if(BL==0){}else{
 		for (var i = 0; i <= BL-2; i+=2) { //BL-2
-			var p = Del[i]; var v = Del[i+1]; var nv = v;
-			if(v.length==undefined){}else{
+			var p = beat[i]; var v = beat[i+1]; var nv = v;
+			if(v.length==undefined){}else{ //else for not a number .numbers have no length.
 			//a random notation system.. i like this one
 //so if we request the current beat we need to ask after changes?
 				var dots = v.substr(0,2);
@@ -833,7 +837,7 @@ const beatUp = function(F,B,S){ //Frame, Beat, State
 //we want to construct this '..1-5-1' , the last number will now hold thecurrent value of the randomizer. this notation isrebuilt while
 //we use the result to perform the operation. ok works perfectly
 					var nn = '..'+cdeda[0]+'-'+cdeda[1]+'-'+n_rand; 
-					Del[i+1] = nn;//
+					beat[i+1] = nn;//
 					nv = n_rand;
 				}
 			}
@@ -2338,18 +2342,17 @@ const comRiTarget = function(signal,target,St){
 			if(aspect=='circle'){o.circle=false;}
 			if(aspect=='rectangle'){o.rectangle=false;}
 			if(aspect=='text'){o.text=false;}
+			if(aspect=='oscillator'){o.oscillator=false;}
 			return
 		}
-		//.. orb is always defined if we are here
-		//if(o){
 //send a signal to be processed on correct instance. but for now just remove
 		var ioo = Orbs.indexOf(o);
+		if(ioo){}else{return 'end'}
 		Orbs.splice(ioo,1);
 		var iooo = staNce.indexOf(o.name);
 		staNce.splice(iooo,1);
 		Eout = 'delete>>'+o.name;
 		return
-		//}
 		//.. not sure whi i blocked this. it makes sense to return 'end' here if we didnt find a target
 		//return 'end'
 	}
@@ -2366,16 +2369,19 @@ const comRiTarget = function(signal,target,St){
 //so we can specify a beat from an aspect to be removed... not a bad idea... kinda messy tho
 // rmline>>orb/text/line
 	if(signal=='rmline'){
-//we could send a signal kinda like when we do orb/in ..
-		//if(o){
+//we could send a signal kinda like when we do orb/in ..!!!!!!!!
 			//send a signal to be processed on correct instance. but for now just remove the line on txtB
 		if(o.text){
 			if(line){
 				if(line=='current'){var targetl = o.txtLi[o.txtB-1]; var place = o.txtB;}
+// rmline>>orb/text/current
 			//.. so last is not really the last line we see.. its the first line
 				if(line=='last'){var targetl = o.txtLi[o.txtLi.length-1]; var place = o.txtLi.length-1;}
+// rmline>>orb/text/last
 				if(line=='all'){o.txtLi=[]; return}
+// rmline>>orb/text/all
 				if(place==undefined){var targetl = o.txtLi[line-1]; var place = line;}
+// rmline>>orb/text/number
 			}
 			if(targetl){
 				//o.txtLi.splice(o.txtB-1,1);
@@ -2386,7 +2392,6 @@ const comRiTarget = function(signal,target,St){
 			}
 			return 'end'
 		}
-		//}			
 		//return 'end'
 	}
 
@@ -2418,6 +2423,7 @@ const comRiTarget = function(signal,target,St){
 		if(aspect=='circle'){o.circle=false; return}
 		if(aspect=='rectangle'){o.rectangle=false; return}
 		if(aspect=='image'){o.image=false; return}
+		if(aspect=='oscillator'){o.oscillator=false; return}
 	}
 	if(signal=='unseal'){SoulSeal(o,aspect); return}
 
@@ -2521,7 +2527,7 @@ const getLeValue = function(LS,St){
 			if(o.oscillator){
 				//asp.push('oscillator');
 				res.push(
-					'/osc'
+					'/oscillator'
 				);
 			}
 			if(o.image){
@@ -2730,6 +2736,16 @@ const getLeValue = function(LS,St){
 					}
 					return 'end'
 
+				case 'text':
+//orb/text
+					var dla = [];
+					for (var i = 0; i <= o.txtLi.length-1; i++) {
+						var tl = o.txtLi[i].txt;
+						dla.push(tl);
+					}
+
+					return dla
+
 				case 'script':
 //orb/script
 					var scla = [];
@@ -2763,21 +2779,13 @@ const getLeValue = function(LS,St){
 						btt.push(bt);
 					}
 					return btt;
-				case 'text':
-//orb/text
-					var dla = [];
-					for (var i = 0; i <= o.txtLi.length-1; i++) {
-						var tl = o.txtLi[i].txt;
-						dla.push(tl);
-					}
 
-					return dla
 
-				case 'osc':
-//orb/osc
+				case 'oscillator':
+//orb/oscillator
 					var tla = [];
 					for (var i = 0; i <= o.oscTL.length-1; i++) {
-						var tl = o.oscTL[i];
+						var tl = o.oscTL[i].toString();
 						tla.push(tl);
 					}
 					return tla;
@@ -3023,7 +3031,7 @@ const getLeValue = function(LS,St){
 			// o , cont, ckey, sub . we are retrieving here RS[1] is cont , RS[2] is ckey
 
 			if(cont=='text'){
-				if(o.txtLi){
+				if(o.text){
 					if(o.txtLi.length==0){return 'end'}//nothing here
 					if(ckey=='last'){
 						var lastl = o.txtLi[o.txtLi.length-1];
@@ -3121,9 +3129,46 @@ const getLeValue = function(LS,St){
 					//var RSout = [strb];
 					//o.o = RSout;
 					return [strb]
-				}//o.txtLi 
+				} 
+				return 'end'
 			}//text
+//i think we need to be able to request and also modify specific parameters on specific beats as well...? this is going to be extenuating..
+//maybe there is a different way? changing a specific element on the beat might be too complicated..? except its not necesarily so
+//we write a function similiar to beatUp but it works with a single beat line. 
+//			var cont = SS[1]; var ckey = SS[2]; var sub =SS[3]; // o
+//we could accept a fifth param to modify the target value instead of just retrieving if necesary
+//beatParam(o,cont,key,sub)
+			if(cont=='circle'){
+				if(o.circle){
+					var ret = beatParam(o,cont,ckey,sub);
+					if(ret==undefined){return 'end'}
+					return [ret]
+				}
+// orb/circle/current/x>>
+// orb/circle/current/y>>		
+// orb/circle/current/radius>>
+// orb/circle/current/layer>>
+// orb/circle/current/r>>
+// orb/circle/current/g>>
+// orb/circle/current/b>>
+// orb/circle/current/a>>
+			}
+			if(cont=='rectangle'){
+// orb/rectangle/current/x>>
+// orb/rectangle/current/y>>		
+			}
+			if(cont=='image'){
+// orb/image/current/x>>
+// orb/image/current/y>>		
+			}
 
+//audios are a bit different because commands changing params act on existing audio objects. 
+			if(cont=='oscillator'){
+			
+			}
+			if(cont=='audio'){
+			
+			}
 		}
 	}
 	//...
@@ -3161,6 +3206,9 @@ const putRiValue = function(op,RS,St,pol){
 
 				case 'x':
 // ~/x
+	//errors could also be processed. If op or op[0] is not a valid new parameter, we need a feedback to let user know it.
+	//we dont want to silently ignore the operation wasnt succesful, errors should have a recoil that affects the entity performance
+	//and prevent the execution of the rest of the script
 					if(pol==0){
 						ctx0.translate(eX,0);
 						ctx0.translate(-(op[0]),0);
@@ -3339,6 +3387,7 @@ const putRiValue = function(op,RS,St,pol){
 				case 'in':
 // orb/in
 					o.i = op[0]; return
+//.. hmm yeah this is like puting a command for the orb to call... dont make mush sense now
 				//case 'out':
 // orb/out ?
 					//
@@ -3358,7 +3407,10 @@ const putRiValue = function(op,RS,St,pol){
 						var ttb = txtToB(op[i]);
 						ncb.push(ttb);
 					}
-					o.cirB = 1; o.cirF = ncb; return //?
+					//... maybe we dont need to put cirB back to 1 always
+					o.cirB = 1; 
+					o.cirF = ncb;
+					return //?
 
 				case 'rectangle':
 //orb/rectangle
@@ -3381,15 +3433,8 @@ const putRiValue = function(op,RS,St,pol){
 				case 'text':
 //orb/text
 //so, we can place multilines on a data container by passing in an array with lines on op
-//text key on its own does not react to polarity. it returns all text lines in the orb.
 //this command not only needs to clear previous data, but also return all lines
 //op is the data we want to have now so we want to clear old data here and place op instead
-//we want RSout op to overide all data and replace it.... but we could ask if there is a line structure already and just use
-//that. we would only have to pass on the new text data only. in this way also we could just use the previous beat
-					//
-//so we need the beat from the orb or entity that produced op.. ? i think not anymore. we can probly highlight using mirror
-// orb/circle>>orb2/text<>#r,220,b,220,g,220>>orb/circle/current
-
 //so before clearing up o.txtLi, we check if there are as many datalines as op.length. yup this is good
 					//o.txtLi = [];
 					for (var i = 0; i <= op.length-1; i++) {
@@ -3402,21 +3447,28 @@ const putRiValue = function(op,RS,St,pol){
 							o.txtLi.push(Line);
 						}
 					}
+			//!!!!!!!!!! but we also want to remove the excedent lines !!!!  we can use op.length to flush all lines
+			//from a previous text. we dont want the text to keep lines from previous commands modifying the content. ok done
+					if(o.txtLi.length>op.length){o.txtLi.splice(op.length);}
 
 					dESpacer(o);
 					return //[]  //not sure what to return here
 
-				case 'osc':
-//orb/osc
-					o.oscTL = op;
+				case 'oscillator':
+//orb/oscillator
+					var nob = [];
+					for (var i = 0; i <= op.length-1; i++) {
+						var ttb = txtToB(op[i]);
+						nob.push(ttb);
+					}
+					o.oscTL = nob;
 					return //[]  //not sure what to return here
 //.. wait
 //drag . Make a target move with the caster. drag accepts targets names . every target is sent a displacement signal everytime
 //the orb displaces. o.Drag accepts a list of one or more names to send signals to... 
 				case 'drag':
 //orb/drag
-					o.drag=op;
-					return //[]  //not sure what to return here
+					o.drag=op; return //[]  //not sure what to return here
 
 				case 'cursor':
 //orb/cursor
@@ -3846,7 +3898,7 @@ const putRiValue = function(op,RS,St,pol){
 				}
 			}
 
-			if(cont=='osc'){
+			if(cont=='oscillator'){
 				if(o.oscillator){
 					if(ckey=='run'){
 						if(pol==0){
@@ -4101,6 +4153,56 @@ const txtToB = function(txt){
 	return beat
 }
 
+//a function to change a specific param on a specific beat. return target if found return undefined if not
+const beatParam = function(o,cont,key,sub,op){
+	switch(cont){
+		case 'circle':
+			var contstr = 'cirF'; var bstr = 'cirB'; break
+		case 'rectangle':
+			var contstr = 'rectF'; var bstr = 'rectB'; break
+		case 'image':
+			var contstr = 'imgF'; var bstr = 'imgB'; break
+		return
+	}
+	//.. key needs to create a number but to access the number.. we need the container to tell use its corresponding beat
+	switch(key){
+		case 'current':
+			var kstr = o[bstr]-1; break
+		case 'last':
+			var kstr = o[contstr].length-1; break
+		default:
+			//key is a number now..
+			var kstr = parseFloat(key-1); var nan = isNaN(kstr); if(nan){return}
+			break
+	}
+//now we need to ask if adress of beat even exist and then use sub to look for its pair value on the target beat
+//ok.. check if op is working.. and finish the param access commands... also for oscillators... tomorow. rest now
+	var B = o[contstr][kstr];
+	if(B){
+		for (var i = 0; i <= B.length-2; i+=2) {
+			var p = B[i]; var v = B[i+1]; var nv = v;
+			if(p==sub){
+				if(op){
+					if(op[0].length==undefined){}else{ //else for not a number .numbers have no length.
+						var dots = op[0].substr(0,2);
+						if(dots=='..'){
+							var cded = op[0].substr(2); var cdeda = cded.split("-");
+							var min = parseFloat(cdeda[0]); var max = parseFloat(cdeda[1]);
+							var n_rand = getRandom(min,max);
+							var nn = '..'+cdeda[0]+'-'+cdeda[1]+'-'+n_rand; 
+							B[i+1] = nn;//
+							nv = n_rand;
+						}
+					}
+					B[i]=nv;
+					//S[p] = nv;				
+				}
+				return nv
+			}
+		}	
+	}
+}
+
 
 //COMMAND ANNALIZER PEAK
 const comA = function(S,C){ 
@@ -4109,11 +4211,12 @@ const comA = function(S,C){
 //text must be properly formated to be picked by the system. returns and array with multilines on left side
 	if(C[0]==':'){
 // :multiliner>>RS
-	//we probably want the last line to be '>>something' and be its own line.
+//we probably want the last line to be '>>something' and be its own line. yes i like this. ok so in order to use ':' , we need to
+//do ' ' and '>>target' at the end always
 		var ml = C.substr(1);
 		var mla = ml.split(' ');
 		var RS = mla.pop();
-		var RSml = RS.substr(2);
+		var RSml = RS.substr(2);//extract '>>'
 		var res = putRiValue(mla,RSml,S,0);
 		return res //return end if operation wasnt succesful
 
@@ -4132,8 +4235,9 @@ const comA = function(S,C){
 //what if we say '#sfverbdbdsrs>>#sfbdrsves#sdvdbdvfsvfsvrsi'.. i think this also works.
 		//
 //ok i think we can make # work with multiple <> but it will take a bit of effort so.... !!!!!!!1 maybe later i want to check other
-//stuff now
+//stuff now.. for , we can just test if there are more than 1 '<>', if so, then just return 'end'
 		if(MS[0][0]=='#'){
+			var CC = C.split('<>'); if(CC.length>1){return 'end'}//condition check. more than 1 '<>' on # line is not legal
 			if(MS.length==2){ 
 	// there is 1 '>>'
 				var LSout = [];
@@ -5722,8 +5826,10 @@ function update(){ //PEAK
 						id:Date.now(), start:0, freq:420, gain:0.7, fadein:0.2, fadeout:0.3,type:0,duration:1
 					}
 					//update state using tone line
-					var TLr = txtToB(TL);
-					timeUp(os,TLr);
+				//so this txtToB is done on command when we push a text line into container.. but with tones am doing it
+				//here.... inconsistent. it should be in beat format already
+					//var TLr = txtToB(TL);
+					timeUp(os,TL);
 					var osc = COsc(os);
 					//push osc
 					soundCue.push(osc);

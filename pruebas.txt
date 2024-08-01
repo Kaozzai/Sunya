@@ -19,11 +19,3 @@ This rect selection is in synch with the image orb selected beat. So the origina
 mirror selection position and size. We move the image with arrows, and we move the mirror rect with WASD.
 The orb image beat is running on repeat.
 
-
-
-
-
-
-
-
-
