@@ -1,21 +1,29 @@
-Useful scripts for RUN orb. Place this text on Entry to create a script on RUN. Then do
-#once>>RUN/script/run  , to run the script.
-A script to log entity stats at everyheartbeat on LOG1
-
-:@LOG1<>left200>>LOG1
-#~>>LOG1/text>>LOG1/script
-#loop>>LOG1/script/run
-@LOG2<>right200>>LOG2
-#%>>LOG2/text>>LOG2/script
-#loop>>LOG2/script/run
-~/orbs>>RUN/text<>RUN/text>>~/drag
-rmline>>RUN/text/all
->>RUN/script
-
-Scripts to edit animations using an image file from local machine.
+scripts to edit animations using an image file from local machine.
 We use mirrors to proyect image orb and rect orb. 1 img mirror proyects the full image on x0 y0 .
 A second rect mirror is used to select the part of the image we want to extract and use.
 This rect selection is in synch with the image orb selected beat. So the original image proyected is in synch with the rect
 mirror selection position and size. We move the image with arrows, and we move the mirror rect with WASD.
 The orb image beat is running on repeat.
+
+Eimg
+
+
+Ecen
+@Ecen<>unseal>>Ecen/circle
+#x,0,y,0,r,250,g,250,b,250,a,0.9,inside,filled,radius,1,layer,0>>Ecen/circle
+#loop>>Ecen/circle/run
+#~/x>>Ecen/circle/1/x<>~/y>>Ecen/circle/1/y>>Ecen/script
+#loop>>Ecen/script/run
+
+
+Elid
+@Elid<>unseal>>Elid/circle
+#x,0,y,0,r,1,g,1,b,1,a,0.4,inside,filled,radius,450,layer,0>>Elid/circle
+#loop>>Elid/circle/run
+#~/x>>Elid/circle/1/x<>~/y>>Elid/circle/1/y>>Elid/script
+#loop>>Elid/script/run
+
+..so far so good... now we need to turn MSp into an orb as well... but its time up, only 30 minutes battery left... imagine if Kaozzai had
+no energy and money issues... endless possibilities... 
+
 

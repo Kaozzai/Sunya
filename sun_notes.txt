@@ -4644,3 +4644,49 @@ target/in==#something<>#once>>orb/script/run
 # can be used to create any literal value but there is only one symbol that cannot be written more than once on the command, <> .  
 the '<>' symbol can only be used once per line , even when we do a multiliner , we cant put more than 1 '<>' per line.
 
+ok , so image x y 0 needs to be orb circle. Because when we move orb circle position, image needs to perform around this point...
+i just noticed. this is important
+OK also when no beats, orb simply sets itself run off , how about that
+AND yeah i think it makes sense to have Elid Ecen and even MSp roles to be performed by orbs. This is even more convenient for multiple
+entities dynamics
+
+
+... ok we need to create an orb to do MSp job now... clear up and update displacements commands..
+..MSp limits are too arbitrary. not likey.
+How about .. having one simple condition to move the entity center around. is being inside a memory form?.. maybe the other way around..
+How about entity being able to freely displace.. but memories forms able to prevent or control an entity displacement..? thats better
+Makes more sense too. An entity can create memories to stop other memories from impeding the entity displacement and so on..
+The idea of MSp also serves to anchor coordinates numbers. Because we want to have a refference when we define coordinates
+on the beats visual aspects in orbs.. but.. ok what if entity is not restrained by its own msp.. and so.. when an orb is created
+.. maybe circle aspect can just have the current entity position , and so are rectangles, but what about images. We want to be able
+to move around the center of the image animation, also the center of audio orbs.. so maybe image and audio aspects need circle or rect
+aspects previously unsealed ..not a fan of that.
+we could just asign an arbitrary center as well...
+so image and audio can be asigned a focus point, and we can also make an orb circle or rect aspect its focus point! i like that.
+orb/image/centerx , centery
+orb/oscillator/centerx , centery
+.. so a script could say: ~/x==
+
+ok now we need to create interactions. so the most convenient way would be by annalyzing o.o . orb output.
++100>>o1/circle/1/x .. this instruction needs to generate an output on the caster that can be annalyzed by a listener instruction
+if casted on the same heartbeat , o1/out>>listener/text . the result needs to be expressed in a multiliner.
+If an aspect changes location, output should express the new location, what signal got it there, and what orb. We check the state of the
+aspect that concerns us, not the beat itself. 
+A listener orb needs to be able to use the output data produce an instruction to
+copy its behavior and execute on a different target,
+cancel its effect, effectively blocking the effect of the instruction or
+modify the instruction using a different text line and proyect it somewhere else as the listener see fit.
+Once this mechanisms are ready we wont need drag. Orbs will have an efective medium to comunicate and create timed dynamics.
+MSp dont ring many bells now either
+.. and its done. output signal works fine.
+
+ok so if we clear all beats on a line, the line will still exist , but it wont be visible
+If circle has no beats, it wont be visible but still exist..
+
+
+after that... we probably need to modularize the whole entity structure....
+.. and then... make some image editor scripts... maybe some sound editing
+scripts to play around with oscillators... and by then we should start working
+on Kaozzai and game introduction..... omg so much work
+
+..aaand am not even using MSp now..
