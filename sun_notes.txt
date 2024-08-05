@@ -4672,7 +4672,7 @@ ok now we need to create interactions. so the most convenient way would be by an
 if casted on the same heartbeat , o1/out>>listener/text . the result needs to be expressed in a multiliner.
 If an aspect changes location, output should express the new location, what signal got it there, and what orb. We check the state of the
 aspect that concerns us, not the beat itself. 
-A listener orb needs to be able to use the output data produce an instruction to
+A listener orb needs to be able to use the output data to produce an instruction to
 copy its behavior and execute on a different target,
 cancel its effect, effectively blocking the effect of the instruction or
 modify the instruction using a different text line and proyect it somewhere else as the listener see fit.
@@ -4683,10 +4683,32 @@ MSp dont ring many bells now either
 ok so if we clear all beats on a line, the line will still exist , but it wont be visible
 If circle has no beats, it wont be visible but still exist..
 
+after that... we probably need to modularize the whole entity structure.... !!!!!!!!
+OK so ents could be reffered by name just like orbs.. but how far can we send commands to other entities... can we even do that
+We need to know an entity name.. we should be able to simply ask the void for an entity name... shoould other entities be even visible..
+How about we can only work with other entities orbs memories.. that kinda makes sense... a lot of sense actually..
+But say another user ask for a user data, and start controling the user screen.. how to prevent that. Say an orb in the wild could send
+commands to affect entity params..
 
-after that... we probably need to modularize the whole entity structure....
-.. and then... make some image editor scripts... maybe some sound editing
+make chatOn and nLine a thing .. should be Cline Iline . done
+aaand we probly want to be able to situate rectangle forms using the screen percentage... that could be handy to create proper
+interfaces. not crucial tho
+ou. i think we can totally forget about angles right now. deep inside i believe we can have a lot of fun already. you need to let go fam
+
+.. and then... make some image editor scripts.. but first define the image center mechanic
+remember we said image and sound aspects need special coordinate paramaters to have point of origin
+
+. maybe some sound editing
 scripts to play around with oscillators... and by then we should start working
 on Kaozzai and game introduction..... omg so much work
 
 ..aaand am not even using MSp now..
+
+The squiggly line
+
+We want to be able to produce text and wait for user input to keep on wit the script. we should be able to do that
+already..
+
+The purpose Kaozzai had in mind when he built the system was not to take full advantage of the machine power, but to allow
+the user to have full understanding of what the system is doing under the hood. Sunya is designed to teach users how does
+programming work.

@@ -1,4 +1,5 @@
 scripts to edit animations using an image file from local machine.
+The Main editor script needs to run from the orb that holds the image already. 
 We use mirrors to proyect image orb and rect orb. 1 img mirror proyects the full image on x0 y0 .
 A second rect mirror is used to select the part of the image we want to extract and use.
 This rect selection is in synch with the image orb selected beat. So the original image proyected is in synch with the rect
@@ -6,6 +7,9 @@ mirror selection position and size. We move the image with arrows, and we move t
 The orb image beat is running on repeat.
 
 Eimg
+$/name>>$/text/1
+@ImgM
+@RectM
 
 
 Ecen
@@ -23,7 +27,8 @@ Elid
 #~/x>>Elid/circle/1/x<>~/y>>Elid/circle/1/y>>Elid/script
 #loop>>Elid/script/run
 
-..so far so good... now we need to turn MSp into an orb as well... but its time up, only 30 minutes battery left... imagine if Kaozzai had
+..so far so good... now we need to turn MSp into an orb as well...maybe not. with signals working and all, MSp could take a permanent vacation
+but its time up, only 30 minutes battery left... imagine if Kaozzai had
 no energy and money issues... endless possibilities... 
 
 
