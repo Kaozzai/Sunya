@@ -27,8 +27,5 @@ Elid
 #~/x>>Elid/circle/1/x<>~/y>>Elid/circle/1/y>>Elid/script
 #loop>>Elid/script/run
 
-..so far so good... now we need to turn MSp into an orb as well...maybe not. with signals working and all, MSp could take a permanent vacation
-but its time up, only 30 minutes battery left... imagine if Kaozzai had
-no energy and money issues... endless possibilities... 
 
 

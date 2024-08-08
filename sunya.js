@@ -66,9 +66,9 @@ var VoidID = Date.now();//sunya initialization time					//
 //var dB = -1; //data beat								// /dB
 ////what layer... msp graphic layer..?
 var laYer = 0;//?									// /layer
-var dsignat = [ //data signature							// /dsignat
+var dsignat = //[ //data signature							// /dsignat
 			//["r",230,"g",230,"b",230], //white
-			["r",176,"g",215,"b",235], //celeste
+			["r",176,"g",215,"b",235]; //celeste
 			//["r",91,"g",157,"b",237] //azure
 			//["r",0,"g",4,"b",233], //blue
 			//["r",97,"g",28,"b",188], //purple blue
@@ -82,7 +82,7 @@ var dsignat = [ //data signature							// /dsignat
 
 	//['r',20,'g',230,'b',120,'a',1],
 	//['r',230,'g',230,'b',200,'a',0.5]
-] //customize entity data lines. its a beat container
+//] //customize entity data lines. its a beat container
 var dfont = 'px Courier New';								// /font
 var dfontSize = 18;
 
@@ -95,7 +95,10 @@ So i was thinking maybe instead of a random ass number why not take a measure of
 all work the entity and its orbs do in a single update. This time should give us an idea of how many orbs we can have doing stuff
 at any moment .. yes we got it, its tut
 */
-var MSpSize = undefined;//The number of max allocated space in radius 			// /Mcounter
+//we need a better name for this .. hEat
+//var MSpSize = undefined;//The number of max allocated space in radius 		// /Mcounter
+var hEat = undefined;									// /memheat
+/*
 const MSp = {
 	B : 1,	layer:0, 								// /msB...
 //so MSp field should simply use dsignat and radius should not be able to be modified from beats
@@ -110,7 +113,7 @@ const MSp = {
 		layer:0
 	}//a special circle state.	
 }
-
+*/
 
 //Entity shortcuts. 
 var EkeyS = [										// /keys
@@ -123,8 +126,12 @@ if text aspect active, current circle form position
 	{name:"C", key:"C", com1:"@C<>#C>>C/text>>C/script"},
 	{name:"D", key:"D", com1:"#loop>>B/script/run"},
 	{name:"E", key:"E", com1:"#loop>>C/script/run"},
-	{name:"F", key:"F", com1:"-300>>B/text/x<>+200>>C/text/x"},
+	{name:"F", key:"F", com1:"@P<>~/screenx>>Elog/text/x"},
 	{name:"G", key:"G", com1:"#loop>>Elog/script/run"},
+	{name:"H", key:"H", com1:"P/name>>~/stance<>~/screeny>>Elog/text/y"},
+	{name:"II", key:"II", com1:"-300>>B/text/x<>+200>>C/text/x"},
+	{name:"JJ", key:"JJ", com1:"unseal>>B/oscillator"},
+
 	//some temporal shorts for developing..
 	{name:"A1", key:"A1", com1:"@A<>#A>>~/stance"},
 	{name:"A2", key:"A2", com1:"$/text>>$/script<>#once>>$/script/run"},
@@ -150,8 +157,6 @@ if text aspect active, current circle form position
 	//{name:"chain", key:"chain", com1:"#Carl>>~/drag<>#20>>Carl/gspeed"},
 	//{name:"track", key:"track", com1:">>Carl/text<>#20>>Carl/gspeed"},
 	//drag/add ... we dont want toalways putall drag orbs at once wealso wanto add
-	{name:"focus", key:"focus", com1:"#~>>Carl/script<>#loop>>Carl/script/run"},
-	{name:"army", key:"army", com1:"~/orbs>>Vespa/script<>#loop>>Vespa/script/run"},
 	//........
 	//{name:"track", key:"track", com1:"$/text/cn>>Jupiter/script<>#loop>>Jupiter/script/run"},
 
@@ -160,8 +165,8 @@ if text aspect active, current circle form position
 	{name:"mm", key:"mm", com1:"+>>~/stance"},
 	{name:"zz", key:"zz", com1:"->>~/stance"},
 
-	{name:"bv", key:"bv", com1:"->>$/text/cn"},
-	{name:"nm", key:"nm", com1:"+>>$/text/cn"},
+	{name:"bb", key:"bb", com1:"->>$/text/cn"},
+	{name:"nn", key:"nn", com1:"+>>$/text/cn"},
 
 //use Jupiter 
 	//{name:"s1", key:"s1", com1:'Jupiter/text/1>>~/gspeed'},
@@ -186,51 +191,12 @@ somehow..
 ]
 
 
-//we need a center cursor to appear when entity is idling or displacing on its memory space. Should always indicate the screen center
-//This point Holds eX and eY always.
-//..so we now transform Ecen into an orb. it needs circle unsealed, and it need to update x and y coordinates to eX and eY at every
-//heartbeat. User entity will now be able configure how it looks as well.
-const Ecen = {
-	B : 1,	layer:2, 								// /msB...
-	beats:[										// /msignat
-		['r',20,'g',160,'b',7,'a',0.3],
-		['r',230,'g',255,'b',230,'a',0.9]
-	],
-	state:{
-		r:230, g:230, b:230, a:0.8, x:eX, y:eY, radius:1, is:'circle',		
-		inside:'filled',
-		layer:2
-	}
-}
+//fair lines
+//I know its a bit of a sudden .. But could you please do something for me real quick?
+//Commands are instructions! Buttons are just calling Commands! We can asign Commands
+//into any Button! We can create Buttons using Commands!
+//The possibilities are Endless! Haha
 
-
-//PEAK elid2 update neccesary. What really IS elid2. Its the void eye lid? kinda. The lid of the entity. We might use this one
-//later. Its useful to have a rect state just ready out there to do stuff. Just make an object on global for this. Its the rect
-//on the whole screen data. Good for fading out, maybe we could manipulate it later to create some effects. Maybe it can be shrinked
-//Maybe it can be tinted with another color ant semi transparent. Yes this is a useful element to have. Pretty much a user feature.
-//
-//so Elid could be an active element in user experience. instead of making it a special rect here, an orb rect could do this job.!!
-//foreseeen
-//Its purpose is to prevent the overwhelming activity in the void from saturating the entity screen. ... ... and now am thinking,
-//this could be a circle actually... and this circle area should also protect entity from the sea void unbearable noise.
-//This circle should probably be the first orb users learn to control in order to work against the void... or maybe this is
-//simply the work of MSp field.. To silence the void noise and clear up the void color surges in the screen.
-//.. ok lets make elid a circle as well then.
-
-/*
-const Elid = {
-	B:1,	layer:2,
-	beats:[
-		//['r',1,'g',1,'b',1,'a',0.2,'w',window.innerWidth,'h',window.innerHeight]
-	],
-	state:{
-		r:1, g:1, b:1, a:zai, x:eX-window.innerWidth/2, y:eY-window.innerHeight/2, is:'rect',
-		w:window.innerWidth, h:window.innerHeight,
-		inside:'filled',
-		layer:2
-	}//a special rect state.	
-}
-*/
 
 //kfeed need to be an object just like MSp? maybe not. kfeed is more of hardware thingy
 const Kfeed = {
@@ -330,24 +296,6 @@ const OrbSoul = function(){
 //music orb. each type of orb has 2 aspects
 //... ok maybe later but for now just unlock one aspect at a time
 const SoulSeal = function(o,asp){
-	//if(o.body){
-//so am thinking... maybe o.x and o.y should not be always necessarily linked to its rect or circle for position... we certainly
-//wont link it to image position... but should o.x and o.y even exist? maybe  not? We do need circle and rect and image to be
-//independant, we can t use the same x and y on all forms, this is too limiting... but how about displacing? what is it that we displace
-//when we say displace>>target  ? Should now we specify what aspect we want to displace? yes probly . yes do that. but how about speed..
-//do we want a displace speed for each form? or do we want a better displace command.. probly yes . disleft10>>orb/circle
-// disup30>>orb/rect..  or maybe left3>>orb/circle . lets distile displaces into left, right, up and down, and reserve strifeleft
-//striferight , advance, recede, for focus. if no focus, then these commands dont do anything.
-		//o.dismode='grid'; //'wheel' ... maybe we dont really need a dismode since focus movements will not be asociated to arrows
-		//o.focus=undefined;
-		///o.x=0; o.y=0;
-		//o.cursor='text'; 
-		//o.drag=[]; //do we want drag or nah
-		//o.gspeed=1;
-		//o.wspeed=1;
-		//o.angle=0;
-		//o.rad=0; //distance from target focus?
-	//}
 
 	switch(asp){
 
@@ -375,10 +323,10 @@ const SoulSeal = function(o,asp){
 			o.circle=true;
 //we now want a default beat with all possible params. .maybe we can still put in dsignat for colors, but each aspect has their own
 //unique parameters..!!!!
-			//o.cirF=dsignat;
 			var firstf = dsignat.slice(0);
+			firstf.push('a',0.8,'x',eX,'y',eY,'radius',13,'inside','empty','layer',0);
 			o.cirF = [firstf];
-			o.cirF[0].push('a',0.8,'x',eX,'y',eY,'radius',13,'inside','empty','layer',0);
+			//o.cirF[0].push('a',0.8,'x',eX,'y',eY,'radius',13,'inside','empty','layer',0);
 			o.cirB=1; o.cirR='loop'; //o.cirL=1;
 			o.cirS={
 				r:230, g:230, b:230, a:0.8, x:eX, y:eY,
@@ -392,8 +340,8 @@ const SoulSeal = function(o,asp){
 			o.rectangle=true;
 			//o.rectF=dsignat;
 			var firstf = dsignat.slice(0);
+			firstf.push('a',0.8,'x',eX,'y',eY,'w',60,'h',60,'inside','empty','layer',0);
 			o.rectF = [firstf];
-			o.rectF[0].push('a',0.8,'x',eX,'y',eY,'w',60,'h',60,'inside','empty','layer',0);
 			o.rectB=1; o.rectR='loop'; //o.rectL=1;
 			o.rectS={
 				r:230, g:230, b:230, a:0.8, x:eX, y:eY, w:60, h:60, is:'rect',
@@ -408,7 +356,7 @@ const SoulSeal = function(o,asp){
 			o.imgfile=undefined;
 //so we need the center coordinates now..
 			o.imgCX=eX;  o.imgCY=eY;
-//and a default frame..
+//and a default frame.... we dont need a default frame. this one is created when an image file is loaded into the orb
 			o.imgF=[
 				//['x',0,'y',0,'w',0,'h',0,'px',0,'py',0,'pw',0,'ph',0,'a',1,'layer',0]
 			];
@@ -420,19 +368,12 @@ const SoulSeal = function(o,asp){
 			};
 			break
 
-
-
-
-
 /////////WEB AUDIO
-//Holy shiet audio. ok
 //Basic oscillator using audio web API the Audio context holds nodes. Nodes are connected to create various effects and
 //filters. the source node has no input only output,the destination node has no output, only input. All nodes between these
 //two act as filters and each can have multiple ins and outs
-//!
 //An audio object should hold all the instructions and buffers neccesary for a
 //function to create the precise Audio Node audio objects can be located on orbs , void nodes and user data
-//!
 		case 'audio':
 /*
 //Get an AudioBufferSourceNode.
@@ -567,23 +508,25 @@ all.media_s = function(url_audio, destination){
 //all.au.destination
 
 
-
 */
 			if(o.audio==false){o.audio=true; return}
 			o.audio=true;
 			break
 
+
 		case 'oscillator':
 			if(o.oscillator==false){o.oscillator=true; return}
 			o.oscillator=true;
 			o.oscTL=[
-	//lets have a tone for refference
-				['start',0,'duration',2,'freq',439,'gain',0.07,'fadein',0.3,'fadeout',0.3]
+	//lets have a tone for refference. duration can have 'loop' but lets prevent by default that so users dont panic
+	//this is ok for now its a basic tone line, but later we can try experimenting with other audio nodes
+			['start',0,'duration',2,'freq',432,'gain',0.07,'fadein',0.3,'fadeout',0.3,'type',0]
 				//'start,0,duration,2,freq,439,gain,0.07,fadein,0.3,fadeout,0.3'
 				//[]
 			];
 			//o.oscB=1; 
 			o.oscR='off'; 
+			o.oscPA=false;
 			break
 
 /* 
@@ -632,16 +575,6 @@ all.media_s = function(url_audio, destination){
 
 
 
-
-
-//so create an oscilator with a line and push it into soundCue
-//so a line need to be able to create and push an oscilator state into soundCue using a tone line on run
-//
-//create state
-//var os = {
-//	id:Date.now(), start:0, freq:420, gain:0.7, fadein:0.2, fadeout:0.3,type:0,duration:1
-//}
-
 //update state using tone line
 const timeUp = function(osc,TL){ 
 	for (var i = 0; i <= TL.length-2; i+=2) {
@@ -677,16 +610,21 @@ const COsc = function(os){
 
 	//gain node
 	osc.oscg = actx.createGain();
+	//initial value cant be 0 because this is the condition to remove the tone state..
 	osc.oscg.gain.value = 0.001;
 
 	//analyzer
 	//analyzer=actx.createAnalyser();
 	//analyzer.fftSize = 2 ** 13; //this is just the size of the thing
 	
-	//we can use gain node to determine duration of the tone
+	//fade
+	osc.fadein=os.fadein; osc.fadeout=os.fadeout; 
+
+	osc.duration = os.duration;
+
+	//we can use gain node to determine duration of the audible tone
 	osc.oscg.gain.setTargetAtTime(os.gain, osc.start, os.fadein);
-	osc.oscg.gain.setTargetAtTime(0, osc.start + os.duration, os.fadeout);
-	
+
 	osc.oscn.connect(osc.oscg);
 
 	//osc.oscg.connect(analyzer);
@@ -694,10 +632,9 @@ const COsc = function(os){
 	osc.oscg.connect(actx.destination);
 	osc.oscn.start(osc.start);
 
-	osc.duration=os.duration;
-	osc.end = osc.start+os.duration+os.fadeout+1;
-	osc.oscn.stop(osc.end); //stop can also take a time to stop at time
-//so what if we annalize right here the total duration of the state and make it self remove?
+	if(os.duration=='loop'){}else{
+		osc.end = osc.start+os.duration+os.fadeout+1;
+	}
 
 	return osc
 }
@@ -711,8 +648,25 @@ const COsc = function(os){
 //conection with other orbs etc. its the sound aspect accesible. We check for soundCue on every heartbeat to when its necesary to
 //remove the audio object from memory
 const hearAll = function(s,l){
-	var check = s.end-actx.currentTime;
-	if(check<=0){
+//we want to check if orb still exist. if it was eliminated , then the sound should stop... it these audio objects where kept on
+//the orbs themselves , then there would not be a way to stop() and disconnect() them if the orbs where deleted. so its a good thing
+//i think to keep these audio states apart on soundCue.
+	var o = Fting(Orbs,'name',s.origin);
+	if(o){
+		//if(o.oscillator==false){s.oscn.stop(); s.oscn.disconnect(); soundCue.splice(l,1);}
+		var check = s.end-actx.currentTime;
+		if(check<=0){
+			//setTargetAtTime(target, startTime, timeConstant)
+			s.oscg.gain.setTargetAtTime(0, 0, s.fadeout); s.end = undefined;
+		}
+		if(s.oscg.gain.value==0){
+			s.oscn.stop(); s.oscn.disconnect(); soundCue.splice(l,1);
+	//we also need to let the origin orb know so its oscR value updates to 'off'
+			var o = Fting(Orbs,'name',s.origin);
+			o.oscR='off'; o.oscPA=false;
+		}
+
+	}else{
 		s.oscn.stop(); s.oscn.disconnect(); soundCue.splice(l,1);
 	}
 }
@@ -726,14 +680,6 @@ const hearAll = function(s,l){
 //we can do some funky stuff by feeding oscilator nodes into other oscilator nodes
 //.. am considering creating a system in tune with the tools given by the web api. i think its the right aproach
 //ok so we create nodes and connect them..hmm
-//ok an idea. a tune line goes like this. we got a set of minimal parameters and ranges to work with
-//[freq,439,gain,0.07,fade,0.3,start,0,end,2]
-//When run is 'once', we just read all lines at once and let the sound finish on its own. if run is 'loop' it means the sound will
-//start over again on total duration end? We could just let loop set all end to no end 'repeat' is not used.
-//So the line creates a state that we use to form all nodes necesary for it and we just read all lines at once. just create
-//as many states as there are lines and check for them to when it all ends.
-//
-
 
 //let analyzer = null;
 
@@ -773,16 +719,6 @@ const DataLine = function(){
 	return L
 }//line structure
 
-/*
-const CircleForm = function(){
-	cirS:{
-		r:230, g:230, b:230, a:0.8, x:0, y:0, radius:27, is:'circle',
-		inside:'empty'
-	}
-	return cirS
-}
-*/
-
 
 //the idea now is that we could just create a state using
 //the properties of the container and RSout beat and run it once independently from the beats of the container here.. This operation
@@ -795,6 +731,7 @@ const CircleForm = function(){
 //but we can create a fully custom state from here the mirror
 //so for game mechanics this mirror concept is interesting because now orbs can create visual decoys.
 //we can write a function to do mirror on last, current and by number
+//.... Mirror is pretty much beatUp. We probably need to fuse these together
 const Mirror = function(txtb,sm){//,layer){
 	var nb = txtToB(txtb);
 	var BL = nb.length;
@@ -813,13 +750,6 @@ const Mirror = function(txtb,sm){//,layer){
 		}
 		sm[p] = nv;
 	}
-	//}
-/*
-	if(layer==0){visual_q0.push(sm);} 
-	if(layer==1){visual_q1.push(sm);}
-	if(layer==2){visual_q2.push(sm);}
-*/
-	//o.o = nb;
 	return sm
 }//mirror
 
@@ -880,6 +810,36 @@ const beatUp = function(F,B,S){ //Frame, Beat, State
 }//beatUp
 
 
+//PRINT PEAK
+//we need to substract this operation in order to be called everytime a txt memory modifies any of its lines. Maybe we dont need to clear
+//all everytime... We actually dont need to clear all txt states because now all states are cleared up at every heart beat by design.
+//..So we call y realignment(printo) when we add a data line, when we remove one and when we displace with it.
+//It needs to be a very precise function. Call once and let beats maintain the words vibing.
+//Even minor changes on beats wont require printo, we are only concerned with relocating all lines of the txt in order to display them
+//as desired.
+//Maybe we should simply use the orb x and y as base, txt center. Asigning a coordinate to every single line not only seems
+//convoluted but also unnecesary. Lets just not , for now.
+//Ok so beats wont mess around with x and y. We can safely just modify x and y from the states of the datalines themselves.
+//and they should perdure because states live in the lines themselves, we are only pushing and removing refferences when we
+//push to drawing arrays.
+	//
+//Just apply spacer on y coordinates on a data txt. takes orb as parameter.
+//Relocate data lines from top to bottom using orb Y location as base.
+//data Edit Spacer
+//.... this function should also update datalines x using orb values o.x etc... so we can simply call this when we move the orb around
+//What we rly want is to reorder the data lines position using orb location. nothing more.
+const dESpacer = function(o){//a second parameter to select pprint mode. edit or stream
+//ok lets just locate lines one bellow the other just like now for edit mode.
+	var spacer = 0;
+	//.. change data for text
+	for (var i = 0; i <= o.txtLi.length-1; i++) {
+		var dl = o.txtLi[i]; dl.state.y=o.txtY+spacer; dl.state.x=o.txtX;
+		//if(dl.txt=''){}
+	spacer = spacer+o.spacer;
+	}
+} //dESpacer
+
+
 //PEAK
 //REPEAT
 //repeat system
@@ -912,7 +872,7 @@ const repeatSys = function(){
 //use orb or entity speed. done... not done
 
 //why not just go back to inital idea. Make all keys even arrows customizable, but let arrows have a default behavior
-
+/*
 				case 'left':
 					///var cline='left'+Egspeed+'>>'+stancE
 					var cline='left>>'+stancE;
@@ -931,6 +891,7 @@ const repeatSys = function(){
 					var cline = 'down>>'+stancE;
 					comA(undefined, cline);
 					break
+*/
 //keyD.push({ins:'com', str:key_short.com1});
 			//we can now fast repeat any command... but one a t a time... this is not bad but... arrows could be an exception
 //because we want arows to be able to run together
@@ -1269,34 +1230,7 @@ const displacer = function(x, y, dir, speed){
 
 
 
-//PRINT PEAK
-//we need to substract this operation in order to be called everytime a txt memory modifies any of its lines. Maybe we dont need to clear
-//all everytime... We actually dont need to clear all txt states because now all states are cleared up at every heart beat by design.
-//..So we call y realignment(printo) when we add a data line, when we remove one and when we displace with it.
-//It needs to be a very precise function. Call once and let beats maintain the words vibing.
-//Even minor changes on beats wont require printo, we are only concerned with relocating all lines of the txt in order to display them
-//as desired.
-//Maybe we should simply use the orb x and y as base, txt center. Asigning a coordinate to every single line not only seems
-//convoluted but also unnecesary. Lets just not , for now.
-//Ok so beats wont mess around with x and y. We can safely just modify x and y from the states of the datalines themselves.
-//and they should perdure because states live in the lines themselves, we are only pushing and removing refferences when we
-//push to drawing arrays.
-	//
-//Just apply spacer on y coordinates on a data txt. takes orb as parameter.
-//Relocate data lines from top to bottom using orb Y location as base.
-//data Edit Spacer
-//.... this function should also update datalines x using orb values o.x etc... so we can simply call this when we move the orb around
-//What we rly want is to reorder the data lines position using orb location. nothing more.
-const dESpacer = function(o){//a second parameter to select pprint mode. edit or stream
-//ok lets just locate lines one bellow the other just like now for edit mode.
-	var spacer = 0;
-	//.. change data for text
-	for (var i = 0; i <= o.txtLi.length-1; i++) {
-		var dl = o.txtLi[i]; dl.state.y=o.txtY+spacer; dl.state.x=o.txtX;
-		//if(dl.txt=''){}
-	spacer = spacer+o.spacer;
-	}
-} //dESpacer
+
 
 /*
 //SO PEAK stream in is obsolete
@@ -1730,6 +1664,7 @@ const kdown = function(ev){
 	//console.log(ev.key+'_____'+ev.timeStamp);
 
 //SPACEBAR
+//Maybe we can use other parameter in the event to let ' ' spacebar also be customizable..... !!!!!
 //a system to attach commands into keys.. 
 	if (ev.key == ' ' && ev.target == document.body) { //spacebar
 		ev.preventDefault();//prevents space to scroll document.. idfk how but it works
@@ -1863,7 +1798,6 @@ const kdown = function(ev){
 					visual_q2.push(KF);
 					//ctx0.clearRect((eX-800),(eY-200),1400, 300);
 				}
-
 
 				//if no waitCK, Entry will now hold the command and it will be processed by comA
 				Entry=chat_in.value;
@@ -2015,6 +1949,9 @@ const kdown = function(ev){
 	}//other keys
 
 //////////////////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//
+	//
+	//
 	//ask for asigned key short .. we can now evaluate all keys... mostly
 //while on void , ask for user keyshorts
 	var ksa = EkeyS;//U.void_ks;//
@@ -2100,15 +2037,6 @@ in those directories
 Patterns
 
 */
-//PEAK COMMANDS
-//.. i think we l need to bring back the command cue for when more than one command is called in the same hearbeat? we simply
-//execute them both but we considerate it into the result.
-//Now we need to annalize using '/' as separators. Lets use split to chop the line. '>>' . '{}'... can we use 2 symbols as separators? YES
-
-//confusing. We want commands to be crystal clear. Calling one line on one orb should to the same thing in another orb
-//Having to worry about the stance sounds like an unnecesary limitation.
-//!!! PEAK
-//OK so now annalizer will have lots less problems because the structure of possible commands is much more consistent
 
 
 //NEW STRUCTURE. DEFINITELY FINAL FORM
@@ -2135,7 +2063,7 @@ const getCom = function(C){
 		Eout = '@'+o.name;
 		return true
 	}// @
-
+/*
 	if(C=='msgrow'){
 //msgrow
 		MSpRad++; MSp.state.radius++;
@@ -2152,6 +2080,7 @@ const getCom = function(C){
 		Eout = 'msshrink';
 		return true
 	}
+*/
 	if(C=='loadimage'){
 //loadimg . create a buffer for an image file on local machine 
 		Eout='loadimage';
@@ -2488,18 +2417,20 @@ const comRiTarget = function(signal,target,St){
 // rmline>>orb/text/line
 	if(signal=='rmline'){
 //we could send a signal kinda like when we do orb/in ..!!!!!!!!
-			//send a signal to be processed on correct instance. but for now just remove the line on txtB
+			//send a signal to be processed on correct instance.. !! 
 		if(o.text){
 			if(line){
-				if(line=='current'){var targetl = o.txtLi[o.txtB-1]; var place = o.txtB;}
+
 // rmline>>orb/text/current
-			//.. so last is not really the last line we see.. its the first line
-				if(line=='last'){var targetl = o.txtLi[o.txtLi.length-1]; var place = o.txtLi.length-1;}
+				if(line=='current'){var targetl = o.txtLi[o.txtB-1]; var place = o.txtB;}
 // rmline>>orb/text/last
-				if(line=='all'){o.txtLi=[]; return}
+				if(line=='last'){var targetl = o.txtLi[o.txtLi.length-1]; var place = o.txtLi.length-1;}
+//we cann remove all lines at once useing 'all'
 // rmline>>orb/text/all
-				if(place==undefined){var targetl = o.txtLi[line-1]; var place = line;}
+				if(line=='all'){o.txtLi=[]; return}
+
 // rmline>>orb/text/number
+				if(place==undefined){var targetl = o.txtLi[line-1]; var place = line;}
 			}
 			if(targetl){
 				//o.txtLi.splice(o.txtB-1,1);
@@ -2546,25 +2477,22 @@ const getLeValue = function(LS,St){
 // ~
 //return access keys to entity structure... actually, we could just request all data in real time , same with orbs. 
 			var res = [
-				//'~/name', '~/orbs', '~/stance', '~/dsignat', '~/in', '~/out', '~/gspeed', '~/wspeed',
-				//'~/x', '~/y', '~/angle', '~/mspx','~/mspy','~/mspsize','~/mspradius', '~/limage',
-				//'~/dismode'
 				'~/name: '+Ename,
 				'~/orbs: '+Orbs.length,
 				'~/stance: '+stancE,
-				'~/dsignat: ...',
+				'~/dsignat: '+dsignat.toString(),
 				'~/x: '+eX,
 				'~/y: '+eY,
-				'~/gspeed: '+Egspeed,
+				'~/screenx: '+(eX-(Math.round(window.innerWidth/2))),
+				'~/screeny: '+(eY-(Math.round(window.innerHeight/2))),
+				'~/screenw: '+window.innerWidth,
+				'~/screenh: '+window.innerHeight,
 				'~/comprompt: '+chatOn,
 				'~/inprompt: '+nLine,
-				//'~/mspalpha: '+zai,
-				//'~/mspx: '+MSpX,
-				//'~/mspy: '+MSpY,
-				//'~/mspsize: '+MSpSize,
-				//'~/mspradius: '+MSpRad,
+				'~/memheat: '+hEat,
 				'~/out: '+Eout,
 				'~/in: '+Ein,
+			//limage here could return the number of images..
 				'~/limage: ...'
 			]
 			return res
@@ -2579,6 +2507,7 @@ const getLeValue = function(LS,St){
 			var res = [];
 			res.push(
 				'/name: '+o.name
+				//deprecated..
 				//'/gspeed: '+o.gspeed,
 				//'/cursor: '+o.cursor,
 				//'angle: '+o.angle, 'focus: '+o.focus,
@@ -2595,6 +2524,8 @@ const getLeValue = function(LS,St){
 					'/text/x: '+o.txtX,
 					'/text/y: '+o.txtY,
 					'/text/cn: '+o.txtB,
+				//.. need to implement something here to not print anything if current line dont exist..
+					//'/text/current: '+o.txtLi[o.txtB-1].txt,
 					'/in: '+o.i
 					//o.name+'/text'
 				);
@@ -2604,7 +2535,7 @@ const getLeValue = function(LS,St){
 				res.push(
 					'/script/run: '+o.scR,
 					'/script/cn: '+o.scB,
-					'/script/current:'+o.scC[o.scB-1],
+					//'/script/current:'+o.scC[o.scB-1],
 					'/out: '+o.o
 				);
 			}
@@ -2614,7 +2545,9 @@ const getLeValue = function(LS,St){
 					'/circle/x: '+o.cirS.x,
 					'/circle/y: '+o.cirS.y,
 					'/circle/radius: '+o.cirS.radius,
-					'/circle/run: '+o.cirR
+					//'/circle/current: '+o.cirF[o.cirB-1].toString(),//o.cirR,
+					'/circle/run: '+o.cirR,
+					'/circle/cn: '+o.cirB
 				);
 			}
 			if(o.rectangle){
@@ -2624,13 +2557,17 @@ const getLeValue = function(LS,St){
 					'/rectangle/y: '+o.rectS.y,
 					'/rectangle/w: '+o.rectS.w,
 					'/rectangle/h: '+o.rectS.h,
-					'/rectangle/run: '+o.rectR
+					//'/rectangle/current: '+o.rectF[o.rectB-1].toString(),//o.cirR,
+					'/rectangle/run: '+o.rectR,
+					'/rectangle/cn: '+o.rectB
+
 				);
 			}
 			if(o.oscillator){
 				//asp.push('oscillator');
 				res.push(
-					'/oscillator'
+					'/oscillator/run: '+o.oscR
+					//'/oscillator'
 				);
 			}
 			if(o.image){
@@ -2647,6 +2584,7 @@ const getLeValue = function(LS,St){
 					'/image/w: '+o.imgS.w,
 					'/image/h: '+o.imgS.h,
 					'/image/file: '+o.imgfile,
+					//'/image/current: '+o.imgF[o.imgB-1].toString(),
 					'/image/run: '+o.imgR,
 					'/image/cn: '+o.imgB
 				);
@@ -2676,11 +2614,26 @@ const getLeValue = function(LS,St){
 //~/y
 					return [eY] 
 				case 'comprompt':
-//~/y
+//~/comprompt
 					return [chatOn] 
 				case 'inprompt':
-//~/y
+//~/inprompt
 					return [nLine] 
+				case 'memheat':
+//~/memheat
+					return [hEat]
+				case 'screenx':
+//~/screenx
+					return [eX-(Math.round(window.innerWidth/2))]
+				case 'screeny':
+//~/scrreny
+					return [eY-(Math.round(window.innerHeight/2))]
+				case 'screenw':
+//~/screenw
+					return [window.innerWidth]
+				case 'screenh':
+//~/screenh
+					return [window.innerHeight]
 /*
 //deprecated!!!!!!!!!!!!
 				case 'drag':
@@ -2701,9 +2654,9 @@ const getLeValue = function(LS,St){
 				case 'mspradius':
 //~/mspradius
 					return [MSpRad]
-				case 'orbs':
-*/
 
+*/
+				case 'orbs':
 //~/orbs
 		//read only . return a list of all orbs in the domain
 					var aorbs = [];
@@ -2713,14 +2666,16 @@ const getLeValue = function(LS,St){
 					}
 					return aorbs
 					//return staNce
+				//broken...
 				case 'dsignat':
 //~/dsignat
-					var dsi = [];
-					for (var i = 0; i <= dsignat.length-1; i++) {
-						var dsib = dsignat[i].toString();
-						dsi.push(dsib);
-					}
-					return dsi;
+					//var dsi = [];
+					//for (var i = 0; i <= dsignat.length-1; i++) {
+					//	var dsib = dsignat[i].toString();
+					//	dsi.push(dsib);
+					//}
+					//return dsi;
+					return [dsignat.slice(0).toString()]
 				case 'keys':
 //~/keys
 					var SkS = [];
@@ -2754,17 +2709,6 @@ const getLeValue = function(LS,St){
 					//}
 					//return images
 					//break
-/*
-//deprecated
-				case 'gspeed':
-//~/gspeed
-					return [Egspeed]
-
-				case 'follow':
-					//follow should be similar to stance. we just need to select an orb name or '~' in order to follow it
-					//we can probably toggle this one
-					break
-*/
 				case 'stance':
 //~/stance
 					return [stancE]
@@ -3032,8 +2976,14 @@ const getLeValue = function(LS,St){
 // orb/image/y
 						return [o.imgS.cy+o.imgS.py];
 					}
-// w....h..... unfinished
-					//
+					if(ckey=='w'){
+// orb/image/w
+						return [o.imgS.pw];
+					}
+					if(ckey=='h'){
+// orb/image/h
+						return [o.imgS.ph];
+					}
 					if(ckey=='file'){
 //orb/image/file
 						return [o.imgfile]
@@ -3049,9 +2999,10 @@ const getLeValue = function(LS,St){
 					}
 					if(ckey=='current'){
 //orb/image/current
-				//current needs to return the current beat as text
-						var strb = o.imgF[o.imgB-1].toString();
-						return [strb];
+				//current needs to return the current beat as text.. if exists
+						var strb = o.imgF[o.imgB-1]//.toString();
+						if(strb){return [strb.toString()];}
+						return 'end'
 					}
 					if(ckey=='cn'){
 //orb/image/cn
@@ -3071,14 +3022,11 @@ const getLeValue = function(LS,St){
 //.. rememeber we need to consider text to beat and beat to text format transfomations in all these beat manipulations
 			if(cont=='circle'){
 				if(o.circle){
-					if(ckey=='x'){
+
 // orb/circle/x
-						return [o.cirS.x];
-					}
-					if(ckey=='y'){
+					if(ckey=='x'){return [o.cirS.x];}
 // orb/circle/y
-						return [o.cirS.y];
-					}
+					if(ckey=='y'){return [o.cirS.y];}
 // orb/circle/r
 					if(ckey=='r'){return [o.cirS.r];}
 // orb/circle/g
@@ -3102,32 +3050,35 @@ const getLeValue = function(LS,St){
 						var strb = o.cirF[o.cirB-1].toString();
 						return [strb];			
 					}
+
 					if(ckey=='cn'){
 //orb/circle/cn
 						return [o.cirB];
 					}
+//orb/circle/number
+					var rln = parseFloat(ckey);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>o.cirF.length){return 'end'}
+					var strb = o.cirF[rln-1].toString();
+					//var RSout = [strb];
+					//o.o = RSout;
+					return [strb]
 				}
 			}//circle
 
 			if(cont=='rectangle'){
 				if(o.rectangle){
 //... i think its ok to just return the state coordinates if we just ask the aspect directly... might be interesting
-					if(ckey=='x'){
+					//
 // orb/rectangle/x
-						return [o.rectS.x];
-					}
-					if(ckey=='y'){
+					if(ckey=='x'){return [o.rectS.x];}
 // orb/rectangle/y
-						return [o.rectS.y];
-					}
-					if(ckey=='w'){
-// orb/rectangle/w
-						return [o.rectS.w];
-					}
-					if(ckey=='h'){
+					if(ckey=='y'){return [o.rectS.y];}
+
+					if(ckey=='w'){return [o.rectS.w];}
 // orb/rectangle/h
-						return [o.rectS.h];
-					}
+					if(ckey=='h'){return [o.rectS.h];}
 //.... these might need to go on ALOrbs loop.....!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // orb/rectangle/r
 					if(ckey=='r'){return [o.rectS.r];}
@@ -3150,24 +3101,40 @@ const getLeValue = function(LS,St){
 					if(ckey=='cn'){
 //orb/rectangle/cn
 					}
+//orb/rectangle/number
+					//this ok?
+					var rln = parseFloat(ckey);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>o.rectF.length){return 'end'}
+					var strb = o.rectF[rln-1].toString();
+					//var RSout = [strb];
+					//o.o = RSout;
+					return [strb]
 				}
 			}
 
-			if(cont=='osc'){
+			if(cont=='oscillator'){
 				if(o.oscillator){
-					if(ckey=='run'){
-//orb/osc/run
-						return [o.oscR]	
-					}
+//orb/oscillator/run
+					if(ckey=='run'){return [o.oscR]	}
 //.. osc and audio works differently. there is no current beat selected because all tone lines run at once and are monitored by hearall
 //however we want to be able to access each tone data individually and be able to modify and see whats going on using this sinthax
-//so orb/osc could simply return all tone lines..
-					if(ckey=='current'){
+//so orb/osc could simply return all tone lines.. we could say..orb/osc/1..2..3 and being able to monitor tone states right away
+//.. so we return the lines and when we change the lines everything updates but on heartbeat, not on real time. we can reserve
+//real time speed for paramChange like this: #desiredvalue>>orb/osc/2/gain  .. and these commands when asigned to keys or buttons do
+//create changes in real time.. or at least as fast as possible. yes this sounds ok. ok lets do it.
+//
+//orb/oscillator/number
+					var rln = parseFloat(ckey);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>o.oscTL.length){return 'end'}
+					var strb = o.oscTL[rln-1].toString();
+					//var RSout = [strb];
+					//o.o = RSout;
+					return [strb]
 
-					}
-					if(ckey=='cn'){
-
-					}
 				}
 			}
 
@@ -3301,12 +3268,14 @@ const getLeValue = function(LS,St){
 //we could accept a fifth param to modify the target value instead of just retrieving if necesary
 //beatParam(o,cont,key,sub,op)
 // orb/aspect/key/sub>>
+//this can probably be optimized......!!!!!!!!
 			if(cont=='circle'){
 				if(o.circle){
 // orb/circle/beat/param>>?
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
-					return [ret]
+					o.o = ret;//.toString();
+					return [ret[2]]
 				}
 			}
 			if(cont=='rectangle'){
@@ -3314,7 +3283,8 @@ const getLeValue = function(LS,St){
 // orb/rectangle/beat/param>>?
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
-					return [ret]
+					o.o = ret;//.toString();
+					return [ret[2]]
 				}
 			}
 			if(cont=='image'){
@@ -3322,7 +3292,8 @@ const getLeValue = function(LS,St){
 // orb/image/beat/param>>?
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
-					return [ret]
+					o.o = ret;//.toString();
+					return [ret[2]]
 				}
 			}
 
@@ -3331,7 +3302,11 @@ const getLeValue = function(LS,St){
 			if(cont=='oscillator'){
 //orb/oscillator/toneline/param
 				if(o.oscillator){
-
+//ok we need to find the tone line thats playing... and change the parameters of the tone state directly.
+					//var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
+					//if(ret==undefined){return 'end'}
+					//o.o = ret;//.toString();
+					//return [ret[2]]
 				}
 			
 			}
@@ -3434,6 +3409,7 @@ const putRiValue = function(op,RS,St,pol){
 					return staNce 
 					break
 */
+				//broken..
 				case 'dsignat':
 // ~/dsignat
 					//read. write. A list of beats to all forms by default
@@ -3542,6 +3518,8 @@ const putRiValue = function(op,RS,St,pol){
 			}//switch
 		}//~
 
+//!!!!!!!!!!!!!!!!!!!!!!output?
+//.. so what kind of output should give these operations besides the effect itself produced by their target having a new value
 		if(o){
 			var k = SS[1];
 			switch (k){
@@ -3845,10 +3823,16 @@ const putRiValue = function(op,RS,St,pol){
 
 					if(ckey=='cn'){
 //orb/script/cn
-			//we probly want cn to manage toggle ?
+						if(pol==0){
 						//should only accept numbers.. max is number of lines in script
-						//.... maybe we want to turn this into a number
-						o.scB = op[0]; return
+							//.. maybe we need to check here if op[0] is a number?
+							o.scB=op[0];
+							return
+						}else{
+							o.scB = o.scB+pol;
+							if(o.scB<=0){o.scB=1;} 
+							return
+						}
 					}
 //orb/script/number
 		//this command would put a new value on the target script instruction... feels kinda aggressive but might be usable
@@ -3916,8 +3900,16 @@ const putRiValue = function(op,RS,St,pol){
 					}
 					if(ckey=='cn'){
 //>>orb/image/cn
-						o.imgB = op[0];
-						return
+						if(pol==0){
+						//should only accept numbers.. max is number of lines in script
+							//.. maybe we need to check here if op[0] is a number?
+							o.imgB=op[0];
+							return
+						}else{
+							o.imgB = o.imgB+pol;
+							if(o.imgB<=0){o.imgB=1;} 
+							return
+						}
 					}
 					if(ckey=='mirror'){
 //>>orb/image/mirror
@@ -3985,9 +3977,16 @@ const putRiValue = function(op,RS,St,pol){
 					}
 					if(ckey=='cn'){
 //orb/circle/cn
-						//we want to make sure op[0] points to a valid value here....!!!!
-						o.cirB = op[0];
-						return
+						if(pol==0){
+						//should only accept numbers.. max is number of lines in script
+							//.. maybe we need to check here if op[0] is a number?
+							o.cirB=op[0];
+							return
+						}else{
+							o.cirB = o.cirB+pol;
+							if(o.cirB<=0){o.cirB=1;} 
+							return
+						}
 					}
 					if(ckey=='mirror'){
 // ?>>orb/circle/mirror
@@ -4050,9 +4049,16 @@ const putRiValue = function(op,RS,St,pol){
 					}
 					if(ckey=='cn'){
 //orb/rectangle/cn
-					//we want to make sure op[0] points to a valid value here....!!!!
-						o.rectB = op[0];
-						return
+						if(pol==0){
+						//should only accept numbers.. max is number of lines in script
+							//.. maybe we need to check here if op[0] is a number?
+							o.rectB=op[0];
+							return
+						}else{
+							o.rectB = o.rectB+pol;
+							if(o.rectB<=0){o.rectB=1;} 
+							return
+						}
 					}
 
 					if(ckey=='mirror'){
@@ -4076,6 +4082,7 @@ const putRiValue = function(op,RS,St,pol){
 				}
 			}
 
+//osc are different. incomplete
 			if(cont=='oscillator'){
 				if(o.oscillator){
 					if(ckey=='run'){
@@ -4092,7 +4099,6 @@ const putRiValue = function(op,RS,St,pol){
 							return //[run[res]]
 						}
 					}
-//osc are different. 
 					//...
 					if(ckey=='current'){
 
@@ -4309,27 +4315,27 @@ const putRiValue = function(op,RS,St,pol){
 			if(cont=='circle'){
 				if(o.circle){
 // ?>>orb/circle/beat/param
-					var ret = beatParam(o,cont,ckey,sub,op,pol);
+					var ret = beatParam(o,cont,ckey,sub,op[0],pol);
 					if(ret==undefined){return 'end'}
-					o.o = ret;
-					return //[ret]
+					//o.o = ret;//.toString();
+					return //[ret[2]]
 				}
 			}
 			if(cont=='rectangle'){
 				if(o.rectangle){
 // ?>>orb/rectangle/beat/param
-					var ret = beatParam(o,cont,ckey,sub,op,pol);
+					var ret = beatParam(o,cont,ckey,sub,op[0],pol);
 					if(ret==undefined){return 'end'}
-					o.o = ret;
+					//o.o = ret;
 					return //[ret]
 				}
 			}
 			if(cont=='image'){
 				if(o.image){
 // ?>>orb/image/beat/param
-					var ret = beatParam(o,cont,ckey,sub,op,pol);
+					var ret = beatParam(o,cont,ckey,sub,op[0],pol);
 					if(ret==undefined){return 'end'}
-					o.o = ret;
+					//o.o = ret;
 					return //[ret]
 				}
 			}
@@ -4383,6 +4389,36 @@ const beatParam = function(o,cont,key,sub,op,pol){
 			var contstr = 'rectF'; var bstr = 'rectB'; break
 		case 'image':
 			var contstr = 'imgF'; var bstr = 'imgB'; break
+//maybe we can modify both tone line and the state tone itself if playing.. both from here
+		case 'oscillator':
+			var contstr = 'oscTL'; 
+/*
+			//if(op!=undefined)  if(pol!=0)
+			if(o.oscPA){
+				var k = parseFloat(key);
+				for (var i = 0; i <= soundCue.length; i++) {
+					var os = soundCue[i];
+					if(os.origin==o.name){
+						if(os.toneline==(k-1)){
+							switch(sub){
+								case 'frecuency':
+									if(op)
+									if(pol)
+									os.oscn.frequency.value
+									break
+								case 'gain':
+
+									break
+								//case '':
+								//	break
+							}
+						}
+					}
+				}
+			}
+*/			
+			break
+
 		return
 	}
 	//.. key needs to create a number but to access the number.. we need the container to tell use its corresponding beat
@@ -4392,21 +4428,25 @@ const beatParam = function(o,cont,key,sub,op,pol){
 		case 'last':
 			var kstr = o[contstr].length-1; break
 		default:
-			//key is a number now..
-			var kstr = parseFloat(key-1); var nan = isNaN(kstr); if(nan){return}
+			//key is a number now.. not sure is parse is necesary again.. ? 
+			var k = parseFloat(key);
+			var kstr = k-1; var nan = isNaN(kstr); if(nan){return}
 			break
 	}
 //now we need to ask if adress of beat even exist and then use sub to look for its pair value on the target beat
 //ok.. check if op is working.. and finish the param access commands... also for oscillators... tomorow. rest now
 	var B = o[contstr][kstr];
+	//console.log(B);
 	if(B){
 		for (var i = 0; i <= B.length-2; i+=2) {
 			var p = B[i]; var v = B[i+1]; //var nv = v;
 			if(p==sub){
 				var outs = [cont,sub];//produce an output signal
-				if(op){B[i+1]=op[0]; outs.push(op);}
-				if(pol){B[i+1]=B[i+1]+pol; outs.push(pol);}
+				if(op){B[i+1]=op; outs.push(op);}
+				if(pol){B[i+1]=B[i+1]+pol; outs.push(B[i+1]);}
+				if(outs.length==2){outs.push(v);}
 				return outs
+				//console.log(outs); //not even getting here..
 			}
 		}	
 	}
@@ -5943,18 +5983,6 @@ function update(){ //PEAK
 	if(zai){//Slowly paint everything black
 		//ctx0.clearRect((eX-800),(eY-200),1400, 300);//this is sooo funky
 		
-		//we need to update Elid now
-//update Elid graphics
-//.. ok Elid is going to be a circle now and it will be an orb.. yes this is more consistent
-		if(Elid.beats.length>0){
-			beatUp(Elid.beats,Elid.B,Elid.state);
-			Elid.B++;
-			if(Elid.B>=Elid.beats.length+1){Elid.B=1;}
-		}
-
-		if(Elid.state.layer==0){visual_q0.push(Elid.state);}
-		if(Elid.state.layer==1){visual_q1.push(Elid.state);}
-		if(Elid.state.layer==2){visual_q2.push(Elid.state);}
 	}
 */
 
@@ -5994,18 +6022,7 @@ function update(){ //PEAK
 	if(MSp.state.layer==2){visual_q2.push(MSp.state);}
 */
 
-/*
-//update Ecen entity center cursor
-	beatUp(Ecen.beats,Ecen.B,Ecen.state);
-	//So we need to check what happening with MSp.B, beatUp should not even increase MSp even. we need to do this now after
-	//beatUp. This way we have more control even. a function should do a specific thing only lol
-	Ecen.B++;
-	if(Ecen.B>=Ecen.beats.length+1){Ecen.B=1;}
-	//console.log(MSp.B);
-	if(Ecen.state.layer==0){visual_q0.push(Ecen.state);} //[B]?
-	if(Ecen.state.layer==1){visual_q1.push(Ecen.state);}
-	if(Ecen.state.layer==2){visual_q2.push(Ecen.state);}
-*/
+
 //these functions are more related to hardware
 	if(Sstr == ' '){}else{
 		KeysFeed();
@@ -6037,14 +6054,10 @@ function update(){ //PEAK
 //for now max number of commands on the same line is 2 we just call comA on every <> split.. simple huh
 		if(o.script){
 //so o.o should only hold a command when we created an instruction. in here probly is the best place to clear o.o using the same
-//technique we use to clear o.i . 
-			if(o.oz==o.o){
-				o.o=undefined;
-				o.oz=Date.now();
-			} 
-			if(o.o!=undefined){
-				o.oz = o.o;
-			}
+//technique we use to clear o.i . This little jugling secures o.o reading and clearing properly
+			if(o.oz==o.o){ o.o=undefined; o.oz=Date.now();} 
+			if(o.o!=undefined){ o.oz = o.o;}
+
 			if(o.scR=='off'){}
 			if(o.scR=='once'){ 
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
@@ -6096,47 +6109,71 @@ function update(){ //PEAK
 
 //OSCILATOR ASPECT
 		if(o.oscillator){
-			if(o.oscR=='off'){} 
-			if(o.oscR=='once'){ 
-			//so do all this with every line at once.. ok lets run a test
-				for (var i2 = 0; i2 <= o.oscTL.length-1; i2++) {
-					var TL = o.oscTL[i2];
-					//create state.. should we be doing default here? 
-					var os = {
-						id:Date.now(), start:0, freq:420, gain:0.7, fadein:0.2, fadeout:0.3,type:0,duration:1
+			if(o.oscR=='off'){
+				if(o.oscPA){
+			//we want to access every tone and shut it down
+					for (var i2 = 0; i2 < soundCue.length; i2++) {
+						//var TL = o.oscTL[i2];
+						var ts = soundCue[i2];
+						if(o.name==ts.origin){
+							//.. we should use fade out here instead of just end 0
+							ts.end=0;
+						}	
 					}
-					//update state using tone line
-					timeUp(os,TL);
-					var osc = COsc(os);
-					soundCue.push(osc);
 				}
-				o.oscR='off';
+			} 
+			if(o.oscR=='play'){
+				if(o.oscPA){}else{
+					if(o.oscTL.length>0){
+						for (var i2 = 0; i2 <= o.oscTL.length-1; i2++) {
+							var TL = o.oscTL[i2];
+							var os = {
+					id:Date.now(), start:0, freq:432, gain:0.07, fadein:0.3, fadeout:0.3,type:0,duration:1
+							}
+							//update state using tone line
+							timeUp(os,TL);
+							var osc = COsc(os);
+				//we need an id to reffer to this tone state. orb/oscillator/1 should point us to the tone state generated
+				//by the first line. so  osc.origin=o.name+i2
+//but we should be able to make changes on the tone states timers more precisely.. maybe we can create changes from reading kdown
+//or touch events directly and not in synch with heartbeat..
+							osc.origin=o.name; osc.toneline=i2+1;
+							soundCue.push(osc);
+						}
+				//we need to set run to a value to let the system know tones are running.
+						//o.oscR='playing';
+						o.oscPA = true;
+					}
+				}
 			}
 		}	
 
 //IMAGE ASPECT
 		if(o.image){
-//all these visual Aspects probably need to set run to off when there are no beats beat.!!!!!
-			
+//all these visual Aspects probably need to set run to off when there are no beats to beat... or we could simply not run beatUp
+//... and just leave run value as is. we probly dont want to just run off because users l have to set run on again thats not nice
 			if(o.imgR=='off'){} 
 			if(o.imgR=='loop'){ 
-				beatUp(o.imgF,o.imgB,o.imgS); // o,o
-				//We need to synch with orb position... . . images huh
-	//well i think we want to use circle as refference ... or maybe rects . for now just circle !!!!!!!!!!!!
-				//o.imgS.px=o.cirS.x; o.imgS.py=o.cirS.y;
-				o.imgB++;
-				if(o.imgB>o.imgF.length){o.imgB=1;}
-				if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
-				if(o.imgS.layer==1){visual_q1.push(o.imgS);}
-				if(o.imgS.layer==2){visual_q2.push(o.imgS);}
+				if(o.imgF.length>0){
+					beatUp(o.imgF,o.imgB,o.imgS); // o,o
+					//We need to synch with orb position... . . images huh
+		//well i think we want to use circle as refference ... or maybe rects . for now just circle !!!!!!!!!!!!
+					//o.imgS.px=o.cirS.x; o.imgS.py=o.cirS.y;
+					o.imgB++;
+					if(o.imgB>o.imgF.length){o.imgB=1;}
+					if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
+					if(o.imgS.layer==1){visual_q1.push(o.imgS);}
+					if(o.imgS.layer==2){visual_q2.push(o.imgS);}
+				}
 			}
-			if(o.imgR=='repeat'){ 
-				beatUp(o.imgF,o.imgB,o.imgS); // o,o
-				//if(o.imgB>o.imgF.length){o.imgB=1;}
-	//layer could be on state, this way state beats could also affect layer so we can specify layer when we create mirrors.
-				if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
-				if(o.imgS.layer==1){visual_q1.push(o.imgS);}
-				if(o.imgS.layer==2){visual_q2.push(o.imgS);}
+			if(o.imgR=='repeat'){
+				if(o.imgF.length>0){
+					beatUp(o.imgF,o.imgB,o.imgS); // o,o
+		//layer could be on state, this way state beats could also affect layer so we can specify layer when we create mirrors.
+					if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
+					if(o.imgS.layer==1){visual_q1.push(o.imgS);}
+					if(o.imgS.layer==2){visual_q2.push(o.imgS);}
+				}
 			}
 		}
 
@@ -6146,14 +6183,25 @@ function update(){ //PEAK
 			//if(o.cirF.length==0){o.cirR='off';}
 			if(o.cirR=='off'){} 
 			if(o.cirR=='loop'){ 
-				beatUp(o.cirF,o.cirB,o.cirS); // o,o
-				//We need to synch circle with orb position... . . ?
-				//o.cirS.x=o.x; o.cirS.y=o.y;
-				o.cirB++;
-				if(o.cirB>o.cirF.length){o.cirB=1;}
-				if(o.cirS.layer==0){visual_q0.push(o.cirS);} //[B]?
-				if(o.cirS.layer==1){visual_q1.push(o.cirS);}
-				if(o.cirS.layer==2){visual_q2.push(o.cirS);}
+				if(o.cirF.length>0){
+					beatUp(o.cirF,o.cirB,o.cirS); // o,o
+					//We need to synch circle with orb position... . . ?
+					//o.cirS.x=o.x; o.cirS.y=o.y;
+					o.cirB++;
+					if(o.cirB>o.cirF.length){o.cirB=1;}
+					if(o.cirS.layer==0){visual_q0.push(o.cirS);} //[B]?
+					if(o.cirS.layer==1){visual_q1.push(o.cirS);}
+					if(o.cirS.layer==2){visual_q2.push(o.cirS);}
+				}
+			}
+
+			if(o.cirR=='repeat'){
+				if(o.cirF.length>0){
+					beatUp(o.cirF,o.cirB,o.cirS); // o,o
+					if(o.cirS.layer==0){visual_q0.push(o.cirS);} //[B]?
+					if(o.cirS.layer==1){visual_q1.push(o.cirS);}
+					if(o.cirS.layer==2){visual_q2.push(o.cirS);}
+				}
 			}
 
 //we need to keep angle updated.. but we are ignoring the changes on angle. we need to update somewhere else.... we need to update
@@ -6186,6 +6234,14 @@ function update(){ //PEAK
 				if(o.rectS.layer==0){visual_q0.push(o.rectS);} //[B]?
 				if(o.rectS.layer==1){visual_q1.push(o.rectS);}
 				if(o.rectS.layer==2){visual_q2.push(o.rectS);}
+			}
+			if(o.rectR=='repeat'){
+				if(o.rectF.length>0){
+					beatUp(o.rectF,o.rectB,o.rectS); // o,o
+					if(o.rectS.layer==0){visual_q0.push(o.rectS);} //[B]?
+					if(o.rectS.layer==1){visual_q1.push(o.rectS);}
+					if(o.rectS.layer==2){visual_q2.push(o.rectS);}
+				}
 			}
 		}
 
@@ -6294,8 +6350,6 @@ function update(){ //PEAK
 			var secins = csplit.pop(); var firstins = csplit.join('<>');
 			var end = comA(c.st,firstins); if(end=='end'){}else{comA(c.st,secins);}
 		}else{comA(c.st,csplit[0]);}
-		//var end = comA(c.st,csplit[0]);
-		//if(end=='end'){}else{if(csplit[1]){comA(c.st,csplit[1]);}}
 
 	}//ALOrbs
 	ALOrbs = []; //flush every heartbeat
@@ -6307,7 +6361,7 @@ function update(){ //PEAK
 	const t1 = performance.now();
 
 //track update time
-	MSpSize = t1-t0;
+	hEat = t1-t0;
 
 }//update
 
