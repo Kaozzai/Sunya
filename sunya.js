@@ -30,7 +30,7 @@ var kaoz = false;//false;//undefined; //where is zai? :(
 //var tut = undefined;
 
 var actx = undefined; //audio context
-const soundCue = [];
+const oscCue = [];
 
 var Ename = 'Kaozzai'; 									// /name
 var Eid = 0;										// /id
@@ -80,8 +80,6 @@ var dsignat = //[ //data signature							// /dsignat
 			//["r",163,"g",238,"b",4], //green
 			//["r",127,"g",224,"b",191] //calypso
 
-	//['r',20,'g',230,'b',120,'a',1],
-	//['r',230,'g',230,'b',200,'a',0.5]
 //] //customize entity data lines. its a beat container
 var dfont = 'px Courier New';								// /font
 var dfontSize = 18;
@@ -117,9 +115,20 @@ const MSp = {
 
 //Entity shortcuts. 
 var EkeyS = [										// /keys
+
 /*
+We want a script to let us create an oscillator and link it with a circle that when is displaced, it affects a parameter.
+one pixel to the right increase 1 frequency , to the left decreases 1 freq
+
+.. a command to seal all orbs at once..
+or we could just .. cast a command while on no stance orb, but instruct all orbs to cast the command on Eout as if they where casting
+it on themselves. So we can now say seal>>$/text . This would seal all texts. then unseal>>$/text to bring them back.
+
+We also want a command to just move the center screen into the selected orb when we select it.
+
 Ok we want a single orb to follow entity and monitor: current entity position , currently selected orb, current selected line
 if text aspect active, current circle form position
+
 */
 	{name:"A", key:"A", com1:"@Elog<>#~>>Elog/text>>Elog/script"},
 	{name:"B", key:"B", com1:"@B<>#B>>B/text>>B/script"},
@@ -262,9 +271,9 @@ const OrbSoul = function(){
 		name:idn, //id name
 
 		//deprecated..
-		cursor:'text',
-		drag:[],
-		gspeed:1,
+		//cursor:'text',
+		//drag:[],
+		//gspeed:1,
 		//
 /*
 //seals, all possible forms
@@ -520,7 +529,7 @@ all.media_s = function(url_audio, destination){
 			o.oscTL=[
 	//lets have a tone for refference. duration can have 'loop' but lets prevent by default that so users dont panic
 	//this is ok for now its a basic tone line, but later we can try experimenting with other audio nodes
-			['start',0,'duration',2,'freq',432,'gain',0.07,'fadein',0.3,'fadeout',0.3,'type',0]
+			['start',0,'duration',2,'frequency',432,'gain',0.07,'fadein',0.3,'fadeout',0.3,'type',0]
 				//'start,0,duration,2,freq,439,gain,0.07,fadein,0.3,fadeout,0.3'
 				//[]
 			];
@@ -603,9 +612,8 @@ const COsc = function(os){
 	if(os.type==0){os.type='sine';}if(os.type==1){os.type='square';} //.. and so on
 	var osc = {}
 	//oscillator node
-	osc.start = actx.currentTime+os.start;
 	osc.oscn = actx.createOscillator();
-	osc.oscn.frequency.value=os.freq;
+	osc.oscn.frequency.value=os.frequency;
 	osc.oscn.type=os.type;
 
 	//gain node
@@ -620,9 +628,12 @@ const COsc = function(os){
 	//fade
 	osc.fadein=os.fadein; osc.fadeout=os.fadeout; 
 
+	//init timers
 	osc.duration = os.duration;
+	osc.start = actx.currentTime+os.start;
 
-	//we can use gain node to determine duration of the audible tone
+	//we can use gain node to determine duration of the audible tone too..
+	//but no thanks. lets fade in always because no fade in is ugly
 	osc.oscg.gain.setTargetAtTime(os.gain, osc.start, os.fadein);
 
 	osc.oscn.connect(osc.oscg);
@@ -630,44 +641,46 @@ const COsc = function(os){
 	//osc.oscg.connect(analyzer);
 
 	osc.oscg.connect(actx.destination);
+
+	//start
 	osc.oscn.start(osc.start);
 
 	if(os.duration=='loop'){}else{
-		osc.end = osc.start+os.duration+os.fadeout+1;
+		osc.end = osc.start+os.duration+os.fadeout+1; //..+1...
 	}
 
 	return osc
 }
 
 //push osc
-//soundCue.push(osc);
+//oscCue.push(osc);
 
 
 //if ended, remove
-//we place all osc states on soundCue from where we can monitor non timming crucial data about the audio playing. its name, position
-//conection with other orbs etc. its the sound aspect accesible. We check for soundCue on every heartbeat to when its necesary to
+//we place all osc states on oscCue from where we can monitor non timming crucial data about the audio playing. its name, position
+//conection with other orbs etc. its the sound aspect accesible. We check for oscCue on every heartbeat to when its necesary to
 //remove the audio object from memory
 const hearAll = function(s,l){
 //we want to check if orb still exist. if it was eliminated , then the sound should stop... it these audio objects where kept on
 //the orbs themselves , then there would not be a way to stop() and disconnect() them if the orbs where deleted. so its a good thing
-//i think to keep these audio states apart on soundCue.
+//i think to keep these audio states apart on oscCue.
 	var o = Fting(Orbs,'name',s.origin);
 	if(o){
-		//if(o.oscillator==false){s.oscn.stop(); s.oscn.disconnect(); soundCue.splice(l,1);}
+		//if(o.oscillator==false){s.oscn.stop(); s.oscn.disconnect(); oscCue.splice(l,1);}
 		var check = s.end-actx.currentTime;
 		if(check<=0){
 			//setTargetAtTime(target, startTime, timeConstant)
 			s.oscg.gain.setTargetAtTime(0, 0, s.fadeout); s.end = undefined;
 		}
 		if(s.oscg.gain.value==0){
-			s.oscn.stop(); s.oscn.disconnect(); soundCue.splice(l,1);
+			s.oscn.stop(); s.oscn.disconnect(); oscCue.splice(l,1);
 	//we also need to let the origin orb know so its oscR value updates to 'off'
 			var o = Fting(Orbs,'name',s.origin);
 			o.oscR='off'; o.oscPA=false;
 		}
 
 	}else{
-		s.oscn.stop(); s.oscn.disconnect(); soundCue.splice(l,1);
+		s.oscn.stop(); s.oscn.disconnect(); oscCue.splice(l,1);
 	}
 }
 
@@ -2114,7 +2127,6 @@ const comRiTarget = function(signal,target,St){
 
 // command>>target
 //annalize target on right side
-	var speed = undefined; //let aspect, speed
 	if(target[0]=='~'){var ent = true;}
 //so we may or may not have a '/' here. if no aspect is specified, we roll with default values 
 	var CCS = target.split('/');  //
@@ -2139,187 +2151,9 @@ const comRiTarget = function(signal,target,St){
 //of things instead of having these left up down right commands.. oh jeez am so tired . it never fucking ends
 //!!! what if we just say the orb name.. its not picking it up obviously
 
-
-//deprecatz!!!!!!!!
-//displacements
-//displacements expect an orb name and an aspect or not
-	//get the displacement command by reading just the first 2 letters.. ok it works!!
-/*
-	var dc = signal.substr(0,2);
-	
-	if(dc=='le'){ // left
-		var dcn = signal.substr(4);
-		if(ent){
-// left>>~
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
-			displacE('~','left',aspect,speed);
-			Eout='left'+speed+'>>~';
-		//so maybe we dont want drag after all... its kinda overpowered anyway
-			if(Drag.length>0){
-				for (var i3 = 0; i3 < Drag.length; i3++) {
-					var to = Drag[i3].split('/');
-					displacE(to[0],'left',to[1],speed);
-				}
-			}
-			return
-		}
-		if(o){
-//left>>orb/aspect/beatline?
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
-			displacE(o.name,'left',aspect,speed);
-			if(aspect==undefined){var asp = o.name;}else{var asp = o.name+'/'+aspect;}
-			o.o='left'+speed+'>>'+asp;
-
-//o drag is working but am still not sure if we want to really implement orb drag
-			if(o.drag.length>0){
-				for (var i3 = 0; i3 < o.drag.length; i3++) {
-					var to = o.drag[i3].split('/');
-					displacE(to[0],'left',to[1],speed);
-					//displacE(o.drag[i3],'left',aspect,speed);
-				}
-			}
-			return
-		}
-	}
-
-	if(dc=='ri'){//right
-		var dcn = signal.substr(5); //if(dcn!=''){var speed = parseFloat(dcn);}
-		if(ent){
-// right>>~
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
-			displacE('~','right',aspect,speed);
-			Eout='right'+speed+'>>~';
-			if(Drag.length>0){
-				for (var i3 = 0; i3 < Drag.length; i3++) {
-					var to = Drag[i3].split('/');
-					displacE(to[0],'right',to[1],speed);
-				}
-			}
-			return
-		}
-// right>>orb  ,/aspect
-		if(o){
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
-			displacE(o.name,'right',aspect,speed);
-			if(aspect==undefined){var asp = o.name;}else{var asp = o.name+'/'+aspect;}
-			o.o='right'+speed+'>>'+asp;
-			if(o.drag.length>0){
-				for (var i3 = 0; i3 < o.drag.length; i3++) {
-					var to = o.drag[i3].split('/');
-					displacE(to[0],'right',to[1],speed);
-				}
-			}
-			return
-		}
-	}
-
-	if(dc=='up'){ // up
-		var dcn = signal.substr(2); //if(dcn!=''){var speed = parseFloat(dcn);}
-		if(ent){
-// up>>~
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
-			displacE('~','up',aspect,speed);
-			Eout='up'+speed+'>>~';
-			if(Drag.length>0){
-				for (var i3 = 0; i3 < Drag.length; i3++) {
-					var to = Drag[i3].split('/');
-					displacE(to[0],'up',to[1],speed);
-				}
-			}
-			return
-		}
-// up>>orb , /aspect
-		if(o){
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
-			displacE(o.name,'up',aspect,speed);
-			if(aspect==undefined){var asp = o.name;}else{var asp = o.name+'/'+aspect;}
-			o.o='up'+speed+'>>'+asp;
-			if(o.drag.length>0){
-				for (var i3 = 0; i3 < o.drag.length; i3++) {
-					var to = o.drag[i3].split('/');
-					displacE(to[0],'up',to[1],speed);
-				}
-			}
-			return
-		}
-	}
-
-	if(dc=='do'){ //down
-		var dcn = signal.substr(4); //if(dcn!=''){var speed = parseFloat(dcn);}
-//we need to add Drag here
-		if(ent){
-// down>>~
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = Egspeed;}
-			displacE('~','down',aspect,speed);
-			Eout='down'+speed+'>>~';
-			if(Drag.length>0){
-				for (var i3 = 0; i3 < Drag.length; i3++) {
-					var to = Drag[i3].split('/');
-					displacE(to[0],'down',to[1],speed);
-				}
-			}
-			return
-		}
-// down>>orb , /aspect
-		if(o){
-			if(dcn!=''){var speed = parseFloat(dcn);}else{var speed = o.gspeed;}
-			displacE(o.name,'down',aspect,speed);
-			if(aspect==undefined){var asp = o.name;}else{var asp = o.name+'/'+aspect;}
-			o.o='down'+speed+'>>'+asp;
-			if(o.drag.length>0){
-				for (var i3 = 0; i3 < o.drag.length; i3++) {
-					var to = o.drag[i3].split('/');
-					displacE(to[0],'down',to[1],speed);
-				}
-			}
-			return
-		}
-	}
-*/
-
 //from here on o is necessary so we might as well just ask once if its defined
 	if(o){}else{return 'end'}
 
-/*
-//incomplete!!!!!!!!!!!!!!!!!!!!!!!!!
-//strife clockwise and counter clockwise
-//we want to be able to focus on a target circle form for now ... strife comands are incomplete!!!!!!!!!!
-	if(signal=='strifec'){
-// strifec>>~
-		if(ent){
-			//strifE('~','right',undefined,undefined,Focus);
-		}
-		if(o){
-//why doesnt displacE also just use o instead of o.name...? !!!!!
-			strifE(o.name,'right',0.01);
-		}
-	}
-	if(signal=='strifecc'){
-// strifecc>>~
-		if(ent){
-			//strifE('~','left',aspect,speed);
-		}
-		if(o){
-			strifE(o.name,'left',0.01);
-		}
-	}
-
-	if(signal=='advance'){
-// advance>>~
-		if(ent){
-			//strifE('~','up',aspect,speed);
-		}
-		//if(o) ..
-	}
-
-	if(signal=='recede'){
-// recede>>~
-		if(ent){
-			//strifE('~','down',aspect,speed);
-		}
-		//if(o) ..
-	}
-*/
 
 //a commnad to delete a target orb.. for now
 // delete should always expect a single string which is an orb name... maybe an aspect too? .. yes this is good. if only
@@ -2329,6 +2163,7 @@ const comRiTarget = function(signal,target,St){
 //use this data to create processes using scripts.
 // delete>>orb , orb/aspect , orb/aspect/subk
 	if(signal=='delete'){
+
 		if(line){//line? more like, sub
 			//if(sub=='x') ... so we could say +>>orb/circle/x... yeah thats lovely. signals to states directly
 //use data on lines to select a target
@@ -2364,7 +2199,7 @@ const comRiTarget = function(signal,target,St){
 				if(rln>o.txtLi.length){return 'end'}
 				var rl = o.txtLi[rln-1].txt;
 				if(rl){
-					var T = rll.split('/'); //T[0] is the orb name, T[1] could be the aspect
+					var T = rl.split('/'); //T[0] is the orb name, T[1] could be the aspect
 					var not = Fting(Orbs,'name',T[0]); //new orb target
 					var nota = T[1];
 					//var not = Fting(Orbs,'name',rl);
@@ -2392,12 +2227,14 @@ const comRiTarget = function(signal,target,St){
 			return
 		}
 		*/
+		//console.log(o);
 //send a signal to be processed on correct instance. but for now just remove
 		var ioo = Orbs.indexOf(o);
-		if(ioo){}else{return 'end'}
-		Orbs.splice(ioo,1);
+		if(ioo==undefined){return 'end'}
+		//console.log(ioo);
 		var iooo = staNce.indexOf(o.name);
 		staNce.splice(iooo,1);
+		Orbs.splice(ioo,1);
 		Eout = 'delete>>'+o.name;
 		return
 		//.. not sure whi i blocked this. it makes sense to return 'end' here if we didnt find a target
@@ -2604,36 +2441,28 @@ const getLeValue = function(LS,St){
 		if(ent){
 			var k = SS[1];
 			switch (k){
-				case 'name':
+
 //~/name
-					return [Ename] 
-				case 'x':
+				case 'name': return [Ename] 
 //~/x
-					return [eX] 
-				case 'y':
+				case 'x': return [eX] 
 //~/y
-					return [eY] 
-				case 'comprompt':
+				case 'y':return [eY] 
 //~/comprompt
-					return [chatOn] 
-				case 'inprompt':
+				case 'comprompt': return [chatOn] 
 //~/inprompt
-					return [nLine] 
-				case 'memheat':
+				case 'inprompt': return [nLine] 
 //~/memheat
-					return [hEat]
-				case 'screenx':
+				case 'memheat': return [hEat]
 //~/screenx
-					return [eX-(Math.round(window.innerWidth/2))]
-				case 'screeny':
+				case 'screenx': return [eX-(Math.round(window.innerWidth/2))]
 //~/scrreny
-					return [eY-(Math.round(window.innerHeight/2))]
-				case 'screenw':
+				case 'screeny': return [eY-(Math.round(window.innerHeight/2))]
 //~/screenw
-					return [window.innerWidth]
-				case 'screenh':
+				case 'screenw': return [window.innerWidth]
 //~/screenh
-					return [window.innerHeight]
+				case 'screenh': return [window.innerHeight]
+					
 /*
 //deprecated!!!!!!!!!!!!
 				case 'drag':
@@ -2676,8 +2505,8 @@ const getLeValue = function(LS,St){
 					//}
 					//return dsi;
 					return [dsignat.slice(0).toString()]
-				case 'keys':
-//~/keys
+				case 'skeys':
+//~/skeys
 					var SkS = [];
 					//loop for EkeyS
 					for (var i = 0; i <= EkeyS.length-1; i++) {
@@ -2800,6 +2629,8 @@ const getLeValue = function(LS,St){
 					}
 					return 'end'
 
+//these can also probably merged into one single function!!!!!!!!!!!!!!!!!!!!!!!!!
+					//
 				case 'text':
 //orb/text
 					var dla = [];
@@ -3268,7 +3099,7 @@ const getLeValue = function(LS,St){
 //we could accept a fifth param to modify the target value instead of just retrieving if necesary
 //beatParam(o,cont,key,sub,op)
 // orb/aspect/key/sub>>
-//this can probably be optimized......!!!!!!!!
+//this can probably be optimized......!!!!!!!!  its all using beatParam
 			if(cont=='circle'){
 				if(o.circle){
 // orb/circle/beat/param>>?
@@ -3303,17 +3134,20 @@ const getLeValue = function(LS,St){
 //orb/oscillator/toneline/param
 				if(o.oscillator){
 //ok we need to find the tone line thats playing... and change the parameters of the tone state directly.
-					//var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
-					//if(ret==undefined){return 'end'}
-					//o.o = ret;//.toString();
-					//return [ret[2]]
+					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
+					if(ret==undefined){return 'end'}
+					o.o = ret;//.toString();
+					return [ret[2]]
 				}
 			
 			}
 			if(cont=='audio'){
-//orb/audio/toneline/param
+//orb/audio/audioline/param
 				if(o.audio){
-
+					//var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
+					//if(ret==undefined){return 'end'}
+					//o.o = ret;//.toString();
+					//return [ret[2]]
 				}		
 			}
 		}
@@ -3414,12 +3248,13 @@ const putRiValue = function(op,RS,St,pol){
 // ~/dsignat
 					//read. write. A list of beats to all forms by default
 		//.. would be convenient to designate all the most common colours on default
-					var nba = [];
-					for (var i = 0; i <= op.length-1; i++) {
-						var rsob = txtToB(op[i]);
-						nba.push(rsob);
-					}
-					dsignat = nba;
+					//var nba = [];
+					//for (var i = 0; i <= op.length-1; i++) {
+					//	var rsob = txtToB(op[i]);
+					//	nba.push(rsob);
+					//}
+					//dsignat = nba;
+					dsignat = op[0];
 					return 
 				case 'keys':
 // ~/keys
@@ -3840,12 +3675,13 @@ const putRiValue = function(op,RS,St,pol){
 					var rln = parseFloat(ckey);
 					let nan = isNaN(rln);
 					if(nan){return 'end'}
-					if(rln>=o.scC.length){return 'end'}
-					var rl = o.scC[rln-1];
-					if(rl){
+					//if(rln>=o.scC.length){return 'end'}
+					//var rl = o.scC[rln-1];
+					//if(rl){
+				//this works better like this now..
 						o.scC[rln-1] = op[0];
 						return
-					}
+					//}
 				}
 
 			}//script
@@ -4015,7 +3851,7 @@ const putRiValue = function(op,RS,St,pol){
 			if(cont=='rectangle'){
 				if(o.rectangle){
 /*
-//deprecated
+//deprecated. no need to change rects states directly
 					if(ckey=='x'){
 //orb/rectangle/x
 						o.rectS.x=op[0]; return
@@ -4086,11 +3922,12 @@ const putRiValue = function(op,RS,St,pol){
 			if(cont=='oscillator'){
 				if(o.oscillator){
 					if(ckey=='run'){
+// ?>>orb/oscillator/run
 						if(pol==0){
 							o.oscR=op[0];
 							return //[o.oscR]	
 						}else{
-							var run = ['off','once','loop'];//,'loop','repeat']; 
+							var run = ['off','play'];//,'loop','repeat']; 
 							var n = run.indexOf(o.oscR);
 							var res = n+pol;
 							if(res>=run.length){res--;} 
@@ -4100,13 +3937,6 @@ const putRiValue = function(op,RS,St,pol){
 						}
 					}
 					//...
-					if(ckey=='current'){
-
-					}
-					//...
-					if(ckey=='cn'){
-
-					}
 				}
 			}//osc
 
@@ -4342,6 +4172,14 @@ const putRiValue = function(op,RS,St,pol){
 
 //audios are a bit different because commands changing params act on existing audio objects. 
 			if(cont=='oscillator'){
+//orb/oscillator/toneline/param
+				if(o.oscillator){
+//ok we need to find the tone line thats playing... and change the parameters of the tone state directly.
+					var ret = beatParam(o,cont,ckey,sub,op[0],pol);
+					if(ret==undefined){return 'end'}
+					//o.o = ret;//.toString();
+					return //[ret[2]]
+				}
 			
 			}
 			if(cont=='audio'){
@@ -4392,34 +4230,36 @@ const beatParam = function(o,cont,key,sub,op,pol){
 //maybe we can modify both tone line and the state tone itself if playing.. both from here
 		case 'oscillator':
 			var contstr = 'oscTL'; 
-/*
-			//if(op!=undefined)  if(pol!=0)
-			if(o.oscPA){
-				var k = parseFloat(key);
-				for (var i = 0; i <= soundCue.length; i++) {
-					var os = soundCue[i];
-					if(os.origin==o.name){
-						if(os.toneline==(k-1)){
-							switch(sub){
-								case 'frecuency':
-									if(op)
-									if(pol)
-									os.oscn.frequency.value
-									break
-								case 'gain':
-
-									break
-								//case '':
-								//	break
-							}
-						}
-					}
-				}
-			}
-*/			
+//..so instead of multiple loops, lets just asign name+audiotype+line and search for that on oscCue.. but this means we cant
+//adress all oscillators at once. No matter what i do there is always a new thing to considerate. I migth as well just focus on
+//writing everything as modular as possible. Maybe we should even have 2 arrays instead of one oscCue. This way i dont need to
+//add even more tags to find states i l just focus on name and line, oscCue  audioCue . 
+			if(op!=undefined||pol!=0){
+				if(o.oscPA){
+					var k = parseFloat(key);
+					for (var i = 0; i < oscCue.length; i++) {
+						var os = oscCue[i];
+						if(os.origin==o.name){
+							if(os.toneline==k){
+								switch(sub){
+									case 'frequency':
+										if(op){os.oscn.frequency.value=op;}
+										if(pol){}
+										break
+									case 'gain':
+										if(op){os.oscg.gain.value=op;}
+										if(pol){}
+										break
+									//case '':
+									//	break
+								}
+							}//toneline match
+						}//origin name match
+					}//sound cue loop
+				}//osc playing already
+			}//op or pol
 			break
-
-		return
+		return //return if no cont match
 	}
 	//.. key needs to create a number but to access the number.. we need the container to tell use its corresponding beat
 	switch(key){
@@ -6004,8 +5844,8 @@ function update(){ //PEAK
 
 
 //check sound cue
-	var l = soundCue.length;
-	while(l--){var s = soundCue[l]; hearAll(s,l);}
+	var l = oscCue.length;
+	while(l--){var s = oscCue[l]; hearAll(s,l);}
 
 /*
 //.. we are not checking for when no beats on these elements....
@@ -6112,9 +5952,9 @@ function update(){ //PEAK
 			if(o.oscR=='off'){
 				if(o.oscPA){
 			//we want to access every tone and shut it down
-					for (var i2 = 0; i2 < soundCue.length; i2++) {
+					for (var i2 = 0; i2 < oscCue.length; i2++) {
 						//var TL = o.oscTL[i2];
-						var ts = soundCue[i2];
+						var ts = oscCue[i2];
 						if(o.name==ts.origin){
 							//.. we should use fade out here instead of just end 0
 							ts.end=0;
@@ -6128,7 +5968,7 @@ function update(){ //PEAK
 						for (var i2 = 0; i2 <= o.oscTL.length-1; i2++) {
 							var TL = o.oscTL[i2];
 							var os = {
-					id:Date.now(), start:0, freq:432, gain:0.07, fadein:0.3, fadeout:0.3,type:0,duration:1
+					id:Date.now(), start:0, frequency:432, gain:0.07, fadein:0.3, fadeout:0.3,type:0,duration:1
 							}
 							//update state using tone line
 							timeUp(os,TL);
@@ -6138,7 +5978,7 @@ function update(){ //PEAK
 //but we should be able to make changes on the tone states timers more precisely.. maybe we can create changes from reading kdown
 //or touch events directly and not in synch with heartbeat..
 							osc.origin=o.name; osc.toneline=i2+1;
-							soundCue.push(osc);
+							oscCue.push(osc);
 						}
 				//we need to set run to a value to let the system know tones are running.
 						//o.oscR='playing';
@@ -6226,14 +6066,16 @@ function update(){ //PEAK
 		if(o.rectangle){
 			if(o.rectR=='off'){} 
 			if(o.rectR=='loop'){ 
-				beatUp(o.rectF,o.rectB,o.rectS); // o,o
-				//We need to synch circle with orb position... . .?
-				//o.rectS.x=o.x; o.rectS.y=o.y;
-				o.rectB++;
-				if(o.rectB>o.rectF.length){o.rectB=1;}
-				if(o.rectS.layer==0){visual_q0.push(o.rectS);} //[B]?
-				if(o.rectS.layer==1){visual_q1.push(o.rectS);}
-				if(o.rectS.layer==2){visual_q2.push(o.rectS);}
+				if(o.rectF.length>0){
+					beatUp(o.rectF,o.rectB,o.rectS); // o,o
+					//We need to synch circle with orb position... . .?
+					//o.rectS.x=o.x; o.rectS.y=o.y;
+					o.rectB++;
+					if(o.rectB>o.rectF.length){o.rectB=1;}
+					if(o.rectS.layer==0){visual_q0.push(o.rectS);} //[B]?
+					if(o.rectS.layer==1){visual_q1.push(o.rectS);}
+					if(o.rectS.layer==2){visual_q2.push(o.rectS);}
+				}
 			}
 			if(o.rectR=='repeat'){
 				if(o.rectF.length>0){
@@ -6289,6 +6131,7 @@ function update(){ //PEAK
 					//o.txtLi.splice(o.txtB-1,1,dli);
 		   		//but we dont want to replace the line by default when writing into a text from input.... do we
 		    		//nah.. because we want to be able to quicly insert a new line in place when we are here..
+
 				}
 
 //so before despacer, and here, only once per heartbeat, check if last line text is '', if so then remove.
