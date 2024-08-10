@@ -73,8 +73,43 @@ The most beautiful feeling i once had..
 The silence you  naturally float towards to is my infinity,
 And i am (bound) in love with everything that exists in your prescence.
 
+Sunya . A refreshing world building experience that pushes the boundaries between game developers and players.
+'But i just want to relax and have fun!'
+Well no more you little shit. Now you get your hands dirty because there are no game developers!
+
+
 
 #intro
+This link will take you to my github page which contains the program. Once you click, a ridiculously small html file will load
+another ridiculously small JavaScript file which will take less than a second to load. After that you are free to disconnect from
+the Internet entirely and the program will run just fine.
+I know you still might believe i am trying to hack your computer so this is my effort to make you see this is not the case.
+1. Why would i want to hack your computer when i got more important stuff to do.
+2. This program is a loveletter to gamers, developers and all visual and audio arts.
+Hacking people with malicious intent is a practice i would simply not ever be involved with because it goes against my own highest principles.
+I believe knowledge and beauty should be freely shared and the internet should be a playground for people to learn how to relate
+to each other and to respect each others ideas.
+I think censorship is useless, i believe making the Internet a good place is a collective effort which cannot be consolidated and
+squared into a set of rules to follow. Humanity is a species self driven which has been blessed with the gift of conciousness,
+and it is our duty to aknowledge this, and help others respectfully to do so. Rules should be used to create fair games, not to
+pretend this cant go wrong. Things can and will go wrong so building our own resilience and arguing for the sake of puting out
+there what we think should be done in a given situation is a healthy practice.
+3. Github allowed my file so it having malicius content is very unlikely to be the case anyway.
+4. If you are here, it means i am grateful that you decided to trust me and
+take a time for coming here and learn what this is all about.
+Why would i want to hack you or something after what you have done for me.. that would not make any sense.
+You would not trust me and i would be wasting your time as well. Not in my best interest.
+
+Ok hopefully, that should be enough!
+This site has scripts to be used on Sunya to create things and can be studied as well while running in the program.
+There is a page with all commands available and other page with image files which can be used in the program as well.
+I hope you dont find the system too complicated, i ve tried my best to keep it simple, consistent and powerful. This is not the final
+version of course, and i would deeply apreciate any feedback you would like to give me or if you have an idea for an animation or
+a videogame then please feel free to contact me on discord.
+ok have a nice day and take care of yourself. God bless :)
+
+
+
 *allow sound?
 Void background noise gently pressing in. Colors as well.
 A giant circle coming towards the center clearing up the noise. 
@@ -83,13 +118,27 @@ A point in the middle. Its the user entity screen center.
 We start inside another entity. This first encounter with another entity will
 help user to understand some basic commands.
 
+'Ok do you see no problem here? You can see the words just right?'
+*user notices the interface is messed up
+'Oh dear... we are gonna have to call someone.. what? developer is on vacation? Oh no we cant just interrupt his vacations for such
+a minor mistake, these kinds of errors are perfectly understandable... he did code the whole game on his own after all he must be TIRED'
+'You think you could fix this for me real quick? You just have to execute a little command on a terminal up here i cant do it myself
+since i am just a Memory but you are an interdimentional entity so you should have that skill unlocked'
+'just press Enter and type in...'
+*and now the player learned something important. Everything in Sunya can be customized because all elements are within the reach
+of the command line user just used. We gave the player a reason to learn the sinthax.
+
+The idea of offering a story that fails narratively due to low budget or some comical reason has potential to be a fourth wall breaking
+humour for a twist. the plot is indeed all prewritten but its interesting to involve the player on the experience of the developer
+this is perfectly in line with the tematic. we want to reduce the gap between developers and players after all.
+
 First dialogue (clean)
 *Kaozzai begins to explains things
 
 "Most Keys on your keyboard have no personal browser atachments. So we can work with those!
 Try pressing all your favourite keys to check if they are ok! If you can see them on
 the screen , it means we can asign commands to them...! But first let me show You
-how to execute a command...
+how to execute a command... ou you already know?
 *press Enter
 comline is now listenning. You can type in commands here!
 *press Esc
@@ -102,13 +151,13 @@ Just type in:
 @MyFirstMemoryOrbInSunya ... Or you can call it whatever you want! You can call
 it @Joni ! or @Jeni ! or @!!!  Just be sure to type
 in this very fancy symbol from the 90's here  '@' I am not sure what even means..
-But its very neat so i decided to include it in the program!
+But its very neat so i decided to include it in the program..!
 *user creates orb
 Nice! What a lovely name! *clears throat
 A memory Orb is just a structure to hold instructions and data.
 What kind of data will depend on its purpuse. To give orbs a purpuse, we need to
 unseal specific aspects.
-We can awaken aspects into this orb You just created... 
+We can unseal aspects of this orb You just created... 
 
 Text aspect
 Lets open up the orb possibilities into a new aspect, text. Just type in the command:
@@ -136,14 +185,10 @@ We can even type in text lines right in, Just press Enter 2 times to
 make inprompt listen. And type in some words as example. Then press Enter
 again to create a text line, You can always just press Esc if you want to close 
 a prompt without creating an Entry.
-
 *types into inprompt
-
 And there is your text line...
 Try adding a few other lines so you see how they pile up after the other!
-
 *types some more lines
-
 I will now give you a few shortcuts and set up a couple of orbs running Scripts
 to help you catch the drift of what is happening in your screen..if i may..
 
@@ -179,11 +224,11 @@ the user to have full understanding of what the system is doing under the hood. 
 programming work, and how we can use the computer to build our own rules, and to create our own games. That this possibility
 already exist, and that it will not take all your time, and that you will benefit inmensely from being able to do this!
 
-
 You can now move around this text. Feels quite snappy doesnt it? We do not create nor
 manipulate html elements to do so, except for the canvas element and the Web Audio API,
-both highly optimized systems on which the whole Sunya data structure relies on.
-So the system is responsive and fully customizable.
+both highly optimized systems on which the whole Sunya data structure relies on, there are really few other html elements around
+we are using.
+So the system is very responsive and also fully customizable.
 
 Script Aspect
 Every orb is independent, but we can build the strings to link its actions in 
@@ -227,7 +272,7 @@ fade out too soon for me to find peace, to take root in my own understanding of
 the reality that unfolded faster and faster before my eyes.. my ears.. my heart..
 
 It was a constant existential crisis. No one could tell what was is it all about.
-There was guiding light to hold on to.
+There was no guiding light to hold on to.
 And there was no one to truly share what i was living trough,
 the way i wanted to share it.
 
@@ -240,7 +285,7 @@ The truth had to be simple, natural. It wont come in a box, it wont
 come from a master, or an idol, or a job, or money, or a piece of art.
 
 Truth is a state of the mind, a dance between the vectors in the spotlight,
-a pursuing of the conciousness, an supreme instinct untainted by fear,
+a pursuing of the conciousness, a supreme instinct untainted by fear,
 a feeling that blooms even when  vaguely described by the least concerned..
 
 I found the words, i found the Logic, and i could check for consistency.
@@ -253,7 +298,7 @@ I would find a path forward from time to time.. and sit on it.. only to feel the
 coming out.. only to be washed away by the overwhelmed sea of sadness, pouring out
 from my spine. Rusting all the joints of my graceful thoughts, and blurring my sight,
 pululating my mind with ghosts, and terrible forms snaping from the darkness of
-the black whole inside my heart.
+the black hole inside my heart.
 
 I was disapointed of my own selfish acts after all.
 I could not hold accountable for the things i lost in the way, for the friends i left behind.. for the love i didnt give back.
@@ -263,7 +308,7 @@ And i was alone again.
 
 There was after all, a series of logical steps to follow.
 A clear and methodic process to enlightnment. The vessel of freedom had to be constructed.
-From the inside out, and outside going inwards as well. The good ending.
+From the inside out, and outside going inwards as well. The path forward.
 
 It only took a bit more.. it only took for me to heal my body
 and clear my mind to keep building it.. And i would only become stronger
@@ -313,7 +358,7 @@ no further action can be taken without leting the guard down..
 An entity might now trigger a crack on the defense of one Character, and watch in real
 time all scripts trigering to secure control of its oponent. Only when the
 user is familiar enough with the script sinthax , and is able to read how scripted events unfold,
-massive knowledge of Combat and its rules can be adquired by triggering this combat sequence.
+massive knowledge of Combat and its rules can be adquired by triggering and studying this combat sequence.
 
 
 experiment
@@ -327,7 +372,8 @@ rect.
 
 experiment
 A condition to force entity always follow one of its orbs at least. so no independant
-entity screen movility. Also orbs speed is limited.
+entity screen movility. Also orbs speed is limited... and we cant create orbs, only find them. This is basically a game engine..
+or at the very least this seems to be the way to it
 
 
 experiment
@@ -363,11 +409,9 @@ slow breathing, slow filtering, slow is faster!!!
 
 
 
-
-
 make chatOn and nLine a thing .. should be Cline Iline . done
 aaand we probly want to be able to situate rectangle forms using the screen percentage... that could be handy to create proper
-interfaces. not crucial tho
+interfaces. not crucial tho. done
 ou. i think we can totally forget about angles right now. deep inside i believe we can have a lot of fun already. you need to let go fam
 
 .. and then... make some image editor scripts.. but first define the image center mechanic. done
@@ -382,7 +426,6 @@ The squiggly line
 
 We want to be able to produce text and wait for user input to keep on with the main story script. we should be able to do that
 already..
-
 
 
 
@@ -417,3 +460,4 @@ poping out in the screen. Rectangles will also be able to tell if there is a spe
 A command to ask if target is on area
 
 So am thinking its 3 acts really. early game, mid game and late game
+

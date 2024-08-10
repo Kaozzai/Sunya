@@ -27,5 +27,128 @@ Elid
 #~/x>>Elid/circle/1/x<>~/y>>Elid/circle/1/y>>Elid/script
 #loop>>Elid/script/run
 
+OCTAVE 4 Piano Middle
+C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+start,0,duration,loop,frequency,261,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,277,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,293,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,311,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,329,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,349,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,369,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,392,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,415,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,440,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,466,gain,0.01,fadein,0.3,fadeout,0.3,type,0
+start,0,duration,loop,frequency,493,gain,0.01,fadein,0.3,fadeout,0.3,type,0
 
 
+
+
+
+
+
+
+Beats for colors
+white
+r,230,g,230,b,230
+celeste
+r,176,g,215,b,235
+azure
+r,91,g,157,b,237
+blue
+r,0,g,4,b,233
+purple blue
+r,97,g,28,b,188
+purple
+r,138,g,12,b,152
+black
+r,0,g,0,b,0
+red
+r,255,g,10,b,6
+orange
+r,255,g,152,b,1
+yellow
+r,255,g,221,b,38
+green
+r,163,g,238,b,4
+calypso
+r,127,g,224,b,191		
+
+
+textAlign = value
+Text alignment setting. Possible values: start, end, left, right or center. The default value is start.
+textBaseline = value
+Baseline alignment setting. Possible values: top, hanging, middle, alphabetic, ideographic, bottom. The default value is alphabetic.
+direction = value
+Directionality. Possible values: ltr, rtl, inherit. The default value is inherit.
+						
+
+Entity log
+Create an orb Elog to follow entity around showing entity stats
+making orbs with only script aspect to run a single listener should be a thing. This script creates Elog to print entity stats
+and ElogPos to make Elog always stay on the corner screen of the user. We also want OrbsSel. an orb to always print the current orbs
+created by the entity.
+ok now we want to be able to highlight the selected orb and print its status to follow around user. If no orb selected then we just
+see Elog and OrbsSel. We also want a button to simply toggle on and off all text on the screen.
+
+how about a map to see where the entity is in a specific number of pixels on the canvas. This is just a pair of rectangles. should not be
+hard to put together
+
+:@Elog<>unseal>>Elog/text/script
+#~>>Elog/text>>Elog/script/1
+#loop>>Elog/script/run
+@ElogPos<>unseal>>ElogPos/script
+#~/screenx>>Elog/text/x<>~/screeny>>Elog/text/y>>ElogPos/script/1
+#loop>>ElogPos/script/run
+@OrbsSel<>unseal>>OrbsSel/text/script
+#~/orbs>>OrbsSel/text>>OrbsSel/script/1
+#loop>>OrbsSel/script/run
+@OrbsSelPos<>unseal>>OrbsSelPos/script
+#~/screenx>>OrbsSel/text/x<>~/screeny280>>OrbsSel/text/y>>OrbsSelPos/script/1
+#loop>>OrbsSelPos/script/run
+@OrbStat<>unseal>>OrbStat/text/script
+#%>>OrbStat/text>>OrbStat/script/1
+#loop>>OrbStat/script/run
+@OrbStatPos<>unseal>>OrbStatPos/script
+#~/screenx320>>OrbStat/text/x<>~/screeny10>>OrbStat/text/y>>OrbStatPos/script/1
+#loop>>OrbStatPos/script/run
+>>Main/script
+
+delete>>$
+
+
+
+
+Main Control
+9 orbs. select orbs with numbers, 0 is no stance , sealtext seals all 9 orb texts, unsealtext unseals back all 9 again
+selected orbs will replicate entity displacements on themselves
+1 orb always prints entity stats and always follows entity on uper left screen
+
+
+@2<>#2>>2/text>>2/script
+@3<>#3>>3/text>>3/script
+
+@4<>#4>>4/text>>4/script
+@5<>#5>>5/text>>5/script
+@6<>#6>>6/text>>6/script
+
+Main skeys
+name,0,key,0,com1,#~>>~/stance
+name,1,key,1,com1,nines/1>>select/text/1<>#once>>select/script/run
+name,2,key,1,com1,#1>>~/stance
+name,3,key,1,com1,#1>>~/stance
+
+name,4,key,1,com1,#1>>~/stance
+name,5,key,1,com1,#1>>~/stance
+name,6,key,1,com1,#1>>~/stance
+
+reff
+name,C,key,C,com1,@C<>#C>>C/text>>C/script
+name,D,key,D,com1,#loop>>B/script/run
+name,E,key,E,com1,#loop>>C/script/run
+name,F,key,F,com1,@P<>~/screenx>>Elog/text/x
+name,G,key,G,com1,#loop>>Elog/script/run
+name,H,key,H,com1,P/name>>~/stance<>~/screeny>>Elog/text/y
+name,II,key,II,com1,-300>>B/text/x<>+200>>C/text/x
+name,JJ,key,JJ,com1,unseal>>B/oscillator

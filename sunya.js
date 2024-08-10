@@ -130,6 +130,9 @@ Ok we want a single orb to follow entity and monitor: current entity position , 
 if text aspect active, current circle form position
 
 */
+	{name:"MC", key:"MC", com1:"@Main<>unseal>>Main/script"},
+	{name:"MR", key:"MR", com1:"#once>>Main/script/run"},
+
 	{name:"A", key:"A", com1:"@Elog<>#~>>Elog/text>>Elog/script"},
 	{name:"B", key:"B", com1:"@B<>#B>>B/text>>B/script"},
 	{name:"C", key:"C", com1:"@C<>#C>>C/text>>C/script"},
@@ -364,7 +367,7 @@ const SoulSeal = function(o,asp){
 			o.image=true;
 			o.imgfile=undefined;
 //so we need the center coordinates now..
-			o.imgCX=eX;  o.imgCY=eY;
+			//o.imgCX=eX;  o.imgCY=eY;
 //and a default frame.... we dont need a default frame. this one is created when an image file is loaded into the orb
 			o.imgF=[
 				//['x',0,'y',0,'w',0,'h',0,'px',0,'py',0,'pw',0,'ph',0,'a',1,'layer',0]
@@ -1360,7 +1363,7 @@ const drawAll = function(s){
 		c.save();
 		c.fillStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
 		c.font = s.font;
-		//c.txtBaseLine='middle'; //we can do this as well to align vertically
+		c.textBaseline='top'; //we can do this as well to align vertically
 		c.textAlign=s.align;
 		//var c_x = (s.x+s.tx); 
 		//var c_y = (s.y+s.ty); //not sure if ux and uy needs to be here....
@@ -2055,6 +2058,12 @@ Patterns
 //NEW STRUCTURE. DEFINITELY FINAL FORM
 //return true on success, undefined if no match nor success
 const getCom = function(C){
+
+//..!!!!!an idea for orb creation sinthax. Why not just do unseal>>orbname . If the orb name doesnt exist, its created.
+//.. hmm.. but if it exists already...what do. would be interesting to be abtle to say unseal>>orb/aspect1/aspect2... and so on.
+//so orbs can be unsealed multiple aspect in one line. This makes sense.. however am not sure if we want to necesarily create the
+//orb if it doesnt exist. Its interesting to set a script to wait for the existence of a specificaly named orb. we dont want to 
+//sacrifice that. But multi aspects in one line is good
 	if(C[0]=='@'){
 // @orbname
 		var oname = C.substr(1);
@@ -2069,9 +2078,10 @@ const getCom = function(C){
 		//audio
 		//...
 
-		SoulSeal(o,'text'); SoulSeal(o,'script');
+		//SoulSeal(o,'text');
+		//SoulSeal(o,'script');
 		//this for now.. but we need to decide orbs first location by default..
-		o.txtX=eX; o.txtY=eY; //!!!!!!!
+		//o.txtX=eX; o.txtY=eY; //!!!!!!!
 		if(oname!=''){o.name=oname;} Orbs.push(o); staNce.push(o.name);
 		Eout = '@'+o.name;
 		return true
@@ -2155,6 +2165,23 @@ const comRiTarget = function(signal,target,St){
 	if(o){}else{return 'end'}
 
 
+//seals
+	if(signal=='seal'){
+		for (var i = 1; i < CCS.length; i++) {
+			var asp = CCS[i];
+			o[CCS[i]]=false;
+		}
+		return
+	}
+	if(signal=='unseal'){
+//!!!! . so we want seals to do multi aspects now. unseal>>orb/aspect1/aspect/2 and seal>>orb/aspect1/aspect2... and so on
+		for (var i = 1; i < CCS.length; i++) {
+			SoulSeal(o,CCS[i]);
+		}
+		return
+	}
+
+
 //a commnad to delete a target orb.. for now
 // delete should always expect a single string which is an orb name... maybe an aspect too? .. yes this is good. if only
 //an orb, delete the orb, if orb and aspect, delete the aspect, if orb/text/number, ... use the dataline as target...? thats inconsistent
@@ -2214,7 +2241,7 @@ const comRiTarget = function(signal,target,St){
 
 //ok now we can delete orbs and also specific orbs aspects so this needs update!!!!!!!!!
 //... however i think it would be more apropiate to design a different signal to manage aspects. seal and unseal
-//So with signals we can simply restrict the activity of orbs aspects without erasing all data. this might be an interesting mechanic.
+//So with seals we can simply restrict the activity of orbs aspects without erasing all data. this might be an interesting mechanic.
 //well seal and unseal are both working. Maybe delete could remove alldata from specified aspect only when the aspect is unsealed..!!!!!!
 		//incomplete...
 // delete>>orb/aspect
@@ -2234,62 +2261,91 @@ const comRiTarget = function(signal,target,St){
 		//console.log(ioo);
 		var iooo = staNce.indexOf(o.name);
 		staNce.splice(iooo,1);
-		Orbs.splice(ioo,1);
 		Eout = 'delete>>'+o.name;
+		Orbs.splice(ioo,1);
 		return
 		//.. not sure whi i blocked this. it makes sense to return 'end' here if we didnt find a target
 		//return 'end'
 	}
 
-//.. and how about deleting specific things. how would delete line look like.. here maybe?
 //SO actually rmline is good because it literally removes the text line when we do orb/text/number as target . 'delete' command
-//signal uses the line in the target text to create a new target instead of removing the line itself. Yes this is worthy
+//signal USES the line in the target text to create a new target instead of removing the line itself. Yes this is worthy
 //of clarification and its actually looking consistent and logic.. to me at least
 // rmline>>orb/text/..... hm... modify the switch a bit maybe? Because now we can do a command>>into a specific place/of a target orb
 //so '>>' doesnt just transfer data but sinthax also uses it to cast a command on a target... !!!!!!! we definitely want the sinthax
 //to work like this because command>>target looks kinda easy to grasp i mean it is self explanatory imo... ok this is interesting..
 //i  realized rmline could simply access an orb, and just yoink the current text line... this is notbad either.. but no
 //rmline should always expect orb/text/1..2..current..last etc...... OR MAYBE we could also expect rmline>>orb/circle/number, 
-//so we can specify a beat from an aspect to be removed... not a bad idea... kinda messy tho
+//so we can specify a beat from an aspect to be removed... not a bad idea... kinda messy tho... but yeah totally possible. and possibly
+//very handy. I can picture many situations were snatching a single beat from a form would be exactly what we want.. so yeah lets expand
+//rmline to work on lines, beats, and maybe skeys
 // rmline>>orb/text/line
 	if(signal=='rmline'){
-//we could send a signal kinda like when we do orb/in ..!!!!!!!!
-			//send a signal to be processed on correct instance.. !! 
-		if(o.text){
-			if(line){
+ //ok we only need to work with o, aspect and line !!
+//rmline>>orb/aspect/line
+			//
+		switch(aspect){
+			case 'text':
+				var contstr = 'txtLi'; var bstr = 'txtB'; break
+			case 'script':
+				var contstr = 'scC'; var bstr = 'scB'; break
+			case 'circle':
+				var contstr = 'cirF'; var bstr = 'cirB'; break
+			case 'rectangle':
+				var contstr = 'rectF'; var bstr = 'rectB'; break
+			case 'image':
+				var contstr = 'imgF'; var bstr = 'imgB'; break
+//maybe we can modify both tone line and the state tone itself if playing.. both from here. we actually want to remove the
+//tone line so if o.oscPA, then we also need to end the tone asociated.. but probably a nice end, so we request fade out, not just
+//remove the state, we dont want the poping sound
+			case 'oscillator':
+				var contstr = 'oscTL'; 
+				if(o.oscPA){
+					var k = parseFloat(line);
+					for (var i = 0; i < oscCue.length; i++) {
+						var os = oscCue[i];
+						if(os.origin==o.name){
+							if(os.toneline==k){
+								//remove tone line gently
+								os.end=0; //this works?
+							}//toneline match
+						}//origin name match
+					}//sound cue loop
+				}//osc playing already
+				break
+			return 'end'//return if no cont match
+		}
 
-// rmline>>orb/text/current
-				if(line=='current'){var targetl = o.txtLi[o.txtB-1]; var place = o.txtB;}
-// rmline>>orb/text/last
-				if(line=='last'){var targetl = o.txtLi[o.txtLi.length-1]; var place = o.txtLi.length-1;}
-//we cann remove all lines at once useing 'all'
-// rmline>>orb/text/all
-				if(line=='all'){o.txtLi=[]; return}
-
-// rmline>>orb/text/number
-				if(place==undefined){var targetl = o.txtLi[line-1]; var place = line;}
-			}
-			if(targetl){
-				//o.txtLi.splice(o.txtB-1,1);
-				o.txtLi.splice(place-1,1);
+		switch(line){
+			case 'all':
+				var kstr = 'all';
+			case 'current':
+				var kstr = o[bstr]-1; break
+			case 'last':
+				var kstr = o[contstr].length-1; break
+			default:
+				//line is a number now.. not sure if parse is necesary again.. ? 
+				var k = parseFloat(line);
+				var kstr = k-1; var nan = isNaN(kstr); if(nan){return 'end'}
+				break
+		}
+//now we check if this line exists, if so then remove it.
+		if(line=='all'){o[contstr].splice(0); return}
+		var B = o[contstr][kstr];
+		if(B){
+			o[contstr].splice(kstr,1); 
+			if(aspect=='text'){
 				dESpacer(o);
-				Eout = 'rmline>>'+target;//o.name;
+				Eout = 'rmline>>'+target;//we need a better output structure to annalize i think
 				return
 			}
-			return 'end'
 		}
-		//return 'end'
-	}
+		
+		return 'end' //return end if no rmline match because the operation failed and so second ins if any cant execute
 
-//seals
-	if(signal=='seal'){
-		if(aspect=='text'){o.text=false; return}
-		if(aspect=='circle'){o.circle=false; return}
-		if(aspect=='rectangle'){o.rectangle=false; return}
-		if(aspect=='image'){o.image=false; return}
-		if(aspect=='oscillator'){o.oscillator=false; return}
-	}
-	if(signal=='unseal'){SoulSeal(o,aspect); return}
+	}//rmline
+
+
 
 	return 'end'
 } //comRiTarget
@@ -2440,6 +2496,22 @@ const getLeValue = function(LS,St){
 	if(SS.length==2){ //SS[1] is a cont
 		if(ent){
 			var k = SS[1];
+//...!!! ok we need screenx0 .. 100 .. 300 to specify how far we want to position ourselves from the corner here.
+//same with screeny. we need this because otherwise we would waste so much time building a script to do this.
+//ok. grab the word "screen", process the next symbol, x y w h , and then check for a number... so maybe switch is not apropiated for
+//this. so we test for these before the switch statement. and its working perfectly
+			var screen = k.substr(0,6); // 'screen'
+			if(screen=='screen'){
+				var p = k.substr(6,1); //should have the next symbol
+				var a = parseFloat(k.substr(7));  //has the value to add. if none, then value is 'NaN'
+				var isnan = isNaN(a); if(isnan){a = 0;}
+				if(p=='x'){var tg = eX+a; return [tg-(Math.round(window.innerWidth/2))]}
+				if(p=='y'){var tg = eY+a; return [tg-(Math.round(window.innerHeight/2))]}
+				if(p=='w'){return [window.innerWidth+a]}
+				if(p=='h'){return [window.innerHeight+a]}
+			}//screen
+
+				
 			switch (k){
 
 //~/name
@@ -2454,39 +2526,8 @@ const getLeValue = function(LS,St){
 				case 'inprompt': return [nLine] 
 //~/memheat
 				case 'memheat': return [hEat]
-//~/screenx
-				case 'screenx': return [eX-(Math.round(window.innerWidth/2))]
-//~/scrreny
-				case 'screeny': return [eY-(Math.round(window.innerHeight/2))]
-//~/screenw
-				case 'screenw': return [window.innerWidth]
-//~/screenh
-				case 'screenh': return [window.innerHeight]
-					
-/*
-//deprecated!!!!!!!!!!!!
-				case 'drag':
-//~/drag
-					return Drag		
-				case 'mspsize':
-//~/mspsize
-					return [MSpSize]
-				case 'mspx':
-//~/mspx
-					return [MSpX]
-				case 'mspy':
-//~/mspy
-					return [MSpY]
-				case 'mspalpha':
-//~/mspalpha
-					return [zai]
-				case 'mspradius':
-//~/mspradius
-					return [MSpRad]
-
-*/
-				case 'orbs':
 //~/orbs
+				case 'orbs':
 		//read only . return a list of all orbs in the domain
 					var aorbs = [];
 					for (var i = 1; i <= staNce.length-1; i++) {
@@ -4274,9 +4315,10 @@ const beatParam = function(o,cont,key,sub,op,pol){
 			break
 	}
 //now we need to ask if adress of beat even exist and then use sub to look for its pair value on the target beat
-//ok.. check if op is working.. and finish the param access commands... also for oscillators... tomorow. rest now
+//ok.. check if op is working.. and finish the param access commands... also for oscillators... tomorow. rest now. its done
+//so far we can recycle these switches to use rmline signal.
 	var B = o[contstr][kstr];
-	//console.log(B);
+//this little snipet here works on the parameter we specified on the command..
 	if(B){
 		for (var i = 0; i <= B.length-2; i+=2) {
 			var p = B[i]; var v = B[i+1]; //var nv = v;
@@ -4286,7 +4328,6 @@ const beatParam = function(o,cont,key,sub,op,pol){
 				if(pol){B[i+1]=B[i+1]+pol; outs.push(B[i+1]);}
 				if(outs.length==2){outs.push(v);}
 				return outs
-				//console.log(outs); //not even getting here..
 			}
 		}	
 	}
@@ -5843,9 +5884,9 @@ function update(){ //PEAK
 	while(l--){var s = visual_q2[l]; drawAll(s);} visual_q2=[];
 
 
-//check sound cue
+//check sound cue.. we should only check for oscillators here
 	var l = oscCue.length;
-	while(l--){var s = oscCue[l]; hearAll(s,l);}
+	while(l--){var s = oscCue[l]; hearAll(s,l);} //hearAll should be hearOsc needs a more precise name
 
 /*
 //.. we are not checking for when no beats on these elements....
