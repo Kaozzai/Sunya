@@ -47,8 +47,6 @@ start,0,duration,loop,frequency,493,gain,0.01,fadein,0.3,fadeout,0.3,type,0
 
 
 
-
-
 Beats for colors
 white
 r,230,g,230,b,230
@@ -90,65 +88,93 @@ making orbs with only script aspect to run a single listener should be a thing. 
 and ElogPos to make Elog always stay on the corner screen of the user. We also want OrbsSel. an orb to always print the current orbs
 created by the entity.
 ok now we want to be able to highlight the selected orb and print its status to follow around user. If no orb selected then we just
-see Elog and OrbsSel. We also want a button to simply toggle on and off all text on the screen.
+see Elog and OrbsSel. to do this, create a mirror on every beat using the current line of OrbsSel
+and then, we asign mm and zz skeys to commands to change currently selected line on OrbsSel
+
+
+We also want a button to simply toggle on and off all text on the screen. maybe a script #once>>SealAllText/script/run .. does this
+Goes trough a list and runs an instruction using data on the list once. how to do that. now we can do it because now signals have
+a different sinthax
+problem now is... am sealing the text of the orb that contains the names of targets to seal so it stops in the middle of it lol
+ou man this is hella tricky
+
+
+
+
+:#1>>OrbsSel/text/cn
+
+Seal text aspect from orbs on list. needs more thought
+
+:seal/text>>OrbsSel/text/current<>+/text/cn>>OrbsSel
+OrbsSel/text/last==OrbsSel/text/current<>#off>>$/script/run
+>>Clear/script
+
+unseal text aspect on orbs from list. not ready
+ 
+:unseal/text>>OrbsSel/text/current<>+/text/cn>>OrbsSel
+OrbsSel/text/last==OrbsSel/text/current<>#off>>$/script/run
+>>Clear/script
+
 
 how about a map to see where the entity is in a specific number of pixels on the canvas. This is just a pair of rectangles. should not be
-hard to put together
+hard to put together... however it should work within a limited area in the canvas.
 
-:@Elog<>unseal>>Elog/text/script
+
+Print entity stats on the left corner and follow around the entity. 2 orbs. Dump script on stance orb and then run.
+
+:@Elog<>unseal/text/script>>Elog
 #~>>Elog/text>>Elog/script/1
 #loop>>Elog/script/run
-@ElogPos<>unseal>>ElogPos/script
+@ElogPos<>unseal/script>>ElogPos
 #~/screenx>>Elog/text/x<>~/screeny>>Elog/text/y>>ElogPos/script/1
 #loop>>ElogPos/script/run
-@OrbsSel<>unseal>>OrbsSel/text/script
+>>$/script
+
+Prints all orbs names created and highlights the currently selected one. Also follows around the entity. 3 orbs.
+Dump script on stance orb and then run.
+
+:@OrbsSel<>unseal/text/script>>OrbsSel
 #~/orbs>>OrbsSel/text>>OrbsSel/script/1
 #loop>>OrbsSel/script/run
-@OrbsSelPos<>unseal>>OrbsSelPos/script
+@OrbsSelPos<>unseal/script>>OrbsSelPos
 #~/screenx>>OrbsSel/text/x<>~/screeny280>>OrbsSel/text/y>>OrbsSelPos/script/1
 #loop>>OrbsSelPos/script/run
-@OrbStat<>unseal>>OrbStat/text/script
+@OrbsSelHL<>unseal/text/script>>OrbsSelHL
+##r,..1-250,g,3,layer,1,x,..1-7>>OrbsSel/text/current/mirror>>OrbsSelHL/script/1
+#loop>>OrbsSelHL/script/run
+>>$/script
+
+Prints data concerning the selected orb and follow the entity around. 2 orbs. Dump script on stance orb and then run.
+
+:@OrbStat<>unseal/text/script>>OrbStat
 #%>>OrbStat/text>>OrbStat/script/1
 #loop>>OrbStat/script/run
-@OrbStatPos<>unseal>>OrbStatPos/script
+@OrbStatPos<>unseal/script>>OrbStatPos
 #~/screenx320>>OrbStat/text/x<>~/screeny10>>OrbStat/text/y>>OrbStatPos/script/1
 #loop>>OrbStatPos/script/run
+>>$/script
+
+skeys sets
+We want sets of skeys to be easily configured by simply dumping lines into the comprompt. So a script when run can configure all skeys
+at once. A set to edit images, a set to explore, a set to play around with oscillators etc
+
+Turn arrows into displacement keys to move around the entity screen by 100 pixels when pressed. no orb required
+
+:name,ArrowLeft,key,ArrowLeft,com1,-100/x>>~
+name,ArrowRight,key,ArrowRight,com1,+100/x>>~
+name,ArrowUp,key,ArrowUp,com1,-100/y>>~
+name,ArrowDown,key,ArrowDown,com1,+100/y>>~
+>>~/skeys/new
+
+Create many orbs at once to mess around with using Main. run Main script once
+.. what if we want to creat acircel with initial values kinda randombly at a certain area.. we can always just ask for a value
+put it on a text somewhere and then use that value to modify an aspect directly o1/text/1>>o2/circle/1/r .... stil not a solution
+we want to use 2 values form a text and create a random range how would we do that
+
+:@o1<>unseal/text/script/circle>>o1
+#r,..1?4,g,..100?230,b,..180?255,x,..-23?50>>o1/circle
+@o2<>unseal/text/script/circle>>o2
+@o3<>unseal/text/script/circle>>o3
+@o4<>unseal/text/script/circle>>o4
+@o5<>unseal/text/script/circle>>o5
 >>Main/script
-
-delete>>$
-
-
-
-
-Main Control
-9 orbs. select orbs with numbers, 0 is no stance , sealtext seals all 9 orb texts, unsealtext unseals back all 9 again
-selected orbs will replicate entity displacements on themselves
-1 orb always prints entity stats and always follows entity on uper left screen
-
-
-@2<>#2>>2/text>>2/script
-@3<>#3>>3/text>>3/script
-
-@4<>#4>>4/text>>4/script
-@5<>#5>>5/text>>5/script
-@6<>#6>>6/text>>6/script
-
-Main skeys
-name,0,key,0,com1,#~>>~/stance
-name,1,key,1,com1,nines/1>>select/text/1<>#once>>select/script/run
-name,2,key,1,com1,#1>>~/stance
-name,3,key,1,com1,#1>>~/stance
-
-name,4,key,1,com1,#1>>~/stance
-name,5,key,1,com1,#1>>~/stance
-name,6,key,1,com1,#1>>~/stance
-
-reff
-name,C,key,C,com1,@C<>#C>>C/text>>C/script
-name,D,key,D,com1,#loop>>B/script/run
-name,E,key,E,com1,#loop>>C/script/run
-name,F,key,F,com1,@P<>~/screenx>>Elog/text/x
-name,G,key,G,com1,#loop>>Elog/script/run
-name,H,key,H,com1,P/name>>~/stance<>~/screeny>>Elog/text/y
-name,II,key,II,com1,-300>>B/text/x<>+200>>C/text/x
-name,JJ,key,JJ,com1,unseal>>B/oscillator

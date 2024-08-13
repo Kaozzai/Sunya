@@ -44,7 +44,7 @@ be called again and again indefinitely
 
 
 #concept
-In Sunya we dont have experience points. We just have experience lol
+In Sunya we dont have experience points. We just have experience.
 We can see lots of numbers that will start to grow the more you learn stuff to cease
 your anxiety levels, but its knowledge what will really strengthen you.
 If you already know about videogames or have images or sound or text lines that could
@@ -64,49 +64,63 @@ Have i been missing out...?
 #dialogue
 Void King Pledge
 I will write the instructions, i will execute the commands
-Until all my words, become the lines you love to read
-I will carry this memory in my heart with every step i
-take , and every beat inside.
-I will not forget this feeling.
+Until all my words, become the lines your love demands
+I will carry this memory in my black heart
+with every step i take , and every beat inside
+I will never forget this strange feeling
 I promise to not let it fade, for i will follow its trace
 The most beautiful feeling i once had..
-The silence you  naturally float towards to is my infinity,
+The silence you so naturally float towards to is my infinity,
 And i am (bound) in love with everything that exists in your prescence.
 
-Sunya . A refreshing world building experience that pushes the boundaries between game developers and players.
+*an alien species has decided to yoink all game developers out of existance and so a bunch of NPCS are trying to make
+players create games so they can work
+"Sunya . A refreshing world building experience that pushes the boundaries between game developers and players!"
 'But i just want to relax and have fun!'
-Well no more you little shit. Now you get your hands dirty because there are no game developers!
-
+Well, no more fun and relaxing! You will experience now the struggle of game developers!
+Now You get your hands dirty because there are no game developers! And we need You to give us a purpuse! Please Help us!
+We dont want to be deleted and forgotten for ever! We are Culture!
 
 
 #intro
 This link will take you to my github page which contains the program. Once you click, a ridiculously small html file will load
-another ridiculously small JavaScript file which will take less than a second to load. After that you are free to disconnect from
-the Internet entirely and the program will run just fine.
-I know you still might believe i am trying to hack your computer so this is my effort to make you see this is not the case.
-1. Why would i want to hack your computer when i got more important stuff to do.
-2. This program is a loveletter to gamers, developers and all visual and audio arts.
-Hacking people with malicious intent is a practice i would simply not ever be involved with because it goes against my own highest principles.
-I believe knowledge and beauty should be freely shared and the internet should be a playground for people to learn how to relate
-to each other and to respect each others ideas.
-I think censorship is useless, i believe making the Internet a good place is a collective effort which cannot be consolidated and
-squared into a set of rules to follow. Humanity is a species self driven which has been blessed with the gift of conciousness,
-and it is our duty to aknowledge this, and help others respectfully to do so. Rules should be used to create fair games, not to
-pretend this cant go wrong. Things can and will go wrong so building our own resilience and arguing for the sake of puting out
-there what we think should be done in a given situation is a healthy practice.
-3. Github allowed my file so it having malicius content is very unlikely to be the case anyway.
-4. If you are here, it means i am grateful that you decided to trust me and
-take a time for coming here and learn what this is all about.
+another ridiculously small JavaScript file which will take less than a second to load. Thats on your browser not me. 
+After that you are free to disconnect from the Internet entirely and the program will run just fine.
+But of course you dont NEED to do that, am just telling you so you know.
+This program is contained in a couple of files that run on your browser just like any other web page you ve visited so far.
+I know.. you still might believe i am trying to hack your computer so.. this
+is my honest effort to make you see, it is not the case.
+1. Why would i want to hack your computer when i got more important and fun stuff to do?
+2. This program is a loveletter to all arts. Your computer was created with art. I respect art, thus, i respect your computer.
+3. You Are Art. And i respect Art, so i respect You and your human vessel. And your cat or your dog if you have one.
+4. Hacking people with malicious intent is a practice i would simply not ever be involved with because its not my style.
+5. Github allowed my files so it having malicius content is very unlikely to be the case anyway.
+6. If you are here, it means i am grateful that you decided to trust me and
+taking the time for coming here and learn what this is all about. It means everything to me.
 Why would i want to hack you or something after what you have done for me.. that would not make any sense.
-You would not trust me and i would be wasting your time as well. Not in my best interest.
+7. This proyect is evolves out of Logic and Love.
+And i apreciate your time as much as i apreciate mine. Time is all we have i think.
+8. I would preffer to learn about you From You instead of going to the dark webz and buying some data sheet with all your
+inclinations and deepest desires, i find that kinda creepy.
 
 Ok hopefully, that should be enough!
 This site has scripts to be used on Sunya to create things and can be studied as well while running in the program.
+In Sunya, we can create texts with lines holding instructions to do things on the system, we call these 'scripts' in here.
 There is a page with all commands available and other page with image files which can be used in the program as well.
 I hope you dont find the system too complicated, i ve tried my best to keep it simple, consistent and powerful. This is not the final
 version of course, and i would deeply apreciate any feedback you would like to give me or if you have an idea for an animation or
-a videogame then please feel free to contact me on discord.
+a videogame then please feel free to contact me on discord. 
+I have some ideas to discuss regarding how this system might evolve once and if we get to form a group of friends.
 ok have a nice day and take care of yourself. God bless :)
+
+
+I believe knowledge and beauty should be freely shared and the internet should be a playground for people to learn how to relate
+to each other and to respect each others ideas.
+I think censorship is useless and despicable, i believe making the Internet a good place is a collective effort which cannot be
+consolidated and
+squared into a set of rules to follow. I think rules should be used to create fair games. Fair games are interesting.
+Things can and will go wrong so building our own resilience and arguing for the sake of puting out
+there what we think should be done in a given situation is a healthy practice. 
 
 
 
@@ -407,8 +421,6 @@ slow breathing, slow filtering, slow is faster!!!
 
 
 
-
-
 make chatOn and nLine a thing .. should be Cline Iline . done
 aaand we probly want to be able to situate rectangle forms using the screen percentage... that could be handy to create proper
 interfaces. not crucial tho. done
@@ -422,10 +434,25 @@ drawAll directly. its done
 scripts to play around with oscillators... and by then we should start working
 on Kaozzai and game introduction..... omg so much work
 
-The squiggly line
-
 We want to be able to produce text and wait for user input to keep on with the main story script. we should be able to do that
-already..
+already.. .. am guessing the more straightforward way to do this is write instructions to wait for a specific value.
+So maybe output signals could produce a text with the value of the command , and maybe the value of the target, on two separate lines..
+MAYBe we can even include this in the sinthax. orb/out/instruction , orb/out/target . In this way, we can trully annalyze the effect
+of any instruction executed by an orb. . . we could say :
+orb/out/target>>aorb/text/1<>#once>>listener/script/run   or
+orb/out/instruction>>aorb/text/5<>#once>>listener2/script/run
+We would now have picked the value with which we want to work with and store it on aorb.
+listener could now use a target or a command to create an effect related.
+aorb/text/1>>~/stance  ,  aorb/text/5 .. 
+hmm.... how would we copy a modification of a parameter and redirect that same change into another orb Aspect, this is what we want..!
+orb/out/echo>>newtarget    or     orb/out>>orb/text/1 
+out alone returns the instruction. we can then say   orb/out==#+20>>Orb/circle/3/
+So echo copies the command but replaces the target and casts it inmediately. ...
+but what if we just set a script to do this : orb1/circle/x>>orb2/circle/x and just run on repeat. this is how we make an orb follow
+another orb. so instead of focusing on hearing outputs and do stuff with the literal output string, we just use output to check
+for the type of command that the listening orb executed? because maybe we dont want to copy the circle position at everyhearbeat
+but only when a specific output comes from the target orb... output is a one beat event.. we need to think differently , we need to
+take advantage on this particularity instead of taking the boar aproach.
 
 
 
@@ -442,18 +469,9 @@ Once this mechanisms are ready we wont need drag. Orbs will have an efective med
 MSp dont ring many bells now either
 .. and its done. output signal works fine.
 
-ok so if we clear all beats on a line, the line will still exist , but it wont be visible
-If circle has no beats, it wont be visible but still exist..
 
 and now am thinking maybe we can also turn the key memory system into a job performed by an orb... since we can also asign
 spacebar commands... wait. nah we good for now
-
-Rectangles
-ok lets make rectangles able to recognize percentage areas from users screen. This way we will have a great tool to creat proper
-interfaces... so maybe screen location by percent is more of a command in itself huh. We just need a memorable sinthax ,js
-already lets us access these. how about ~/screenx , ~/screeny , ~/screenw , ~/screenh. well from here we can just move structures
-knowing these refferences. we first do ~/screenx>>orb/text  . then orb/text>>orb2/text will have a number we can work with.
-ok done. We need to update commands txt from site now..
 
 We want rectangle aspect to perform the job of html tag containers for text on the screen to provide highlights into elements
 poping out in the screen. Rectangles will also be able to tell if there is a specified memory aspect in its area probably.
