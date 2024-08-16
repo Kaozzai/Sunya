@@ -23,7 +23,8 @@ A timeline... we should be able to see the timeline of instructions in a cue.
 
 #concept
 .. and yes we do need a drawing app.... but a really cool and simple one. not for 
-drawing , but for connecting things with lines. I can picture this being a more handy feature for tocuhscreen users.
+drawing ,there already very good ones out there, but for connecting orbs
+aspects with lines. I can picture this being a more handy feature for touchscreen users.
 
 
 oscillators
@@ -72,7 +73,10 @@ I promise to not let it fade, for i will follow its trace
 The most beautiful feeling i once had..
 The silence you so naturally float towards to is my infinity,
 And i am (bound) in love with everything that exists in your prescence.
+(And i am in bound with everything that exists in your canvas)
 
+
+#dialogue
 *an alien species has decided to yoink all game developers out of existance and so a bunch of NPCS are trying to make
 players create games so they can work
 "Sunya . A refreshing world building experience that pushes the boundaries between game developers and players!"
@@ -82,38 +86,8 @@ Now You get your hands dirty because there are no game developers! And we need Y
 We dont want to be deleted and forgotten for ever! We are Culture!
 
 
-#intro
-This link will take you to my github page which contains the program. Once you click, a ridiculously small html file will load
-another ridiculously small JavaScript file which will take less than a second to load. Thats on your browser not me. 
-After that you are free to disconnect from the Internet entirely and the program will run just fine.
-But of course you dont NEED to do that, am just telling you so you know.
-This program is contained in a couple of files that run on your browser just like any other web page you ve visited so far.
-I know.. you still might believe i am trying to hack your computer so.. this
-is my honest effort to make you see, it is not the case.
-1. Why would i want to hack your computer when i got more important and fun stuff to do?
-2. This program is a loveletter to all arts. Your computer was created with art. I respect art, thus, i respect your computer.
-3. You Are Art. And i respect Art, so i respect You and your human vessel. And your cat or your dog if you have one.
-4. Hacking people with malicious intent is a practice i would simply not ever be involved with because its not my style.
-5. Github allowed my files so it having malicius content is very unlikely to be the case anyway.
-6. If you are here, it means i am grateful that you decided to trust me and
-taking the time for coming here and learn what this is all about. It means everything to me.
-Why would i want to hack you or something after what you have done for me.. that would not make any sense.
-7. This proyect is evolves out of Logic and Love.
-And i apreciate your time as much as i apreciate mine. Time is all we have i think.
-8. I would preffer to learn about you From You instead of going to the dark webz and buying some data sheet with all your
-inclinations and deepest desires, i find that kinda creepy.
-
-Ok hopefully, that should be enough!
-This site has scripts to be used on Sunya to create things and can be studied as well while running in the program.
-In Sunya, we can create texts with lines holding instructions to do things on the system, we call these 'scripts' in here.
-There is a page with all commands available and other page with image files which can be used in the program as well.
-I hope you dont find the system too complicated, i ve tried my best to keep it simple, consistent and powerful. This is not the final
-version of course, and i would deeply apreciate any feedback you would like to give me or if you have an idea for an animation or
-a videogame then please feel free to contact me on discord. 
-I have some ideas to discuss regarding how this system might evolve once and if we get to form a group of friends.
-ok have a nice day and take care of yourself. God bless :)
-
-
+#dialogue
+"
 I believe knowledge and beauty should be freely shared and the internet should be a playground for people to learn how to relate
 to each other and to respect each others ideas.
 I think censorship is useless and despicable, i believe making the Internet a good place is a collective effort which cannot be
@@ -121,17 +95,32 @@ consolidated and
 squared into a set of rules to follow. I think rules should be used to create fair games. Fair games are interesting.
 Things can and will go wrong so building our own resilience and arguing for the sake of puting out
 there what we think should be done in a given situation is a healthy practice. 
+"
 
+First Act
 
-
+User is prompted to allow sound or prohibit it. 
+?so a memory needs to wait for an entity input and only when that happens, we proceed with story
+?maybe we can just create a timer and keep substracting as long as we want to wait for an user input.
 *allow sound?
-Void background noise gently pressing in. Colors as well.
-A giant circle coming towards the center clearing up the noise. 
-Covering now the whole screen. Noise is gone.
-A point in the middle. Its the user entity screen center.
-We start inside another entity. This first encounter with another entity will
-help user to understand some basic commands.
+Void background noise gently pressing in. A white overwhelming mist, a sound that is the sum of all possible sounds.Colors as well.
+A few seconds pass. The screen is filled with forms.(and white noise if audio is allowed)
+Strange uncertain melodies are audible. Strange noises that seem to come and go. A storm of conciousness.
+A giant circle aproaches. Coming towards the center of the screen clearing up the noise and the screen.
+Covering now the whole screen. Noise is gone. A point in the middle manifests. Its the user entity screen center.
+'You can move now..'
+User can move the screen slowly with arrows now.
+A whisper can be heard. Someone in whistles is chanting an alluring melody. User moves towards it or back into the storm.
+The sound of the strom is muffled increasingly with every pixel closer to the melody.
+"There you are! hmm.... You are not a simple memory.. "
+A bird is drinking from a fountain.
 
+Our Main memory orb will let us find text orbs in the wild to transfer the lines into Main script aspect and then run the commands contained
+in them.. A first memory to let users run useful scripts found in the wild.
+We give users some initial keywords to learn to control Main orb.
+
+
+#dialogue
 'Ok do you see no problem here? You can see the words just right?'
 *user notices the interface is messed up
 'Oh dear... we are gonna have to call someone.. what? developer is on vacation? Oh no we cant just interrupt his vacations for such
@@ -238,6 +227,7 @@ the user to have full understanding of what the system is doing under the hood. 
 programming work, and how we can use the computer to build our own rules, and to create our own games. That this possibility
 already exist, and that it will not take all your time, and that you will benefit inmensely from being able to do this!
 
+
 You can now move around this text. Feels quite snappy doesnt it? We do not create nor
 manipulate html elements to do so, except for the canvas element and the Web Audio API,
 both highly optimized systems on which the whole Sunya data structure relies on, there are really few other html elements around
@@ -253,7 +243,7 @@ This line will store the word 'once' into the orb script run key, and so the orb
 #once>>orbname/script/run . 
 This is the second Aspect. script.
 To unseal the script aspect we run :
-unseal>>orbname/script
+unseal/script>>orbname
 
 *user might be overwhelmed already
 
@@ -355,7 +345,6 @@ commands to affect entity params.. orbs should be able to send command signal to
 !!!!!!!!!!!!!!!!!!!!!!!!
 Lets just asume user is the only entity for now, lets worry about multiple entities when we go Online Sunya.. ok? ok . solved.
 resolved!!!!!!!!!!!!!!!!!
-
 
 
 
@@ -479,3 +468,15 @@ A command to ask if target is on area
 
 So am thinking its 3 acts really. early game, mid game and late game
 
+character movement . an idea
+Use arrows to move the screen in a limited way
+WASD moves the character. We see the animation.. and also we see the animation of the char face.
+When we move the screen too far away, the character expresses a face gone, distracted. when the screen is on character
+Its expression aknowledges it, its feels more present. also attentive and more able to react to sneak attacks
+When screen is far away , character is more vulnerable
+
+
+to edit image animations we have WASD and arrows. Using any displacement button will center the screen on the displaced.
+Arrows control the image extraction while WASD control the image positioning. we can use other keys to control w h pw and ph
+and a and layer. while on edit mode also the animation is on repeat, so we go beat by beat . maybe we can use Pageup and down
+to select a different beat.. or just KeyB and KeyN
