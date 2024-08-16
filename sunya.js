@@ -18,6 +18,8 @@ var keyboardEnabled = undefined;
 var actx = undefined; //audio context
 const oscCue = [];
 
+var transLate = [];
+
 var Ename = 'Kaozzai'; 									// /name
 var Eid = 0;										// /id
 var Entry = undefined;									// /entry
@@ -31,7 +33,7 @@ var nLine =false;
 var Orbs = [];	//All entity orbs are stored in here.					// /orbs
 var ALOrbs = []; //after loop Orbs commands
 //const WM = [];	Other memories?
-var Drag = [];
+//var Drag = [];
 var staNce = ['~']; //all stances
 var stancE = '~'; //The ent or memory orb that will respond to commands with no target
 
@@ -114,8 +116,8 @@ Ok we want a single orb to follow entity and monitor: current entity position , 
 if text aspect active, current circle form position
 
 */
-	{name:"Start", key:"Start", com1:"@Start<>unseal/script>>Start"},
-	{name:"SS", key:"SS", com1:"#once>>Start/script/run"},
+	//{name:"create Start", key:"Home", com1:"@Start<>unseal/script>>Start"},
+	//{name:"run Start", key:"End", com1:"#once>>Start/script/run"},
 	//{name:"Main", key:"Main", com1:"@Main<>unseal/text/script/circle/rectangle/image/oscillator>>Main"},
 	//{name:"MM", key:"MM", com1:"#Main>>~/stance"},
 	//{name:"SR", key:"SR", com1:"#once>>Main/script/run"},
@@ -126,10 +128,10 @@ if text aspect active, current circle form position
 
 	//{name:"MC", key:"MC", com1:"@Clear<>unseal/text/script>>Clear"},
 
-	{name:"ArrowLeft", key:"ArrowLeft", com1:"-100/x>>~"},
-	{name:"ArrowRight", key:"ArrowRight", com1:"+100/x>>~"},
-	{name:"ArrowUp", key:"ArrowUp", com1:"-100/y>>~"},
-	{name:"ArrowDown", key:"ArrowDown", com1:"+100/y>>~"},
+	//{name:"ArrowLeft", key:"ArrowLeft", com1:"-100/x>>~"},
+	//{name:"ArrowRight", key:"ArrowRight", com1:"+100/x>>~"},
+	//{name:"ArrowUp", key:"ArrowUp", com1:"-100/y>>~"},
+	//{name:"ArrowDown", key:"ArrowDown", com1:"+100/y>>~"},
 
 
 	//{name:"mm", key:"mm", com1:"+/text/cn>>OrbsSel<>OrbsSel/text/current>>~/stance"},
@@ -149,9 +151,9 @@ circleform>>Jin,#once>>JinProcess/script/run
 OK we need a command to delete an orb.. am strugling with this one.. because it doesnt feel right to be able to woosh an orb like that
 somehow.. 
 */
-	{name:"rml", key:"rml", com1:'rmline/text/current>>$'},
-	{name:"coml", key:"coml", com1:'$/text/current>>~/comline'},
-	{name:"inl", key:"inl", com1:'$/text/current>>~/inline'}
+	//{name:"rml", key:"rml", com1:'rmline/text/current>>$'},
+	//{name:"coml", key:"coml", com1:'$/text/current>>~/comline'},
+	//{name:"inl", key:"inl", com1:'$/text/current>>~/inline'}
 
 //!!!!!!!! interesting. Having caps keys allow the possibility to lock the key on repeat when we let go shift. To remove from key_d
 //we just have to use shift to call the key again and let go while still pressing shift. 
@@ -821,64 +823,37 @@ const dESpacer = function(o){//a second parameter to select pprint mode. edit or
 //when timestamp is a certain number bigger than first press. at an interval
 //.. so this function is probly the best time to ask if there is a repeated command, if so we need to prevent execution and inmediately
 //flush it
+//... ok we want to run all things on keyD in one heartbeat, we should be able to cast more than one command at the same time if
+//we press more than one button at the same time. this even sounds fun. for displacing in more than one direction, for experimenting
+//and to play more than one tone . yes we want this
 const repeatSys = function(){
 	if(keyD.length!=0){
 		var l = keyD.length;
 		while(l--){
 			var kd = keyD[l];
 		//this solves it. works perfectly fine.. maybe we can expand some more but this already works.
-		//.. kinda frisky kinda messy but works
-			if(l==1){//its because there is 0..
+		//.. kinda frisky kinda messy but works... cant rememebr why i did this... doesnt look pretty
+			//if(l==1){//its because there is 0..
 				//so compare with 0
-				kd0 = keyD[0];
-				if(kd.ins==kd0.ins){
-					keyD.splice(0,1);
-				}
+			//	kd0 = keyD[0];
+			//	if(kd.ins==kd0.ins){
+			//		keyD.splice(0,1);
+			//	}
+			//}
+		////////........... it works..
+			var En = kd.str;
+			if(En[0]==':'||En[0]=='#'){comA(stancE,En);}else{
+				var csplit = En.split('<>'); //comands split .. diamond symbol
+	//... so i think this down bellow is not crucial now that we solved the hashtag thing !!!!!!!!!!!!!!
+				if(csplit.length>1){ //there is 1 or more <>. the second instruction is always after the last '<>'
+					var secins = csplit.pop(); var firstins = csplit.join('<>');
+					var end = comA(stancE,firstins); if(end=='end'){}else{comA(stancE,secins);}			
+				}else{comA(stancE,En);}
 			}
-			switch (kd.ins){
-
-//run a script to readjust what arrows do by changing comA first parameter... so this script can simply change a parameter and we
-//asociate this script into any key.
-//lets keep stance. however we will not be using stance as we were using it. Now stance will simply go into the first argument
-//of coma here, and this will affect Comand keys .. ehh
-				//
-//OK new idea. we want to be able to asign a number after displacement commands left23 to specify speed . if no number, then
-//use orb or entity speed. done... not done
-
-//why not just go back to inital idea. Make all keys even arrows customizable, but let arrows have a default behavior
-/*
-				case 'left':
-					///var cline='left'+Egspeed+'>>'+stancE
-					var cline='left>>'+stancE;
-					comA(undefined,cline);
-					break
-				case 'right':
-					var cline='right>>'+stancE;
-					comA(undefined,cline);
-					break
-				case 'up':
-					var cline = 'up>>'+stancE;
-					comA(undefined,cline);
-
-					break
-				case 'down':
-					var cline = 'down>>'+stancE;
-					comA(undefined, cline);
-					break
-*/
-//keyD.push({ins:'com', str:key_short.com1});
-			//we can now fast repeat any command... but one a t a time... this is not bad but... arrows could be an exception
-//because we want arows to be able to run together
-				case 'com':
-					//PEAK
-					//Entry = {str:kd.str};
-					Entry = kd.str;
-					break
-
-			}
-//ok so maybe its pushing the arrow again when we release the second one... but why.. we could implement something to prevent the same
-//command to be on repeat . we need to find the best moment to ask if the command we pushing on repeat already is on the repeat array
-			//if(cline){console.log(cline);}
+		////////
+			//sober
+			//Entry = kd.str;
+			//break
 		}
 	}
 }//repeat keys sys
@@ -1042,6 +1017,8 @@ const strifE = function(caster,dir,speed){
 
 */
 
+/*
+//deprecatz
 const displacE = function(S,dir,aspect,speed){
 		
 //so we want to be able to move only on memory space instead of husk now. always. We dont want to be able to displace freely
@@ -1158,6 +1135,11 @@ const displacE = function(S,dir,aspect,speed){
 
 }//displacE
 
+*/
+
+
+/*
+//peak deprecat
 //PEAK
 // /disup  /disdown   /disleft  /disright .command keys to move a structure. orb or entity. Because these are our bodies.
 //we can transfer /orb/x,/y values into any other data line or beat key . So we use displacements on orbs to create coordinates
@@ -1201,7 +1183,7 @@ const displacer = function(x, y, dir, speed){
 
 	return		
 }//displacer
-
+*/
 
 
 
@@ -1587,7 +1569,7 @@ const audio_in = document.getElementById('input_audio');
 const KeysFeed = function(){
 	SstrT++;	//timer count should run before clearing and before logic updates
 	if(waitCK==true){SstrT--;}//wait for command to save on key_s a lock
-	if(SstrT > 20){ //time limit for command feedback 
+	if(SstrT > 17){ //time limit for command feedback 
 		SstrT = 0;	//reinitialization
 		//self cleans. we set the txt to undefined
 		Sstr = ' '; SstrL = '';//cleaning string symbols here ..?
@@ -1614,22 +1596,21 @@ const KeysFeed = function(){
 
 
 //EVENT funcs KEY
+//.. i think we should use ev.code instead.. these value are more universal i think.
 const kdown = function(ev){
 	//event.preventDefault();
-	//console.log(ev.shiftKey);
-	//ev.shiftKey
-	//ev.ctrlKey
+	//ev.shiftKey ev.ctrlKey
 	//var e = ev.which; 
 	//console.log(e + " " + String.fromCharCode(e)); //allow this to see what key code you press on console
+	//console.log(ev); //allow this to see what key code you press on console
 
 //so repeat is bad. we need to build a custom repeat here
 //It needs to work in conjunction with key up. . We are going to send the key instruction into an array to be checked and called
 //over again and again with a fied interval by us, and will only be removed from the repeat array when key up is fired.
 	if(ev.repeat){
-		//maybe we could use repeat to execute the command asociated again if its possible
 		//maybe we can use timeStamp here
 		return
-	}//prevents repeating.. but we want repeat on certain instances. scrolling stream for example
+	}//prevents repeating
 	
 	//we can use key.. timeStamp is also useful
 	//console.log(ev.key+'_____'+ev.timeStamp);
@@ -1637,8 +1618,10 @@ const kdown = function(ev){
 //SPACEBAR
 //Maybe we can use other parameter in the event to let ' ' spacebar also be customizable..... !!!!!
 //a system to attach commands into keys.. 
-	if (ev.key == ' ' && ev.target == document.body) { //spacebar
-		ev.preventDefault();//prevents space to scroll document.. idfk how but it works
+	if (ev.code == 'Space' && ev.target == document.body) { //spacebar
+		ev.preventDefault();//prevents space to scroll document.
+/*
+//we are getting rid of space memory thingy. not necesary
 		if(Sstr==' '){
 			//here goes ting to clean key memory
 			waitCKforget = true;
@@ -1650,39 +1633,19 @@ const kdown = function(ev){
 			//console.log(Sstr + " key ready to be linked");
 
 		}
-		return
+*/
+		//return
 
 	}//spacebar
 
 
 //KEY COMBINATIONS
-//if key length is 1 , then just evaluate
-//as part of a key combination to create shorts for commands. 
 //what kind of memory is kfeed?
 //kfeedback needs to always be responsive and linked with the command notation system. Maybe is should only be visible by keyboard
 //Users.. we dont need this on phone users, and we shouldnt expect the symbols be treated as memories because that would imply
 //phone users have no way to interact with kfeeds from other entities.
 //So kfeed really is a user feedback to manage commands shortcuts, no need to worry about kfeed form or anything. kfeed
 //is not a txt memory either
-	if(ev.key.length==1&&chatOn == false&&nLine==false){
-		//key combination to k_feed
-		Sstr=SstrL+ev.key; SstrT = 0;//by default , at every key stroke, timer should be reset
-		//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-		//console.log(ev.key+'_____'+ev.timeStamp);
-		//console.log(SstrL);
-	//return
-
-	}//length 1 keys
-
-
-
-//OTHER SPECIAL KEYS
-//all keys that have more than one symbol are special keys like tab, shift enter etc, so these keys will do different things
-//depending on user stance, but these wont be part of key combinations. maybe we can use shift to type
-//symbols in caps but Shift wont become part of the key combination short to call custom commands
-//!!!!! we want to make these special keys able to call commands. entities should be able to asign a command line to these special
-//keys literally
-	if(ev.key.length>1){
 
 //ENTER, CHAT TXT MEMORY CREATOR
 //input system to chat ,send strings to server and enter commands if enter, check if chatOn is true or false, if true,
@@ -1694,129 +1657,130 @@ const kdown = function(ev){
 //and allow other symbols of command interface
 //!!!!!!!!!!!!!!!
 //SO if its a command, we say all.command = chat_in.value;  , if its not, we say chatIn = chat_in.value..... simple. 
-		if (ev.key == 'Enter'){ //press enter to focus on input html tag
-			//event.Default();
+	if (ev.code == 'Enter'){ //press enter to focus on input html tag
+		//event.Default();
 
-			if(nLine){
+		if(nLine){
 //So we are just producing a string on Ein here now. Let orbs handle what to do with it on orbs updates.!!!!
 //We CAN input numbers on Ein and they will be parsed here for now..
-				if(chat_in.value==''){
-					Ein=undefined;
-				}else{
-					Ein=chat_in.value; 
-					//We wanto turn number strings into numbers
+			if(chat_in.value==''){
+				Ein=undefined;
+			}else{
+				Ein=chat_in.value; 
+				//We wanto turn number strings into numbers
 //isNaN(number string) will only return false when we have a number string..
-					let isn = isNaN(chat_in.value);
-					if(isn){
-						Ein=chat_in.value;
-					}else{
-						Ein=parseFloat(chat_in.value);
-						chat_in.value = Ein;
-						
-					}
+				let isn = isNaN(chat_in.value);
+				if(isn){
+					Ein=chat_in.value;
+				}else{
+					Ein=parseFloat(chat_in.value);
+					chat_in.value = Ein;
+					
+				}
 //what if we just run a command. '~/inline>>'+stancE+/in . So now we just check for o.i . Looks much cleaner
-					var inp = '~/inline>>'+stancE+'/in';
-					//Entry = inp;
-					comA(undefined,inp);
+				var inp = '~/inline>>'+stancE+'/in';
+				//Entry = inp;
+				comA(undefined,inp);
 //ok so we need o.i to hold input messages now. Yeah we should be able to access this. Like, other orbs listenning to the input
 //changes on other orbs. thats interesting
-					//console.log(Ein);
-				}
+				//console.log(Ein);
+			}
 
-				chat_in.value = ""; //chatOn = false;
-				chat_in.blur(); chat_in.style.display="none";
+			chat_in.value = ""; //chatOn = false;
+			chat_in.blur(); chat_in.style.display="none";
 
-				nLine=false;
-				return
+			nLine=false;
+			return
 
-			}//nLine
+		}//nLine
 
-			if(chatOn == true){
+		if(chatOn == true){
 //PEAK	
 //let normal enter become a command prompt
 //to create an new input, press enter again. phones can simply use a button to enter commands prompt and another button to enter
 //a new input line... maybe we could to the same for keyboards. just call comprompt on Enter, and call inputprompt with a command
 //comprompt , inprompt
-				///PEAK
-				//user presed enter while no value on input, so we call inprompt
-				if(chat_in.value==''){
-					Ein=undefined;
-		//... i think we dont want double enter to call nLine anymore. we should use a signal to call inprompt, nline
-		//this way users can simply asign a key to it. Enter should be exclusively for commands... leave it for now
-					nLine=true; 
-					chatOn = false; //
-					return
-				}
-				//if input holds a value, we ask for waitCK key memory system
+			///PEAK
+			//user presed enter while no value on input, so we call inprompt
+			if(chat_in.value==''){
+				Ein=undefined;
+	//... i think we dont want double enter to call nLine anymore. we should use a signal to call inprompt, nline
+	//this way users can simply asign a key to it. Enter should be exclusively for commands... leave it for now
+				nLine=true; 
+				chatOn = false; //
+				return
+			}
+/*
+			//if input holds a value, we ask for waitCK key memory system
 //ok key mem sytem working again, but it needs some feedback..
-				if(waitCK==true){
-					var lm = EkeyS.length;
-					while(lm--){
-						//check if key already asigned to the command on input box
-						var ksalr = EkeyS[lm];
-						if(ksalr.com1==chat_in.value){
-							ksalr.key=Sstr;
-							var kready = true;
-							break
-						}
+			if(waitCK==true){
+				var lm = EkeyS.length;
+				while(lm--){
+					//check if key already asigned to the command on input box
+					var ksalr = EkeyS[lm];
+					if(ksalr.com1==chat_in.value){
+						ksalr.key=Sstr;
+						var kready = true;
+						break
 					}
-					if(kready){}else{EkeyS.push({name:Sstr, key:Sstr, com1:chat_in.value});}
-					waitCK = false;
-	//PEAK UNIMPLEMENTED!!!!!!!!!!!!!
-					var KF = Kfeed.state;
-	//KF.x=eX; KF.y=eY; KF.txt=SstrL;
-	//KF.r=Sstr.r; KF.g=Sstr.g; KF.b=Sstr.b; KF.a=Sstr.a;
-					KF.g=220; KF.r=220; KF.b=220;
-					visual_q2.push(KF);
-					//ctx0.clearRect((eX-800),(eY-200),1400, 300);
 				}
+				if(kready){}else{EkeyS.push({name:Sstr, key:Sstr, com1:chat_in.value});}
+				waitCK = false;
+//PEAK UNIMPLEMENTED!!!!!!!!!!!!!
+				var KF = Kfeed.state;
+//KF.x=eX; KF.y=eY; KF.txt=SstrL;
+//KF.r=Sstr.r; KF.g=Sstr.g; KF.b=Sstr.b; KF.a=Sstr.a;
+				KF.g=220; KF.r=220; KF.b=220;
+				visual_q2.push(KF);
+				//ctx0.clearRect((eX-800),(eY-200),1400, 300);
+			}
+*/
 
-				//if no waitCK, Entry will now hold the command and it will be processed by comA
-				Entry=chat_in.value;
-				//
-				//Elid.beats=[];
-				//Elid.state.r=1;Elid.state.g=1;Elid.state.b=1;Elid.state.a=zai;
+			//if no waitCK, Entry will now hold the command and it will be processed by comA
+			Entry=chat_in.value;
+			//
+			chat_in.value = "";
+			chatOn = false;
+			chat_in.blur();
+			chat_in.style.display="none";
+			
+		}else{//if chat_on is false, then activate
+			chat_in.style.display="inLine"; chatOn = true; chat_in.focus();
 
-				chat_in.value = "";
-				chatOn = false;
-				chat_in.blur();
-				chat_in.style.display="none";
-				
-			}else{//if chat_on is false, then activate
-	//this line calls the input. i should probly use a diferent variable  and i need input box to be bigger.
-				//.. we also need some kind of feedback to let know user compromt is listening and not inprompt
-				//Elid.state.r='..1-200';Elid.state.g='..1-4';Elid.state.b='..1-4';
-				//this effect is cool but Elid is an orb now... i need a solution here
-				//Elid.beats=[
-				//	['r','..1-30','g','..1-30','b','..1-35'],
-				//	['r',1,'g',1,'b',1,'a',0.2]
-				//];
-				//Elid.state.a=0.3;
-				chat_in.style.display="inLine"; chatOn = true; chat_in.focus();
+		}//chat on
+//chat_in.focus(); bring focus to html input. chat_in.blur(); remove focus
+//chat_in.value; return text value 
+//chat_in = document.getElementById('chatext');
+///
+		return //////!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-			}//chat on
-	//chat_in.focus(); bring focus to html input. chat_in.blur(); remove focus
-	//chat_in.value; return text value 
-	//chat_in = document.getElementById('chatext');
-	///
-			return //////!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-		}//Enter
+	}//Enter
 
 //ESC1
 //while chat is on, Esc takes us out and doesnt print anything. Fast out
-		if(ev.key == 'Escape'){
-			if(chatOn==true||nLine==true){
-				chat_in.value = "";  chat_in.blur(); chat_in.style.display="none";
-				//Elid.beats=[];
-				//Elid.state.r=1;Elid.state.g=1;Elid.state.b=1;Elid.state.a=zai;
-				chatOn=false;
-				nLine=false; //PEAK
-				//waitCK = false; waitCKforget = false;
-				//KF.g=220; KF.r=220; KF.b=220;
-			}
-		}//esc on input box
+	if(ev.code == 'Escape'){
+		ev.preventDefault();
+		if(chatOn==true||nLine==true){
+			chat_in.value = "";  chat_in.blur(); chat_in.style.display="none";
+			chatOn=false; nLine=false; //PEAK
+			return
+		}
+	}//esc on input box
 
+/*
+//BACKSPACE
+//while chat is on, Esc takes us out and doesnt print anything. Fast out
+	if(ev.code == 'Backspace'){
+		if(chatOn==false&&nLine==false){
+			ev.preventDefault();
+			//waitCK = false; waitCKforget = false;
+			//Kfeed.state.g=230; Kfeed.state.r=230;
+			//SstrT = 20; Sstr =' '; SstrL =''; /// this fixed the thing?
+
+		}
+		return
+	}//esc on input box
+*/
 
 //TAB
 //PEAK
@@ -1825,105 +1789,26 @@ const kdown = function(ev){
 //+>>~/stance
 //And shift Tab to
 //+>>~/stance
-		if (ev.key == 'Tab'){//&& ev.target == document.body){
-			ev.preventDefault(); //this is not preventing Tab defualt behavior
-
-			//just ask in a specific box what to run and make an orb key to be written
-			//Tab should simply make the orb run the script once.
-			Sstr=SstrL+ev.key; SstrT = 0;//by default , at every key stroke, timer should be reset
-			//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-
-		}
-
-//!!!!!!!!!!!!!!!!!!!!performance improve
-		if(chatOn == false && nLine == false){
-	//BACKSPACE
-			//console.log(ev.key+'special key'+ev.timeStamp);
-			if (ev.key == 'Backspace'){ //backspace
-				Sstr = ' '; SstrL = ''; waitCK = false;
-				Kfeed.state.g=220; Kfeed.state.r=220; Kfeed.state.b=220;
-				waitCKforget = false; //clear forget key lock also
-				//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-			}//backspace
+	
+	if (ev.code == 'Tab'){//&& ev.target == document.body){
+		ev.preventDefault(); 
+		//just ask in a specific box what to run and make an orb key to be written
+		//Tab should simply make the orb run the script once.
+		//Sstr=SstrL+ev.code; SstrT = 0;//by default , at every key stroke, timer should be reset
+		//return
+	}
 
 
-	//ESC0
-			if(ev.key == 'Escape'){
-				ev.preventDefault();
-				//same as tab
-				waitCK = false; waitCKforget = false;
-				var KF = Kfeed.state;
-				KF.g=220; KF.r=220; KF.b=220;
-				//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-			}//esc
-
-
-
-//ARROW 
-//OKSO lets push a displace instruction into an array. and call that instruction repeatedly as long as 'Key' up is not being fired.
-//repeatSys . Works like a charm
-//!!!!!!!!!!!!111PEAK
-//let arrows and all special keys to call specific commands. .. just asign a command line to these keys
-			if(ev.key == 'ArrowLeft'){
-				if(["ArrowLeft"].indexOf(ev.code) > -1) {ev.preventDefault();}
-//ok so just call displace function and pass on direction. we can access stance from anywhere since its a global, so we dont pass stance.
-			/*
-				if(keyD.length<2){
-					keyD.push({k:ev.key, ins:'left'});
-					//console.log(keyD);
-				}
-			*/
-				//lets try something. lets make arrows be treated like key strokes
-				Sstr=SstrL+ev.key; SstrT = 0;//by default , at every key stroke, timer should be reseo
-				//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-
-			}//left arrow
-
-			if(ev.key == 'ArrowRight'){
-				if(["ArrowRight"].indexOf(ev.code) > -1) {ev.preventDefault();}
-				/*
-				if(keyD.length<2){
-					keyD.push({k:ev.key, ins:'right'});
-				}
-				*/
-				Sstr=SstrL+ev.key; SstrT = 0;//by default , at every key stroke, timer should be reset	
-				//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-			}//right arow
-
-			if(ev.key == 'ArrowUp'){
-				if(["ArrowUp"].indexOf(ev.code) > -1) {ev.preventDefault();}
-				/*
-				if(keyD.length<2){
-					keyD.push({k:ev.key, ins:'up'});
-				}
-				*/
-				Sstr=SstrL+ev.key; SstrT = 0;//by default , at every key stroke, timer should be reset	
-				//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-			}//up arow
-
-			if(ev.key == 'ArrowDown'){
-				//if(["ArrowDown"].indexOf(ev.code) > -1) {ev.preventDefault();}
-				//ev.preventDefault();
-				/*
-				if(keyD.length<2){
-					keyD.push({k:ev.key, ins:'down'});
-				}
-				*/
-				Sstr=SstrL+ev.key; SstrT = 0;//by default , at every key stroke, timer should be reset	
-				//ctx0.clearRect((eX-800),(eY-200),1400, 300);
-			}//down arow
-
-		}// prompts off condition
+	if(chatOn == false&&nLine==false){
+		ev.preventDefault();
+		//Sstr=SstrL+ev.code; SstrT = 0;//by default , at every key stroke, timer should be reset
+		Sstr=ev.code; SstrT = 0;//by default , at every key stroke, timer should be reset
+	}
 
 //SHIFT?
 //...other keys? more?
 
-	}//other keys
 
-//////////////////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//
-	//
-	//
 	//ask for asigned key short .. we can now evaluate all keys... mostly
 //while on void , ask for user keyshorts
 	var ksa = EkeyS;//U.void_ks;//
@@ -1938,32 +1823,11 @@ const kdown = function(ev){
 	}
 
 	if(key_short){
-		//splice key short if waitCKforget is true
-		if(waitCKforget){
-	//splice from user if we are on void, splice from orb if we are in orb stance.. its the same ksa
-			var key_index = ksa.indexOf(key_short); ksa.splice(key_index, 1);
-			//all.stream_a.push("Key liberated."); all.screen_log();
-			waitCKforget = false;
-			var dont_send_com = true;
-		}
-		if(dont_send_com){}else{
-		//send command asocited with key
-		//all.com_a = {str:key_short.com1}//is_a:"c",}
-//so nowinstead of directly sending the command, we send a request to key_d so it keep sending the command as long as button is pressed
-		//keyD.push({k:ev.key, ins:'left'});
-			if(keyD.length>1){}else{ //prevents having multikeys pressed?
-				//here, k is the problem. we need to specify that only 1 letter k should be able to be repeated
-				//!!!!!!!!!!!!!!!!! solved. nice. good for now
-		//.. but now we want to be able to specify if we want the key to be repeatable...... but we cannot make composed
-		//key combinations repeatable because we cant trigger kup properly..
-				if(key_short.key.length>1){//multi letter keys
-					Entry=key_short.com1;
-				}else{//single letter keys
-					keyD.push({k:ev.key , ins:'com', str:key_short.com1});
-				}
-			}
-		SstrT = 20; Sstr =' '; SstrL =''; /// this fixed the thing?
-		}
+ 
+//We only need fast responsve keys with fast repeat. If we want to execute multiple operations or specific operations with
+//a sequence of keys, we might as well create apropiate scripts. and problem solved.
+		keyD.push({k:ev.code , str:key_short.com1});
+		SstrT = 17; Sstr =' '; SstrL =''; /// this fixed the thing?
 	}//keyshort
 
 
@@ -1975,10 +1839,11 @@ const kdown = function(ev){
 //ok so we could complicate this a bit, but i think it might be interesting to try something a bit complex. lets hope is not
 //too expensive to perform this operation everytime we release a 1 key command like this
 const kup = function(ev){
+	//console.log(ev);
 	var l = keyD.length;
 	while(l--){
 		var kd = keyD[l];
-		if(kd.k==ev.key){
+		if(kd.k==ev.code){
 			keyD.splice(l,1); //this gives the speed up glitch
 			//keyD.length=0; return //this gives even more glitches lol
 //ok since we are looping here already we are going to take the command key value and store it on another array. we do this with all commands.
@@ -2001,7 +1866,7 @@ const kup = function(ev){
 NEW STRUCTURE . NEW PERSPECTIVE
 *This function should do one thing, to disect a command line and process it.
 
-Each and every one of these commands can be called directly from the prompt, can be stored in a key, or can be written into
+Each and every one of these commands can be called directly from the prompt, can be stored in a button, or can be written into
 a memory orb so the orb can play these commands altogether on demand as well. The sinthax is the same.
 We should be able to call many commands at once now
 Memories, Entities.. they have containers with specific names. Sunya recalls specific directories to run functions using data
@@ -2128,7 +1993,10 @@ const comRiTarget = function(signal,target,St){
 		if(tent){ //here goes polarity signals into entity keys
 			if(k1=='x'){
 				var nv = eX+pol; //a new value
-				ctx0.translate(-pol,0); //... remmeber when we translate we need to think in reverse.. yup crazy
+		//create a packet to perform operation at the begginning of next hearbeat..
+				var treq = [-pol,0];
+				transLate.push(treq);
+				//ctx0.translate(-pol,0); //... remmeber when we translate we need to think in reverse.. yup crazy
 				eX=nv;
 				//do we want Eout to have output data here or not..
 				return
@@ -2136,7 +2004,9 @@ const comRiTarget = function(signal,target,St){
 
 			if(k1=='y'){
 				var nv = eY+pol;
-				ctx0.translate(0,-pol); //... remmeber when we translate we need to think in reverse.. yup crazy
+				var treq = [0,-pol];
+				transLate.push(treq);
+				//ctx0.translate(0,-pol); //... remmeber when we translate we need to think in reverse.. yup crazy
 				eY=nv;
 				//Eout?
 				return
@@ -2183,12 +2053,14 @@ const comRiTarget = function(signal,target,St){
 			}
 
 //pol/text/x , y , cn>>
+			if(to[k1]){ //text aspect unsealed?
 			//only pol/text/x  locates x and y on k2 so far..
-			if(k2=='x'){ 
-				to.txtX=to.txtX+pol; dESpacer(to); return //o.o ??
-			}
-			if(k2=='y'){
-				to.txtY=o.txtY+pol; dESpacer(to); return //o.o ??
+				if(k2=='x'){ 
+					to.txtX=to.txtX+pol; dESpacer(to); return //o.o ??
+				}
+				if(k2=='y'){
+					to.txtY=o.txtY+pol; dESpacer(to); return //o.o ??
+				}
 			}
 
 //aspect active line should be able to listen to polarity signals in to . only visuals tho. we can probably optimize code here a lot
@@ -2358,7 +2230,7 @@ const getLeValue = function(LS,St){
 				'~/comprompt: '+chatOn,
 				'~/inprompt: '+nLine,
 				'~/memheat: '+hEat,
-				'~/out: '+Eout,
+				'~/out: '+Entry,//+Eout,
 				'~/in: '+Ein,
 			//limage here could return the number of images..
 				'~/limage: ...'
@@ -2580,8 +2452,9 @@ const getLeValue = function(LS,St){
 					return [Ein]
 				case 'out':
 //~/out>>
-					if(Eout==undefined){return 'end'}
-					return [Eout]
+					//if(Eout==undefined){return 'end'}
+					if(Entry==undefined){return 'end'}
+					return [Entry]//[Eout]
 			}//switch
 		}//ent
 
@@ -3200,14 +3073,22 @@ const putRiValue = function(op,RS,St){//,pol){
 //errors could also be processed. If op or op[0] is not a valid new parameter, we need a feedback to let user know it.
 //we dont want to silently ignore the operation wasnt succesful, errors should have a recoil that affects the entity performance
 //and prevent the execution of the rest of the script
-					ctx0.translate(eX,0); ctx0.translate(-(op[0]),0); eX=op[0]; return
+					var treq1 = [eX,0];
+					var treq2 = [-(op[0]),0];
+					transLate.push(treq1,treq2);
+					//ctx0.translate(eX,0); ctx0.translate(-(op[0]),0);
+					eX=op[0]; return
 					//var res = eX+pol;
 					//ctx0.translate(-pol,0); //... remmeber when we translate we need to think in reverse.. yup crazy
 					//eX=res;
 					//return
 				case 'y':
 // >>~/y
-					ctx0.translate(0,eY); ctx0.translate(0,-(op[0])); eY=op[0]; return
+					var treq1 = [0,eY];
+					var treq2 = [0,-(op[0])]
+					transLate.push(treq1,treq2);
+					//ctx0.translate(0,eY); ctx0.translate(0,-(op[0]));
+					eY=op[0]; return
 					//var res = eY+pol;
 					//ctx0.translate(0,-pol); //... remmeber when we translate we need to think in reverse.. yup crazy
 					//eY=res;
@@ -4356,7 +4237,7 @@ const comA = function(S,C){
 //check for left side as retrieve value.  check right side also as retrieve value. compare
 		var lsout = LSout.toString();	var rsout = RSout.toString();
 //return and let second ins run if any, return end if condition wasnt met.
-		if(lsout==rsout){return}else{return 'end'}
+		if(lsout==rsout){ if(lsout=='sig'){ return 'end'} return }else{ return 'end' }//lol this works just fine
 	}// '=='
 
 /*
@@ -4461,7 +4342,7 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 	if(com=='end'){return 'end'} //return true if it was a solo command
 	if(com){return} //return true if it was a solo command
 
-//if com is undefined, is a retrieve into stance text
+	//if com is undefined, is a retrieve into stance text
 	var ret = getLeValue(C,S);
 	if(ret=='end'){return 'end'}
 	if(ret=='sig'){return 'end'} //fine.. if getLeVal doesnt find a target it return sig here..
@@ -5840,18 +5721,17 @@ all.chant = function(obj){
 function update(){ //PEAK
 
 	const t0 = performance.now();
+
 //PEAK
 //CLEAR FIRST
 	if(kaoz){}else{ //A special condition that prevents all clears and unlocks Artistic potential
 	//one clear. always clear the part of the canvas the user is looking
 		ctx0.clearRect((eX-window.innerWidth/2),(eY-window.innerHeight/2),window.innerWidth, window.innerHeight);
 	}
-/*
-	if(zai){//Slowly paint everything black
+	//if(zai){//Slowly paint everything black
 		//ctx0.clearRect((eX-800),(eY-200),1400, 300);//this is sooo funky
 		
-	}
-*/
+	//}
 
 //graphics first.. graphics should simply draw, not even update frames
 //Just Draw all states on all array layers and flush. then worry about counters and changes. All these things were taken care
@@ -5869,10 +5749,27 @@ function update(){ //PEAK
 	var l = visual_q2.length;
 	while(l--){var s = visual_q2[l]; drawAll(s);} visual_q2=[];
 
+////////////////////translatessss.... working when done here
+
+//.. if we could translate here.... because the problem is we are drawing .. before translating.. so we see the screen moving
+//when everything has already been drawn.. we need to change that.... what if we just draw after all logic like we did long time
+//before? at some point i thought it was better to just draw all at the start... and it did make sense in a way..because
+//no matter how much time logic would take, drawings would be performed consistenly at the beggining of every heartbeat..
+//because the idea is escalate the number of operations in time..
+//but translates are being performed on logic check phase... and so this is why everything lags behind when we move the screen..
+//ok its either we translate here before drawing , or me move all drawing phase to the end after logic !!!
+	//maybe all signals could be moved here as well... that would make sense kinda..
+//ok here. check for translate requests from previous heartbeat
+	var ti = transLate.length; 
+	while(ti--){var tr = transLate[ti]; ctx0.translate(tr[0],tr[1]);}
+	transLate = [];
+
+///////////////translates are a ting
 
 //check sound cue.. we should only check for oscillators here
 	var l = oscCue.length;
 	while(l--){var s = oscCue[l]; hearAll(s,l);} //hearAll should be hearOsc needs a more precise name
+
 
 //these functions are more related to hardware
 	if(Sstr == ' '){}else{
@@ -6193,6 +6090,7 @@ function update(){ //PEAK
 						}else{comA(o.name,RL);}
 */
 
+//OK. noted. We need signals to... wait
 //ALOrbs hold commands that require Orbs array to be already updated
 //.. maybe this is the right instance to process signals comming from other entities.
 //.. and actually the only command we probably want to process is orb/out.. that would be very clean. and i think it is the only
@@ -6213,6 +6111,12 @@ function update(){ //PEAK
 //AND also we need to clear inout array instead of these Ein and Eout... ok we goose? no. we not goose. we want Ein and Eout
 
 	Entry=undefined; Ein=undefined; Eout=undefined;
+
+////////////
+
+
+
+///////////
 	
 	const t1 = performance.now();
 
@@ -6286,22 +6190,14 @@ var SunyaInit = function(device, tutorial){//tutorial no need to go here
 	window.addEventListener('keyup', kup);
 	//
 
-/*
-//Maybe we can embed initial orbs here for user first experience. These memories might be optional later.
-	var fo = OrbSoul(); SoulSeal(fo,'text'); SoulSeal(fo,'script'); SoulSeal(fo,'circle');
-	o.scC = [
-
-	]
 
 
-*/
 
 	//create au audio context by default
 //The Audio context holds a currentTime counter that keeps growing. I should learn if this counter size affects performance and if so
 //how to prevent it
 	//all.au = new (AudioContext || webkitAudioContext)();
 	actx = audioser();
-
 	ctx0.translate(-eX+window.innerWidth/2, -eY+window.innerHeight/2);
 
 //if tutorial..
@@ -6322,18 +6218,108 @@ var SunyaInit = function(device, tutorial){//tutorial no need to go here
 	//var bg_audio_src = all.au.createMediaElementSource(bg_audio);
 	//bg_audio_src.connect(all.au.destination);
 	//bg_audio.play(); //dont play for now
+	
+
 
 	
+
 //once everything is settled and the contract between user and server is done, 
 //out of prerender, start sunya
 //RENDER
 	clearInterval(heartBeat); 
 	heartBeat =	setInterval(update,60); //100 //70
 
+//FIrst sequence. will change later. for now we just want to create useful scripts to keep working
+var o = {
+	name: "FirstSequence", script: true, cast: false,
+	scR: "once", scB: 1,
+	scC: [
+
 /*
-//Lets create some initial memories in here..
-	
+//Main Sequencer. Heart . control HeartBeat
+"@Heart<>unseal/text/script>>Heart",
+"#1>>Heart/text/1",
+"@HeartBeat<>unseal/script>>HeartBeat",
+"#+1>>Heart/text/1>>HeartBeat/script",
+"#loop>>HeartBeat/script/run",
+//Wait for user input. this is easy now. Just let user press enter and type in. orbs can evaluate ~/out .
+"@WaitIn<>unseal/script>>WaitIn",
+"#-1>>Heart/text/1>>WaitIn/script",
+"#loop>>WaitIn/script/run", //to release the heart, we set off WaitIn. and we can always set it to wait again using #loop on run key
+//VCSStream
+"@VCStream<>unseal/text/script/circle>>VCStream",
+"#r,..1?200,g,..1?200,b,..1?200,a,0.1,radius,900,inside,filled>>VCStream/circle/1",//>>VCStream/script",
+"##loop>>VCStream/circle/run>>VCStream/script/1", //remember, when we want touse a literal on a literally stored instruction we need 2 "#"
+//"", //call multiple oscillators to create white noise
+//"#@NoiseIn<>unseal/script>>NoiseIn>>VCStream/script/2",
+//"#+0.1/circle/1/a>>VCStream>>NoiseIn/script",
+//Trigger Noise Begin
+"@NoiseCue<>unseal/text/script>>NoiseCue",
+"+100/text/x>>NoiseCue<>#200>>NoiseCue/text/1",
+"#Heart/text/1==NoiseCue/text/1<>#once>>VCStream/script/run>>NoiseCue/script",
+"#loop>>NoiseCue/script/run",
+
+//Trigger Valeri Circle
+//
 */
+
+
+///*
+//for testing purposes
+//main scripter
+"@Main<>unseal/text/script/circle/rectangle/oscillator/image>>Main",
+"#Main>>~/stance",
+"@MainPos<>unseal/script>>MainPos",
+"#~/screenx>>Main/text/x<>~/screeny40>>Main/text/y>>MainPos/script/1",
+"#loop>>MainPos/script/run",
+"@THL<>unseal/text/script>>THL",
+"##r,..4?25,g,-130,b,..20?50,x,..-1?2,y,0,layer,1,txt,-+-+-+-+-+-+-+,a,-0.1,is,txt,align,left>>%/text/current/mirror>>THL/script/1",
+"#loop>>THL/script/run",
+//skeys
+"#name,Mstance,key,Home,com1,#Main>>~stance>>~/skeys/new",
+"#name,MSR,key,End,com1,#once>>Main/script/run>>~/skeys/new",
+"#name,rmLine,key,Delete,com1,rmline/text/current>>%>>~/skeys/new",
+"#name,coml,key,KeyO,com1,%/text/current>>~/comline>>~/skeys/new",
+"#name,inl,key,KeyI,com1,%/text/current>>~/inline>>~/skeys/new",
+"#name,back,key,KeyB,com1,-/text/cn>>%>>~/skeys/new",
+"#name,next,key,KeyN,com1,+/text/cn>>%>>~/skeys/new",
+"#name,OrbsList,key,Space,com1,~/orbs>>%/text>>~/skeys/new",
+"#name,KeysList,key,ControlRight,com1,~/skeys>>%/text>>~/skeys/new",
+//use wasd to move the selected orb aspect.. maybe a script can use a couple of lines to determine what orb and what aspect to move!!
+//.. hard to do with aspect.. but maybe a different aproach. just create buttons on the fly for each ocassion. so when we press the
+//control button while on a stance, we have a brief time to select an aspect. once we do, we call a script to create buttons
+//acording to what we selected.. better yet.. we just select the option previously.. but the orbs for displacing already exist and..
+//are already configured, we just use option button to link the set to WASD at any moment. Of course in this case WASD will use the
+//stance orb % to send the displacement signals on the aspect we choose
+"@OrbAspSel<>unseal/text>>OrbAspSel",
+//"AspRight",
+//"AspLeft",
+//"AspUp",
+//"AspDown",
+//ent movility
+"@EntRight<>unseal/script>>EntRight",
+"#+50/x>>~>>EntRight/script/1",
+"#end>>EntRight/script/run>>EntRight/script/2",
+"#name,Right,key,ArrowRight,com1,#once>>EntRight/script/run>>~/skeys/new",
+"@EntLeft<>unseal/script>>EntLeft",
+"#-50/x>>~>>EntLeft/script/1",
+"#end>>EntLeft/script/run>>EntLeft/script/2",
+"#name,Left,key,ArrowLeft,com1,#once>>EntLeft/script/run>>~/skeys/new",
+"@EntUp<>unseal/script>>EntUp",
+"#-50/y>>~>>EntUp/script/1",
+"#end>>EntUp/script/run>>EntUp/script/2",
+"#name,Up,key,ArrowUp,com1,#once>>EntUp/script/run>>~/skeys/new",
+"@EntDown<>unseal/script>>EntDown",
+"#+50/y>>~>>EntDown/script/1",
+"#end>>EntDown/script/run>>EntDown/script/2",
+"#name,Down,key,ArrowDown,com1,#once>>EntDown/script/run>>~/skeys/new"
+//*/
+
+	]
+
+}
+Orbs.push(o)
+
 
 	//console.time('test');
 
