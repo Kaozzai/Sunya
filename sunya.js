@@ -274,7 +274,6 @@ const SoulSeal = function(o,asp){
 			var firstf = dsignat.slice(0);
 			firstf.push('a',0.8,'cx',eX,'x',0,'cy',eY,'y',0,'radius',13,'inside','empty','layer',0);
 			o.cirF = [firstf];
-			//o.cirF[0].push('a',0.8,'x',eX,'y',eY,'radius',13,'inside','empty','layer',0);
 			o.cirB=1; o.cirR='off'; //o.cirL=1;
 			o.cirS={
 				r:230, g:230, b:230, a:0.8, cx:eX, cy:eY, x:0, y:0,
@@ -282,6 +281,27 @@ const SoulSeal = function(o,asp){
 				layer:0
 			};
 			break
+///*
+		case 'track':
+			if(o.track==false){o.track=true; return}
+			o.track=true;
+			var firstf = dsignat.slice(0);
+			firstf.push(
+				'a',0.8,//'cx',eX,'x',0,
+				'cx',eX,'cy',eY,'offsx',0,'offsy',0,'tradx',100,'trady',100,//'cy',eY,'y',0,
+				'offspeed',0.05,'layer',0
+			);
+			o.trackF = [firstf];
+			o.trackB=1; o.trackR='off';
+			o.trackS={
+				is:'track',
+				r:230, g:230, b:230, a:0.8,// cx:eX, cy:eY, x:0, y:0, 
+				offspeed:0.05,
+				offsx:0, offsy:0, tradx:100, trady:100,//tRad: 100,
+				cx:eX, cy:eY, layer:0
+			};
+			break
+//*/
 
 		case 'rectangle':
 			if(o.rectangle==false){o.rectangle=true; return}
@@ -858,6 +878,9 @@ const repeatSys = function(){
 	}
 }//repeat keys sys
 
+
+
+
 const toDegree = function(rad){var degree = rad*180/Math.PI; return Math.round(degree);}
 
 const toRadian = function(degree){
@@ -875,6 +898,20 @@ const diff = (a, b) => {
 const diff = (a, b) => {return Math.abs(a - b);}
 */
 
+//PEAK
+//we need x and y from an offset, and track data. offset is just the angle. it really is just the angle. so were do we get this angle from.
+//maybe its a parameter from the circle aspect. because we want multiple aspects using this track, so it makes sense to let each
+//aspect have its own offset/angle at any moment. ok perfect. now we only need a good sinthax for sunya to let us do this in an elegant
+//way
+const getTrackPos = function(offsX,offsY,trackRadX,trackRadY,trackCX,trackCY){
+	return {
+		x:Math.round(trackCX + Math.cos(offsX) * trackRadX),
+		y:Math.round(trackCY + Math.sin(offsY) * trackRadY)
+	}
+
+}	
+
+/*
 //a function to calculate theta in radians using 2 points... however we need to modify this. Because cuadrants
 //if casterx > 0 >>> if castery > 0 , down right , if castery < 0 , up right
 //if casterx < 0 >>> if castery > 0 , down left, if castery < 0 , up left
@@ -882,7 +919,7 @@ const diff = (a, b) => {return Math.abs(a - b);}
 //if cuadrant left up,  PI/2 - theta, and we add PI/2
 //if cuadrant is left down, PI/2 + theta and we add PI
 //if cuadrant is right down, PI/2 - theta and we add PI/2*3
-//ok.. this is fine
+//ok.. this is fine.. but lets start from the beggining..
 const getAngle = function(caX,caY,taX,taY){ //caster and target
 
 	var a = Diff(caY,taY); var c = getDist(caX,taX,caY,taY); //var c = Math.round(cc);
@@ -897,6 +934,8 @@ const getAngle = function(caX,caY,taX,taY){ //caster and target
 	if(cuad=='downr'){return (Math.PI/2-theta)+(Math.PI/2)*3}
 	//return theta
 }
+*/
+
 
 /*
 //lets learn trigonometry and math stuf with radu
@@ -932,14 +971,7 @@ const getAngle = function(caX,caY,taX,taY){ //caster and target
 //We can then calculate the distance from caster and target and calculate the point by increasing or decreasing the angle
 //
 //We also want to go back and forth from a focused target. we could use polarity.
-//... ihate when this happens. am just burned because this doesnt work and i dont know why. hate it
-//okoko i see now. we are just . no. i dont understand what the single fuck is wrong here, am toasted. am losing my shit, its a fucking day
-//i dont see where the fuck is the problem. i hate everything , this makes no fucking sense. its fucking insane. computers are shit
-//trigonometry is ass. formulas dont work, this is random as shit, i dont see the error, am really fucking pissed , i just want to move on
-//this fucking bug is fucking invisible, it makes no fucking sense. am really fucking pissed
-//
-//OK. am done with this shit. Its not even necesary.
-//4 directions gang. WASD for the win. FUCK RADIANS AND ANGLES
+
 
 /*	
 //const strifE = function(caster,dir,aspect,speed,target){
@@ -1251,7 +1283,6 @@ const drawAll = function(s){
 	var pip = ctx0.isPointInPath(-120,0);
 	console.log(pip);
 */
-	
 	if(s.is=='circle'){
 		//var c = s.ctx;
 		c.save();
@@ -1262,12 +1293,14 @@ const drawAll = function(s){
 //we can also change the c.lineWidth=some number .. so yeah this needs to go somewhere. Lines can do other things like dashing etc
 		if(s.inside=="empty"){
 			c.strokeStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
-			c.arc(s.x+s.cx,s.y+s.cy,s.radius,0,Math.PI*2,true);
+//remember we use the last boolean parameter set to true, to draw counter clockwise and false for clockwise here on arc method..
+//.. and maybe we actually dont need to set this at true by default at all..
+			c.arc(s.x+s.cx,s.y+s.cy,s.radius,0,Math.PI*2);//,true);
 			c.stroke();
 		}
 		if(s.inside=="filled"){
 			c.fillStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
-			c.arc(s.x+s.cx,s.y+s.cy,s.radius,0,Math.PI*2,true);
+			c.arc(s.x+s.cx,s.y+s.cy,s.radius,0,Math.PI*2);//,true);
 //ok so we can actually just ask in here. but we use an array to ask for all requested points.?
 //so if this state is a txt orb prim, it could simply ask to an array holding outputs
 //we could just push all outputs into an array and flush it at the end of the heartbeat
@@ -1286,7 +1319,48 @@ const drawAll = function(s){
 		//continue
 		return
 	}
-	
+
+//.. lets just use the same circle structure here but modify it a bit so we can use it as a funny circle state aspect with our system
+//so the state we want to use needs a few more parameters here.. lets just implement the whole aspect so we can play around with it
+//using circle aspect as refference... rememebr to put this one on Orbs updates . this was a good idea :D
+///*
+	if(s.is=='track'){
+		c.save();
+		c.beginPath();
+		c.strokeStyle =`rgba(${s.r},${s.g},${s.b},${s.a})`;
+//maybe i can use a different value here instead of Math.PI*2.. instead of looping all at once, we use s.angle
+//we can then use instructions to simulate 0 to 6.2... so lets build a loop with instructions to generate numbers
+//from 0 to 6.2 and restart, while simultaneously feeding the numbers to a track offsx or offsy see how that goes..
+		//for(let a = 0; a < Math.PI * 2; a += s.offspeed){
+			//c.lineTo(s.CX + Math.cos(s.offsX) * s.tradX, s.CY + Math.sin(s.offsY) * s.tradY,);
+			////getTrackPos = function(offsX,offsY,trackRadX,trackRadY,trackCX,trackCY)
+
+			var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
+			c.moveTo(pos.x, pos.y);
+			//lets just draw a point on position now
+			c.arc(pos.x, pos.y, 1 , 0, Math.PI * 2);//.. maybe there is a more efficient way to draw a point lol
+			//c.fill();
+			//var pos = getTrackPos(a+s.offsX, a+s.offsY, s.tradX, s.tradY, s.CX, s.CY);
+			//c.lineTo(pos.x, pos.y);
+//now here each of these positions i can use to update other aspects.... i am  thinking now.. we can make all kinds of funky forms
+//here and thats fun. but i still need to figure out how to build the sinthax around it.
+//.. so instead of drawing a line, we could simply create an array of coordinates to be used on other aspects... thats going to be crazy.
+//because drawing a line was not the point in this . we are only interested in creating tracks for other forms to follow,
+//so once we create a track, we could simply transfer the position to other aspects. so lets refine this to make it do what we really
+//want to do. so we dont need to create all the points at once in this for loop, we could calculate the points once per heartbeat..
+//or we could calculate all points once and simply stop doing this operation and just use the array of point produced for other
+//aspects to use.... maybe is more inline with the system to produce one point per heartbeat, we dont want to perform too many operations
+//at once, i think its better to distribute the load work evenly in time.
+//All Aspects should be able to be easily tuned using sunya sinthax.
+		//}
+		//c.closePath();
+		c.stroke();
+		c.restore();
+		return
+	}
+//*/
+
+
 	if(s.is=='txt'){
 /*
 textAlign = value
@@ -1314,7 +1388,7 @@ Directionality. Possible values: ltr, rtl, inherit. The default value is inherit
 	}
 
 /*
-//we want lines now..
+//we want lines now.. i find interesting that we can build lines to let aspects use them as tracks.
 //lines can do
 //c.beginPath();  , c.moveTo(x,y); ,  c.lineTo(x,y); ,   c.lineWidth=number; , c.strokeStyle= ...
 //c.setLineDash([n1,n2,n3...]); , use c.setLineDash([]); to turn into normal line again
@@ -2018,21 +2092,22 @@ const comRiTarget = function(signal,target,St){
 
 
 		if(to){
-			//console.log('sdgsegstgsthbd');//not even fucking here omfg
 			if(k1==undefined){ //just polarity, no aspect nor line nor param specification
 //we want to add pol to a number siting in a dataline. we use known keywords to access the line we looking for
-//current, last, or number
+//current, last, or number.. but we want simple numbers so we can match with conditions from instructions!! its a hard
+//time to ask for 6.2 with all those crazy decimals...what would be the most efficient aproach here?
+//.. ok so an idea.. maybe we can by default divide by 100. So we have to use bigger numbers and counters..
 // pol>>orb/text/line
 				if(TS[1]=='text'){//we want to use polarity on a value stored directly on the target text
 					
 					switch(TS[2]){
 						case 'current':
 							var nv = parseFloat(to.txtLi[to.txtB-1].txt);
-							to.txtLi[to.txtB-1].txt=nv+pol;
+							to.txtLi[to.txtB-1].txt=parseFloat((nv+pol).toFixed(2));
 							break
 						case 'last':
 							var nv = parseFloat(to.txtLi[to.txtLi.length-1].txt);
-							to.txtLi[to.txtLi.length-1].txt=nv+pol;
+							to.txtLi[to.txtLi.length-1].txt=parseFloat((nv+pol).toFixed(2));
 							break
 						default:
 							if(isNaN(TS[2])){
@@ -2040,11 +2115,9 @@ const comRiTarget = function(signal,target,St){
 							}else{
 								var num = parseFloat(TS[2]);
 								var nv = parseFloat(to.txtLi[num-1].txt);
-								to.txtLi[num-1].txt=nv+pol;
+								to.txtLi[num-1].txt=parseFloat((nv+pol).toFixed(2));//(nv+pol).toFixed(2);
+	//if(isNaN(rmhash)){LSout.push(rmhash); }else{ var num = parseFloat(rmhash); LSout.push(num);}
 							}
-						//line is a number now.. not sure if parse is necesary again.. ? 
-						//var k = parseFloat(k2);
-						//var kstr = k-1; var nan = isNaN(kstr); if(nan){return 'end'}
 							break				
 					}
 					return
@@ -2054,7 +2127,8 @@ const comRiTarget = function(signal,target,St){
 
 //pol/text/x , y , cn>>
 			if(to[k1]){ //text aspect unsealed?
-			//only pol/text/x  locates x and y on k2 so far..
+			//only pol/text/x  locates x and y on k2 so far.. because we move all lines of the text at once
+			//this is just too convenient not to have. working on txtX and txtY makes this possible
 				if(k2=='x'){ 
 					to.txtX=to.txtX+pol; dESpacer(to); return //o.o ??
 				}
@@ -2065,7 +2139,6 @@ const comRiTarget = function(signal,target,St){
 
 //aspect active line should be able to listen to polarity signals in to . only visuals tho. we can probably optimize code here a lot
 			if(k2=='cn'){
-				//console.log(to,to[k1],k1,k2,k3); //text , cn , undefined  .. no problem. yeah no f problem then what
 				if(to[k1]){ //orb Aspect is unsealed.
 					switch(k1){
 					case 'text':
@@ -2082,7 +2155,11 @@ const comRiTarget = function(signal,target,St){
 						var bstr = 'rectB'; break
 					case 'image':
 						//var contstr = 'imgF';
-						var bstr = 'imgB'; break				
+						var bstr = 'imgB'; break
+					case 'track':
+						//var contstr = 'imgF';
+						var bstr = 'trackB'; break
+
 					//case 'oscillator':
 					//	var contstr = 'oscTL'; break //var bstr = 'imgB'; break
 					}
@@ -2136,6 +2213,8 @@ const comRiTarget = function(signal,target,St){
 			case 'circle': var contstr = 'cirF'; var bstr = 'cirB'; break
 			case 'rectangle': var contstr = 'rectF'; var bstr = 'rectB'; break
 			case 'image': var contstr = 'imgF'; var bstr = 'imgB'; break
+			case 'track': var contstr = 'trackF'; var bstr = 'trackB'; break
+
 
 //maybe we can modify both tone line and the state tone itself if playing.. both from here. we actually want to remove the
 //tone line so if o.oscPA, then we also need to end the tone asociated.. but probably a nice end, so we request fade out, not just
@@ -2301,6 +2380,22 @@ const getLeValue = function(LS,St){
 					'/rectangle/run: '+o.rectR,
 					'/rectangle/cn: '+o.rectB
 
+				);
+			}
+			if(o.track){
+				res.push(
+				///r:230, g:230, b:230, a:0.8, cx:eX, cy:eY, x:0, y:0, is:'track',
+				///offspeed:0.01, offset:0, tRad: 100, tCX:eX, tCY:eY, layer:0
+					//getTrackPos(a+s.offsX,a+s.offsY,s.tradX, s.tradY,s.CX, s.CY)
+					'/track/cx: '+o.trackS.cx,
+					'/track/cy: '+o.trackS.cx,
+					'/track/tradx: '+o.trackS.tradx,
+					'/track/trady: '+o.trackS.trady,
+					'/track/offsx: '+o.trackS.offsx,
+					'/track/offsy: '+o.trackS.offsy,
+					'/track/offspeed: '+o.trackS.offspeed,
+					'/track/run: '+o.trackR,
+					'/track/cn: '+o.trackB
 				);
 			}
 			if(o.oscillator){
@@ -2576,7 +2671,7 @@ const getLeValue = function(LS,St){
 					}
 					return 'end'
 				case 'image':
-//orb/image
+//orb/image>>
 					if(o.image){
 						var btt = [];
 						for (var i = 0; i <= o.imgF.length-1; i++) {
@@ -2587,11 +2682,22 @@ const getLeValue = function(LS,St){
 					}
 					return 'end'
 				case 'oscillator':
-//orb/oscillator
+//orb/oscillator>>
 					if(o.oscillator){
 						var tla = [];
 						for (var i = 0; i <= o.oscTL.length-1; i++) {
 							var tl = o.oscTL[i].toString();
+							tla.push(tl);
+						}
+						return tla;
+					}
+					return 'end'
+//orb/track>>
+				case 'track':
+					if(o.track){
+						var tla = [];
+						for (var i = 0; i <= o.trackF.length-1; i++) {
+							var tl = o.trackF[i].toString();
 							tla.push(tl);
 						}
 						return tla;
@@ -2820,6 +2926,49 @@ const getLeValue = function(LS,St){
 				}
 			}
 
+
+			if(cont=='track'){
+				if(o.track){
+// orb/track/cx
+					if(ckey=='x'){return [o.trackS.cx];}
+// orb/track/cy
+					if(ckey=='y'){return [o.trackS.cy];}
+// orb/track/tradx
+					if(ckey=='w'){return [o.trackS.tradx];}
+// orb/track/trady
+					if(ckey=='w'){return [o.trackS.trady];}
+// orb/track/offsx
+					if(ckey=='w'){return [o.trackS.offsx];}
+// orb/track/offsy
+					if(ckey=='w'){return [o.trackS.offsy];}
+// orb/track/offspeed
+					if(ckey=='h'){return [o.trackS.offspeed];}
+// orb/track/r
+					if(ckey=='r'){return [o.trackS.r];}
+// orb/track/g
+					if(ckey=='g'){return [o.trackS.g];}
+// orb/track/b
+					if(ckey=='b'){return [o.trackS.b];}
+// orb/track/a
+					if(ckey=='a'){return [o.trackS.a];}
+//orb/track/run
+					if(ckey=='run'){return [o.trackR]}
+//orb/track/current
+					if(ckey=='current'){var strb = o.trackF[o.trackB-1].toString(); return [strb];}
+//orb/track/cn
+					if(ckey=='cn'){return [o.trackB];}
+//orb/track/number>>
+					var rln = parseFloat(ckey);
+					var nan = isNaN(rln);
+					if(nan){return 'end'}
+					if(rln>o.trackF.length){return 'end'}
+					var strb = o.trackF[rln-1].toString();
+					//var RSout = [strb];
+					//o.o = RSout;
+					return [strb]
+				}
+			}
+
 			if(cont=='oscillator'){
 				if(o.oscillator){
 //orb/oscillator/run>>
@@ -2996,6 +3145,17 @@ const getLeValue = function(LS,St){
 			if(cont=='image'){
 				if(o.image){
 // orb/image/beat/param>>
+					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
+					if(ret==undefined){return 'end'}
+					o.o = ret;//.toString();
+					return [ret[2]]
+				}
+			}
+
+
+			if(cont=='track'){
+				if(o.track){
+// orb/track/beat/param>>
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
 					o.o = ret;//.toString();
@@ -3251,6 +3411,23 @@ const putRiValue = function(op,RS,St){//,pol){
 							ncb.push(ttb);
 						}
 						o.imgB = 1; o.imgF = ncb; return //?
+					}
+					return 'end'
+
+
+				case 'track' :
+// >>orb/track
+					if(o.track){
+						var ncb = [];
+						for (var i = 0; i <= op.length-1; i++) {
+							var ttb = txtToB(op[i]);
+							ncb.push(ttb);
+						}
+						o.trackF = ncb;
+						//probably all these puts need to perform this operation here so
+						//we can modify the beats without cuting the flow in the animation if possible
+						if(o.trackF[o.trackB-1]==undefined){o.trackB = 1;}
+						return //?
 					}
 					return 'end'
 
@@ -3727,7 +3904,7 @@ const putRiValue = function(op,RS,St){//,pol){
 			if(cont=='rectangle'){
 				if(o.rectangle){
 /*
-//deprecated. no need to change rects states directly
+//deprecated. no need to change rects states directly... but maybe we could use rectangle center refference....... but its not consistent
 					if(ckey=='x'){
 //orb/rectangle/x
 						o.rectS.x=op[0]; return
@@ -3739,38 +3916,20 @@ const putRiValue = function(op,RS,St){//,pol){
 */
 					if(ckey=='run'){
 // >>orb/rectangle/run
-						//if(pol==0){
-							o.rectR=op[0];
-							return //[o.rectR]
-						//}else{
-						//	var run = ['off','once','loop','repeat']; 
-						//	var n = run.indexOf(o.rectR);
-						//	var res = n+pol;
-						//	if(res>=run.length){res--;} 
-						//	if(res<0){res++;} 
-						//	o.rectR=run[res];
-						//	return //[run[res]]
-						//}
+						o.rectR=op[0];
+						return //[o.rectR]
+
 					}
 					if(ckey=='current'){
 // >>orb/rectangle/current
-					//in here we need to transform text beat format into beat array
-						var nb = txtToB(op[0]);
-						o.rectF[o.rectB-1] = nb;
+						var nb = txtToB(op[0]); o.rectF[o.rectB-1] = nb;
 						return //CSout
 					}
 					if(ckey=='cn'){
 // >>orb/rectangle/cn
-						//if(pol==0){
-						//should only accept numbers.. max is number of lines in script
-							//.. maybe we need to check here if op[0] is a number?
-							o.rectB=op[0];
-							return
-						//}else{
-						//	o.rectB = o.rectB+pol;
-						//	if(o.rectB<=0){o.rectB=1;} 
-						//	return
-						//}
+						// maybe we should check if the number is valid...
+						o.rectB=op[0];
+						return
 					}
 
 					if(ckey=='mirror'){
@@ -3782,8 +3941,7 @@ const putRiValue = function(op,RS,St){//,pol){
 							r:o.rectS.r, g:o.rectS.g, b:o.rectS.b, a:o.rectS.a,
 							layer:o.rectS.layer
 						}
-						//Mirror(op[0],mirror,o.cirL);
-						var sm = Mirror(op[0],mirror);//,o.imgL);
+						var sm = Mirror(op[0],mirror);
 						if(sm.layer==0){visual_q0.push(sm);} 
 						if(sm.layer==1){visual_q1.push(sm);}
 						if(sm.layer==2){visual_q2.push(sm);}
@@ -3791,8 +3949,75 @@ const putRiValue = function(op,RS,St){//,pol){
 						return
 
 					}//mirror
+// >>orb/rectangle/number
+//this command would put a new beat on the target beat line.. if exists.. but maybe we can make it exist.....
+					//we need to turn ckey into a number
+					var rln = parseFloat(ckey);
+					let nan = isNaN(rln);
+					if(nan){return 'end'}
+
+					if(o.rectF[rln-1]){
+						var nb = txtToB(op[0]);
+						o.rectF[rln-1] = nb;
+						return
+					}
 				}
 			}
+
+
+			if(cont=='track'){
+				if(o.track){
+// >>orb/track/run
+					if(ckey=='run'){
+						o.trackR=op[0];
+						return //[o.rectR]
+					}
+// >>orb/track/current
+					if(ckey=='current'){
+						var nb = txtToB(op[0]); o.trackF[o.trackB-1] = nb;
+						return //CSout
+					}
+// >>orb/track/cn
+					if(ckey=='cn'){
+						// maybe we should check if the number is valid...
+						o.trackB=op[0];
+						return
+					}
+
+// ?>>orb/track/mirror .... hmm track mirror huh.... hmmmmmmm
+		/*	
+					if(ckey=='mirror'){
+						var mirror = {
+							is:'rect', 
+							x:o.rectS.x, y:o.rectS.y, w:o.rectS.w, h:o.rectS.h,
+							inside:o.rectS.inside,
+							r:o.rectS.r, g:o.rectS.g, b:o.rectS.b, a:o.rectS.a,
+							layer:o.rectS.layer
+						}
+						var sm = Mirror(op[0],mirror);
+						if(sm.layer==0){visual_q0.push(sm);} 
+						if(sm.layer==1){visual_q1.push(sm);}
+						if(sm.layer==2){visual_q2.push(sm);}
+						o.o=op[0];
+						return
+
+					}//mirror
+		*/
+// >>orb/track/number
+//this command would put a new beat on the target beat line.. if exists.. but maybe we can make it exist.....
+					//we need to turn ckey into a number
+					var rln = parseFloat(ckey);
+					let nan = isNaN(rln);
+					if(nan){return 'end'}
+
+					if(o.trackF[rln-1]){
+						var nb = txtToB(op[0]);
+						o.trackF[rln-1] = nb;
+						return
+					}
+				}
+			}
+
 
 //osc are different. incomplete
 			if(cont=='oscillator'){
@@ -4047,6 +4272,17 @@ const putRiValue = function(op,RS,St){//,pol){
 				}
 			}
 
+			if(cont=='track'){
+				if(o.track){
+// ?>>orb/track/beat/param
+					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
+					if(ret==undefined){return 'end'}
+					//o.o = ret;
+					return //[ret]
+				}
+			}
+
+
 //audios are a bit different because commands changing params act on existing audio objects. 
 			if(cont=='oscillator'){
 //orb/oscillator/toneline/param
@@ -4096,7 +4332,7 @@ const txtToB = function(txt){
 }
 
 //a function to change a specific param on a specific beat. return target if found return undefined if not
-//..... needs revision !!!!!!!!!!!!!!!!
+//... this function could definitely be implemented more on getLeValue and putRiValue... maybe after we finish track system!!!!!!
 const beatParam = function(o,cont,key,sub,op,pol){
 	switch(cont){
 		case 'circle':
@@ -4105,6 +4341,8 @@ const beatParam = function(o,cont,key,sub,op,pol){
 			var contstr = 'rectF'; var bstr = 'rectB'; break
 		case 'image':
 			var contstr = 'imgF'; var bstr = 'imgB'; break
+		case 'track':
+			var contstr = 'trackF'; var bstr = 'trackB'; break
 //maybe we can modify both tone line and the state tone itself if playing.. both from here
 		case 'oscillator':
 			var contstr = 'oscTL'; 
@@ -4152,7 +4390,9 @@ const beatParam = function(o,cont,key,sub,op,pol){
 			break
 	}
 //now we need to ask if adress of beat even exist and then use sub to look for its pair value on the target beat
-//.. beatParam so fat only works when the value on beat already exist... maybe we can improve on that
+//.. beatParam can used to create the parameter if it doesnt exist already...
+//... asking here for B actually is great because we simply ask once.. instead of asking for each case on get and put functions....
+//i could really really optimize the code here.... but dont worry now just finish the system first then optimize
 	var B = o[contstr][kstr];
 	//console.log(B); //we here and B is good....
 //this little snipet here works on the parameter we specified on the command..
@@ -5927,6 +6167,34 @@ function update(){ //PEAK
 			}
 		}
 
+//TRACK ASPECT
+///*
+		if(o.track){
+//all these visual Aspects probably need to set run to off when there are no beats beat.!!!!!
+			if(o.trackR=='off'){} 
+			if(o.trackR=='loop'){ 
+				if(o.trackF.length>0){
+					beatUp(o.trackF,o.trackB,o.trackS); // o,o
+					o.trackB++;
+					if(o.trackB>o.trackF.length){o.trackB=1;}
+					if(o.trackS.layer==0){visual_q0.push(o.trackS);}
+					if(o.trackS.layer==1){visual_q1.push(o.trackS);}
+					if(o.trackS.layer==2){visual_q2.push(o.trackS);}
+				}
+			}
+
+			if(o.trackR=='repeat'){
+				if(o.trackF.length>0){
+					beatUp(o.trackF,o.trackB,o.trackS); // o,o
+					if(o.trackS.layer==0){visual_q0.push(o.trackS);}
+					if(o.trackS.layer==1){visual_q1.push(o.trackS);}
+					if(o.trackS.layer==2){visual_q2.push(o.trackS);}
+				}
+			}
+		}
+//*/
+
+
 //CIRCLE ASPECT
 		if(o.circle){
 //all these visual Aspects probably need to set run to off when there are no beats beat.!!!!!
@@ -6276,7 +6544,7 @@ var o = {
 "##r,..4?25,g,-130,b,..20?50,x,..-1?2,y,0,layer,1,txt,-+-+-+-+-+-+-+,a,-0.1,is,txt,align,left>>%/text/current/mirror>>THL/script/1",
 "#loop>>THL/script/run",
 //skeys
-"#name,Mstance,key,Home,com1,#Main>>~stance>>~/skeys/new",
+"#name,Mstance,key,Home,com1,#Main>>~/stance>>~/skeys/new",
 "#name,MSR,key,End,com1,#once>>Main/script/run>>~/skeys/new",
 "#name,rmLine,key,Delete,com1,rmline/text/current>>%>>~/skeys/new",
 "#name,coml,key,KeyO,com1,%/text/current>>~/comline>>~/skeys/new",
@@ -6288,9 +6556,10 @@ var o = {
 //use wasd to move the selected orb aspect.. maybe a script can use a couple of lines to determine what orb and what aspect to move!!
 //.. hard to do with aspect.. but maybe a different aproach. just create buttons on the fly for each ocassion. so when we press the
 //control button while on a stance, we have a brief time to select an aspect. once we do, we call a script to create buttons
-//acording to what we selected.. better yet.. we just select the option previously.. but the orbs for displacing already exist and..
-//are already configured, we just use option button to link the set to WASD at any moment. Of course in this case WASD will use the
-//stance orb % to send the displacement signals on the aspect we choose
+//acording to what we selected.. better yet.. we just select the option previously no need to quick select option
+//but the orbs for displacing already exist and.. are already configured, we just use option button to link the set to WASD at any moment.
+//Of course in this case WASD will use the stance orb % to send the displacement signals on the aspect we choose. this is the right
+//way to do it i think
 "@OrbAspSel<>unseal/text>>OrbAspSel",
 //"AspRight",
 //"AspLeft",
@@ -6312,7 +6581,21 @@ var o = {
 "@EntDown<>unseal/script>>EntDown",
 "#+50/y>>~>>EntDown/script/1",
 "#end>>EntDown/script/run>>EntDown/script/2",
-"#name,Down,key,ArrowDown,com1,#once>>EntDown/script/run>>~/skeys/new"
+"#name,Down,key,ArrowDown,com1,#once>>EntDown/script/run>>~/skeys/new",
+///loop from 0 to 6.2 and back again to zero
+"@Loop62<>unseal/text/script>>Loop62",
+"#0>>Loop62/text/1",
+"@Loop62B<>unseal/script>>Loop62B",
+"#+0.01>>Loop62/text/1>>Loop62B/script",
+"#loop>>Loop62B/script/run",
+"@Loop62Limit<>unseal/text/script>>Loop62Limit",
+"#6.2>>Loop62/text/2",
+"#Loop62/text/1==Loop62/text/2<>#0>>Loop62/text/1>>Loop62Limit/script",
+"#loop>>Loop62Limit/script/run",
+//make a track fast
+"@T<>unseal/track/text>>T",
+"#-300>>T/text/x",
+"#T>>~/stance"
 //*/
 
 	]
