@@ -879,7 +879,7 @@ const repeatSys = function(){
 }//repeat keys sys
 
 
-
+//Math.abs(number)   Returns absolute values only, geting rid of negatives. Might be interesting later..
 
 const toDegree = function(rad){var degree = rad*180/Math.PI; return Math.round(degree);}
 
@@ -902,11 +902,12 @@ const diff = (a, b) => {return Math.abs(a - b);}
 //we need x and y from an offset, and track data. offset is just the angle. it really is just the angle. so were do we get this angle from.
 //maybe its a parameter from the circle aspect. because we want multiple aspects using this track, so it makes sense to let each
 //aspect have its own offset/angle at any moment. ok perfect. now we only need a good sinthax for sunya to let us do this in an elegant
-//way
+//way. ok we are now playing with all parameters.
 const getTrackPos = function(offsX,offsY,trackRadX,trackRadY,trackCX,trackCY){
 	return {
 		x:Math.round(trackCX + Math.cos(offsX) * trackRadX),
-		y:Math.round(trackCY + Math.sin(offsY) * trackRadY)
+//radu uses "-" instead of "+" here when getting 'y' to start off by drawing upwards... hmmmm!!!!!
+		y:Math.round(trackCY + Math.sin(offsY) * trackRadY) 
 	}
 
 }	
@@ -1264,8 +1265,9 @@ const drawAll = function(s){
 	
 	if(s.is=='rect'){
 		c.save();
-		//c.translate(s.tx, s.ty);
 		if(s.inside=="empty"){
+			//`hsl(${s.hue}, 100%, 50%)`  //another way to get color is using hue , saturation and lightness
+			//
 			c.strokeStyle=`rgba(${s.r},${s.g},${s.b},${s.a})`;
 			c.strokeRect(s.x+s.cx,s.y+s.cy,s.w,s.h);
 		}
@@ -1304,6 +1306,8 @@ const drawAll = function(s){
 //ok so we can actually just ask in here. but we use an array to ask for all requested points.?
 //so if this state is a txt orb prim, it could simply ask to an array holding outputs
 //we could just push all outputs into an array and flush it at the end of the heartbeat
+//.. so we have 2 arrays. one holds the location of the targets we are looking for and the second holds the matches?. on match we just
+//ok am not even totally of implementing this or if its even necesary so pause
 			//if(s.mode=='scan'){
 			//	var lso = all.c_out.length;
 			//	while(lso--){
@@ -1337,8 +1341,9 @@ const drawAll = function(s){
 
 			var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
 			c.moveTo(pos.x, pos.y);
-			//lets just draw a point on position now
+			//lets just draw a point on position now.. we only want a visible feedback
 			c.arc(pos.x, pos.y, 1 , 0, Math.PI * 2);//.. maybe there is a more efficient way to draw a point lol
+			//c.lineTo(pos.x, pos.y);
 			//c.fill();
 			//var pos = getTrackPos(a+s.offsX, a+s.offsY, s.tradX, s.tradY, s.CX, s.CY);
 			//c.lineTo(pos.x, pos.y);
@@ -1347,7 +1352,7 @@ const drawAll = function(s){
 //.. so instead of drawing a line, we could simply create an array of coordinates to be used on other aspects... thats going to be crazy.
 //because drawing a line was not the point in this . we are only interested in creating tracks for other forms to follow,
 //so once we create a track, we could simply transfer the position to other aspects. so lets refine this to make it do what we really
-//want to do. so we dont need to create all the points at once in this for loop, we could calculate the points once per heartbeat..
+//want to do. so we dont need to create all the points at once in this for loop, we could calculate a point once per heartbeat..
 //or we could calculate all points once and simply stop doing this operation and just use the array of point produced for other
 //aspects to use.... maybe is more inline with the system to produce one point per heartbeat, we dont want to perform too many operations
 //at once, i think its better to distribute the load work evenly in time.
@@ -5990,16 +5995,17 @@ function update(){ //PEAK
 	while(l--){var s = visual_q2[l]; drawAll(s);} visual_q2=[];
 
 ////////////////////translatessss.... working when done here
-
 //.. if we could translate here.... because the problem is we are drawing .. before translating.. so we see the screen moving
 //when everything has already been drawn.. we need to change that.... what if we just draw after all logic like we did long time
 //before? at some point i thought it was better to just draw all at the start... and it did make sense in a way..because
 //no matter how much time logic would take, drawings would be performed consistenly at the beggining of every heartbeat..
 //because the idea is escalate the number of operations in time..
 //but translates are being performed on logic check phase... and so this is why everything lags behind when we move the screen..
-//ok its either we translate here before drawing , or me move all drawing phase to the end after logic !!!
-	//maybe all signals could be moved here as well... that would make sense kinda..
-//ok here. check for translate requests from previous heartbeat
+//maybe all signals could be moved here as well... that would make sense kinda..
+//ok here. check for translate requests from previous heartbeat. one more detail. if multiple translates are executed on a heartbeat
+//they are still geting executed one at a time and this produces a yank displacement of the screen.. a solution would be
+//to go trough all changes, add up the numbers and call ctx.translate only once.!!!!!!!
+
 	var ti = transLate.length; 
 	while(ti--){var tr = transLate[ti]; ctx0.translate(tr[0],tr[1]);}
 	transLate = [];
@@ -6120,18 +6126,17 @@ function update(){ //PEAK
 							var os = {
 					id:Date.now(), start:0, frequency:432, gain:0.07, fadein:0.3, fadeout:0.3,type:0,duration:1
 							}
-							//update state using tone line
+							//update state using tone line using timeUp
 							timeUp(os,TL);
 							var osc = COsc(os);
 				//we need an id to reffer to this tone state. orb/oscillator/1 should point us to the tone state generated
 				//by the first line. so  osc.origin=o.name+i2
 //but we should be able to make changes on the tone states timers more precisely.. maybe we can create changes from reading kdown
-//or touch events directly and not in synch with heartbeat..
+//or touch events directly and not in synch with heartbeat..!!!!!!!!
 							osc.origin=o.name; osc.toneline=i2+1;
 							oscCue.push(osc);
 						}
-				//we need to set run to a value to let the system know tones are running.
-						//o.oscR='playing';
+				//we need to set oscPA (osc playing already) to true to let the system know tones are running.
 						o.oscPA = true;
 					}
 				}
@@ -6141,7 +6146,7 @@ function update(){ //PEAK
 //IMAGE ASPECT
 		if(o.image){
 //all these visual Aspects probably need to set run to off when there are no beats to beat... or we could simply not run beatUp
-//... and just leave run value as is. we probly dont want to just run off because users l have to set run on again thats not nice
+//... and just leave run value as is. we dont want to just run off because users l have to set run on again thats not nice
 			if(o.imgR=='off'){} 
 			if(o.imgR=='loop'){ 
 				if(o.imgF.length>0){
@@ -6197,14 +6202,10 @@ function update(){ //PEAK
 
 //CIRCLE ASPECT
 		if(o.circle){
-//all these visual Aspects probably need to set run to off when there are no beats beat.!!!!!
-			//if(o.cirF.length==0){o.cirR='off';}
 			if(o.cirR=='off'){} 
 			if(o.cirR=='loop'){ 
 				if(o.cirF.length>0){
 					beatUp(o.cirF,o.cirB,o.cirS); // o,o
-					//We need to synch circle with orb position... . . ?
-					//o.cirS.x=o.x; o.cirS.y=o.y;
 					o.cirB++;
 					if(o.cirB>o.cirF.length){o.cirB=1;}
 					if(o.cirS.layer==0){visual_q0.push(o.cirS);} //[B]?
@@ -6221,22 +6222,6 @@ function update(){ //PEAK
 					if(o.cirS.layer==2){visual_q2.push(o.cirS);}
 				}
 			}
-
-//we need to keep angle updated.. but we are ignoring the changes on angle. we need to update somewhere else.... we need to update
-//everytime caster or target change location. Its easy to check for caster but we cant check on focused target...
-	//maybe we could ask for distance. if distance from target changes, we update the angle !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//THIS BUG MAKES ABSOLUTELY NO FUCKING SENSE AT ALL
-	/*
-			if(o.focus!=undefined){
-				var foc = Fting(Orbs,'name',o.focus);
-				if(foc){
-					//const getAngle = function(caX,caY,taX,taY) //caster and target
-					var ang = getAngle(o.cirS.x,o.cirS.y,foc.cirS.x,foc.cirS.y);
-					o.angle = ang;
-				}
-			}
-	*/
-
 
 		}
 
@@ -6285,7 +6270,6 @@ function update(){ //PEAK
 					//add DataLines difference 
 					for (var i2 = 0; i2 < subs; i2++) {
 						var dli = DataLine();
-						//dli.beats=dsignat; 
 						var firstf = dsignat.slice(0);
 						dli.beats = [firstf];
 						dli.txt='';
@@ -6298,7 +6282,6 @@ function update(){ //PEAK
 				}else{
 
 					var dli = DataLine();
-					//dli.beats=dsignat; 
 					var firstf = dsignat.slice(0);
 					dli.beats = [firstf];
 					dli.txt=o.i;//Ein;
@@ -6307,15 +6290,15 @@ function update(){ //PEAK
 					o.txtLi.splice(o.txtB-1,0,dli);
 					//we could also replace the line from here like this:
 					//o.txtLi.splice(o.txtB-1,1,dli);
-		   		//but we dont want to replace the line by default when writing into a text from input.... do we
-		    		//nah.. because we want to be able to quicly insert a new line in place when we are here..
+//but we dont want to replace the line by default when writing into a text from input.... do we ....nah.. because we want to be able
+//to quicly insert a new line in place when we are here..not erasing the text that was previously in here.
 
 				}
 
 //so before despacer, and here, only once per heartbeat, check if last line text is '', if so then remove.
 //... the idea of dividing long oerations into heartbeats sounds right. the goal is to distribute the heavy work into small steps
-//that can be executed one at a time per heartbeat. its a way to prevent the pressure excess on the machine
-				//havent tested this one out..
+//that can be executed one at a time per heartbeat. its a way to prevent the pressure excess on the machine but also, its an integral
+//feature of the system itself, we want processes to unfold rythmically and slower, so humans are more able to undertand them.
 				if(o.txtLi[o.txtLi.length-1].txt==''){
 					o.txtLi.pop();
 				}
@@ -6344,19 +6327,9 @@ function update(){ //PEAK
 			}
 		}//text
 
-
 	}//orb loop
 
-/*
-//refference.... am i doing something here that i need to also do on ALOrbs loop? ..
-
-					if(RL[0]==':'||RL[0]=='#'){comA(o.name,RL);}else{
-						var csplit = RL.split('<>'); //comands split .. diamond symbol
-						if(csplit.length>1){ 
-							var secins = csplit.pop(); var firstins = csplit.join('<>');
-							var end = comA(o.name,firstins); if(end=='end'){}else{comA(o.name,secins);}
-						}else{comA(o.name,RL);}
-*/
+//... am i doing something here that i need to also do on ALOrbs loop? ..
 
 //OK. noted. We need signals to... wait
 //ALOrbs hold commands that require Orbs array to be already updated
@@ -6376,16 +6349,8 @@ function update(){ //PEAK
 	}//ALOrbs
 	ALOrbs = []; //flush every heartbeat
 
-//AND also we need to clear inout array instead of these Ein and Eout... ok we goose? no. we not goose. we want Ein and Eout
-
 	Entry=undefined; Ein=undefined; Eout=undefined;
 
-////////////
-
-
-
-///////////
-	
 	const t1 = performance.now();
 
 //track update time
@@ -6559,7 +6524,11 @@ var o = {
 //acording to what we selected.. better yet.. we just select the option previously no need to quick select option
 //but the orbs for displacing already exist and.. are already configured, we just use option button to link the set to WASD at any moment.
 //Of course in this case WASD will use the stance orb % to send the displacement signals on the aspect we choose. this is the right
-//way to do it i think
+//way to do it i think. and we can go further. besides setting up WASD, we can set up other buttons to play around with aspects params
+//Kinda like loading a whole set of buttons to work with each specific aspect.. like old edit systems.. yes the ones you brutally erased
+//but are still around in some old sunya version... we ve writen quite a lot to get here huh but i think this is sunya single mode final
+//form. these skeys are really what we wanted initially. so special keayboard keys like Space and Home could be tested by users on
+//prerendering so users quickly understand all buttons can be custmized so its no problem if their keyboard is being funny configured
 "@OrbAspSel<>unseal/text>>OrbAspSel",
 //"AspRight",
 //"AspLeft",
@@ -6593,8 +6562,11 @@ var o = {
 "#Loop62/text/1==Loop62/text/2<>#0>>Loop62/text/1>>Loop62Limit/script",
 "#loop>>Loop62Limit/script/run",
 //make a track fast
-"@T<>unseal/track/text>>T",
+"@T<>unseal/track/text/script>>T",
 "#-300>>T/text/x",
+"#loop>>T/track/run",
+"#T>>T/text>>T/script",
+"#loop>>T/script/run",
 "#T>>~/stance"
 //*/
 
