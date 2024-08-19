@@ -296,7 +296,7 @@ const SoulSeal = function(o,asp){
 			o.trackS={
 				is:'track',
 				r:230, g:230, b:230, a:0.8,// cx:eX, cy:eY, x:0, y:0, 
-				offspeed:0.05,
+				offspeed:0.05, posx:eX, posy:eY,
 				offsx:0, offsy:0, tradx:100, trady:100,//tRad: 100,
 				cx:eX, cy:eY, layer:0
 			};
@@ -1339,10 +1339,12 @@ const drawAll = function(s){
 			//c.lineTo(s.CX + Math.cos(s.offsX) * s.tradX, s.CY + Math.sin(s.offsY) * s.tradY,);
 			////getTrackPos = function(offsX,offsY,trackRadX,trackRadY,trackCX,trackCY)
 
-			var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
-			c.moveTo(pos.x, pos.y);
-			//lets just draw a point on position now.. we only want a visible feedback
-			c.arc(pos.x, pos.y, 1 , 0, Math.PI * 2);//.. maybe there is a more efficient way to draw a point lol
+		var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
+		c.moveTo(pos.x, pos.y);
+		//we want to let other aspects easily access the new position
+		s.posx = pos.x; s.posy = pos.y;
+		//lets just draw a point on position now.. we only want a visible feedback
+		c.arc(pos.x, pos.y, 1 , 0, Math.PI * 2);//.. maybe there is a more efficient way to draw a point lol
 			//c.lineTo(pos.x, pos.y);
 			//c.fill();
 			//var pos = getTrackPos(a+s.offsX, a+s.offsY, s.tradX, s.tradY, s.CX, s.CY);
@@ -1451,7 +1453,6 @@ var SstrAlpha=0.8;
 //all.k_feed=undefined;//a state to print keys feedback
 var waitCK=false; //key mem system flag
 var waitCKforget = true;
-//all.orb_track_l = undefined; //for prims wheel updates on new orb arrival
 
 //to start a timer just set timer_base to Date.now()  ? we should be able to call
 //many timers
@@ -2101,8 +2102,11 @@ const comRiTarget = function(signal,target,St){
 //we want to add pol to a number siting in a dataline. we use known keywords to access the line we looking for
 //current, last, or number.. but we want simple numbers so we can match with conditions from instructions!! its a hard
 //time to ask for 6.2 with all those crazy decimals...what would be the most efficient aproach here?
-//.. ok so an idea.. maybe we can by default divide by 100. So we have to use bigger numbers and counters..
+//parseFLoat and toFixed seem to work for now. We want to create random numbers now. the random sinthax from beats..
+//should be evaluated when we dump a literal or another line... not here.. but we can just ask for any state param thats
+//being randomized at everyheartbeat and get the random number clean as text so...we good for now
 // pol>>orb/text/line
+
 				if(TS[1]=='text'){//we want to use polarity on a value stored directly on the target text
 					
 					switch(TS[2]){
@@ -2135,10 +2139,14 @@ const comRiTarget = function(signal,target,St){
 			//only pol/text/x  locates x and y on k2 so far.. because we move all lines of the text at once
 			//this is just too convenient not to have. working on txtX and txtY makes this possible
 				if(k2=='x'){ 
-					to.txtX=to.txtX+pol; dESpacer(to); return //o.o ??
+					//to.txtX=to.txtX+pol;
+					to.txtX += pol;
+					dESpacer(to); return //o.o ??
 				}
 				if(k2=='y'){
-					to.txtY=o.txtY+pol; dESpacer(to); return //o.o ??
+					//to.txtY=to.txtY+pol;
+					to.txtY += pol;
+					dESpacer(to); return //o.o ??
 				}
 			}
 
@@ -2398,6 +2406,8 @@ const getLeValue = function(LS,St){
 					'/track/trady: '+o.trackS.trady,
 					'/track/offsx: '+o.trackS.offsx,
 					'/track/offsy: '+o.trackS.offsy,
+					'/track/posx: '+o.trackS.posx,
+					'/track/posy: '+o.trackS.posy,
 					'/track/offspeed: '+o.trackS.offspeed,
 					'/track/run: '+o.trackR,
 					'/track/cn: '+o.trackB
@@ -2654,7 +2664,7 @@ const getLeValue = function(LS,St){
 					return 'end'
 				case 'circle':
 //orb/circle>>
-					if(o.script){
+					if(o.circle){
 						var btt = [];
 						for (var i = 0; i <= o.cirF.length-1; i++) {
 							var bt = o.cirF[i].toString();
@@ -2935,19 +2945,23 @@ const getLeValue = function(LS,St){
 			if(cont=='track'){
 				if(o.track){
 // orb/track/cx
-					if(ckey=='x'){return [o.trackS.cx];}
+					//if(ckey=='cx'){return [o.trackS.cx];}
 // orb/track/cy
-					if(ckey=='y'){return [o.trackS.cy];}
+					//if(ckey=='cy'){return [o.trackS.cy];}
 // orb/track/tradx
-					if(ckey=='w'){return [o.trackS.tradx];}
+					if(ckey=='tradx'){return [o.trackS.tradx];}
 // orb/track/trady
-					if(ckey=='w'){return [o.trackS.trady];}
+					if(ckey=='trady'){return [o.trackS.trady];}
 // orb/track/offsx
-					if(ckey=='w'){return [o.trackS.offsx];}
+					if(ckey=='offsx'){return [o.trackS.offsx];}
 // orb/track/offsy
-					if(ckey=='w'){return [o.trackS.offsy];}
+					if(ckey=='offsy'){return [o.trackS.offsy];}
+// orb/track/posx
+					if(ckey=='posx'){return [o.trackS.posx];}
+// orb/track/posy
+					if(ckey=='posy'){return [o.trackS.posy];}
 // orb/track/offspeed
-					if(ckey=='h'){return [o.trackS.offspeed];}
+					if(ckey=='offspeed'){return [o.trackS.offspeed];}
 // orb/track/r
 					if(ckey=='r'){return [o.trackS.r];}
 // orb/track/g
@@ -3333,17 +3347,6 @@ const putRiValue = function(op,RS,St){//,pol){
 					chatOn = true; 
 					chat_in.focus();		
 					return
-/*
-		//read only, returns entity input and output
-				case 'in':
-					if(Ein==undefined){return}
-					return [Ein]
-					break
-				case 'out':
-					if(Eout==undefined){return}
-					return [Eout]
-					break
-*/
 
 
 			}//switch
@@ -3554,16 +3557,10 @@ const putRiValue = function(op,RS,St){//,pol){
 //to simply push all op into the text as new lines
 		//we should be able to toggle current number....!!!!!
 					if(ckey=='cn'){
-//orb/text/cn
-						//if(pol==0){
-							//.. maybe we need to check here if op[0] is a number?
-							o.txtB=op[0];
-							return //[o.txtB]	
-						//}else{
-						//	o.txtB = o.txtB+pol;
-						//	if(o.txtB<=0){o.txtB=1;} 
-						//	return
-						//}
+//>>orb/text/cn
+						//.. maybe we need to check here if op[0] is a number?
+						o.txtB=op[0];
+						return //[o.txtB]	
 
 					}
 					if(ckey=='new'){
@@ -3695,16 +3692,10 @@ const putRiValue = function(op,RS,St){//,pol){
 
 					if(ckey=='cn'){
 // >>orb/script/cn
-						//if(pol==0){
 						//should only accept numbers.. max is number of lines in script
-							//.. maybe we need to check here if op[0] is a number?
-							o.scB=op[0];
-							return
-						//}else{
-						//	o.scB = o.scB+pol;
-						//	if(o.scB<=0){o.scB=1;} 
-						//	return
-						//}
+						//.. maybe we need to check here if op[0] is a number?
+						o.scB=op[0];
+						return
 					}
 // >>orb/script/number
 		//this command would put a new value on the target script instruction... feels kinda aggressive but might be usable
@@ -3753,8 +3744,7 @@ const putRiValue = function(op,RS,St){//,pol){
 					}
 					if(ckey=='run'){
 // >>orb/image/run
-						//if(pol==0){
-							o.imgR=op[0]; return
+						o.imgR=op[0]; return
 						//}else{
 						//	var run = ['off','once','loop','repeat']; 
 						//	var n = run.indexOf(o.imgR);
@@ -3989,7 +3979,7 @@ const putRiValue = function(op,RS,St){//,pol){
 						return
 					}
 
-// ?>>orb/track/mirror .... hmm track mirror huh.... hmmmmmmm
+// ?>>orb/track/mirror .... hmm track mirror huh.... hmmmmmmm. no i don think this makes sense...
 		/*	
 					if(ckey=='mirror'){
 						var mirror = {
@@ -4054,7 +4044,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 	if(SS.length==4){
 		if(ent){
-
+//... 4 keys on entity ? .... probly never. might as well not even ask
 		}
 		if(o){
 			var cont = SS[1]; var ckey = SS[2]; var sub = SS[3];
@@ -4109,11 +4099,11 @@ const putRiValue = function(op,RS,St){//,pol){
 								b:lastl.state.b, a:lastl.state.a,
 								layer:lastl.state.layer
 							}
-							Mirror(op[0],mirror);//,o.txtL);
 							var sm = Mirror(op[0],mirror);//,o.imgL);
 							if(sm.layer==0){visual_q0.push(sm);} 
 							if(sm.layer==1){visual_q1.push(sm);}
 							if(sm.layer==2){visual_q2.push(sm);}
+					//maybe we can output the state here in text format... just an idea..!!!!!
 							o.o=op[0];
 							return
 
@@ -4162,15 +4152,12 @@ const putRiValue = function(op,RS,St){//,pol){
 								b:currl.state.b, a:currl.state.a,
 								layer:currl.state.layer
 							}
-							//Mirror(op[0],mirror);//,o.txtL);
 							var sm = Mirror(op[0],mirror);//,o.imgL);
 							if(sm.layer==0){visual_q0.push(sm);} 
 							if(sm.layer==1){visual_q1.push(sm);}
 							if(sm.layer==2){visual_q2.push(sm);}
 							//o.o=op[0];
 							return
-							//Mirror(op[0],mirror,o.txtL);
-							//return
 
 						}//mirror
 
@@ -4225,16 +4212,12 @@ const putRiValue = function(op,RS,St){//,pol){
 							b:irl.state.b, a:irl.state.a,
 							layer:irl.state.layer
 						}
-						Mirror(op[0],mirror);//,o.txtL);
 						var sm = Mirror(op[0],mirror);//,o.imgL);
 						if(sm.layer==0){visual_q0.push(sm);} 
 						if(sm.layer==1){visual_q1.push(sm);}
 						if(sm.layer==2){visual_q2.push(sm);}
 						o.o=op[0];
 						return
-						//Mirror(op[0],mirror,o.txtL);
-						//o.o=RSout; 
-						//return
 
 					}//mirror
 // ?>>orb/text/1..2..3../1..2..3.. 
@@ -4355,30 +4338,34 @@ const beatParam = function(o,cont,key,sub,op,pol){
 //adress all oscillators at once. No matter what i do there is always a new thing to considerate. I migth as well just focus on
 //writing everything as modular as possible. Maybe we should even have 2 arrays instead of one oscCue. This way i dont need to
 //add even more tags to find states i l just focus on name and line, oscCue  audioCue . 
-			if(op!=undefined||pol!=0){
-				if(o.oscPA){
-					var k = parseFloat(key);
-					for (var i = 0; i < oscCue.length; i++) {
-						var os = oscCue[i];
-						if(os.origin==o.name){
-							if(os.toneline==k){
-								switch(sub){
-									case 'frequency':
-										if(op){os.oscn.frequency.value=op;}
-										if(pol){}
-										break
-									case 'gain':
-										if(op){os.oscg.gain.value=op;}
-										if(pol){}
-										break
-									//case '':
-									//	break
-								}
-							}//toneline match
-						}//origin name match
-					}//sound cue loop
-				}//osc playing already
-			}//op or pol
+			//if(op!=undefined||pol!=0){
+			if(o.oscPA){
+				var k = parseFloat(key);
+				for (var i = 0; i < oscCue.length; i++) {
+					var os = oscCue[i];
+					if(os.origin==o.name){
+						if(os.toneline==k){
+							switch(sub){
+								case 'frequency':
+									if(op){os.oscn.frequency.value=op;}
+									if(pol){
+										os.oscn.frequency.value += pol;
+									}
+									break
+								case 'gain':
+									if(op){os.oscg.gain.value=op;}
+									if(pol){
+										os.oscg.gain.value += pol;
+									}
+									break
+								//case '':
+								//	break
+							}
+						}//toneline match
+					}//origin name match
+				}//sound cue loop
+			}//osc playing already
+			//}//op or pol
 			break
 		return //return if no cont match
 	}
@@ -4495,7 +4482,6 @@ o1/text/1%%o1/text/2>>o2/circle/1/x
 o1/text/1**o1/text/2>>o2/circle/1/x
 */
 
-/////!!!!!!!
 //main split. if an operation is successful, we simply return, if we cant find the caster or the target, we return 'end' , so the
 //instruction after '<>' if any, wont be executed
 //we dont have # , : , == , all is left is checking if LS is a signal , a solo command or a retrieve commnand
@@ -4507,9 +4493,8 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 //if no target match on LS, then its a signal, so it returns 'sig'. And signals operate differently on RS
 		var LS = getLeValue(MS[0],S);
 		if(LS=='end'){return 'end'}
-//.. something is off here.. am returning 'sig' and just using it as LS
+
 		if(LS=='sig'){
-//anyway when we type a number on its own on compromt it prints 'sig' it shouldnt!!!!!!!!!!!!!!!!!
 //so signals targets can now be literals or can point to a line on a list. we can always expect an orb or an entity name.
 //so if LS is a signal, then RS needs to be a name. we only need to ask if it reffers to a text line or if its a literal
 //... do we really need literals on signals targets?.. we already built the signal annalises function to work using the name
@@ -4517,8 +4502,8 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 //number of k will depend on signal...
 
 //in case its not  a literal, we check if the target is trying to point us to a value on a text 
-//.. we dont want to do all these stuf when we have a pol>>orb/text/line structure....!!!!!!!!!!!!!!!!!!!
-//we need to do an exception for this one case
+			//.. we dont want to do all these stuf when we have a pol>>orb/text/line structure....!!!!!!!!!!!!!!!!!!!
+			//we need to do an exception for this one case
 			var ST = MS[0].split('/')
 			if(ST.length==1){//pol>>orb/text/line  exception
 				var res = comRiTarget(MS[0],MS[1],S);		
@@ -6501,21 +6486,23 @@ var o = {
 //for testing purposes
 //main scripter
 "@Main<>unseal/text/script/circle/rectangle/oscillator/image>>Main",
+"#+700>>Main/text/x",
 "#Main>>~/stance",
-"@MainPos<>unseal/script>>MainPos",
-"#~/screenx>>Main/text/x<>~/screeny40>>Main/text/y>>MainPos/script/1",
-"#loop>>MainPos/script/run",
+//"@MainPos<>unseal/script>>MainPos",
+//"#~/screenx>>Main/text/x<>~/screeny40>>Main/text/y>>MainPos/script/1",
+//"#loop>>MainPos/script/run",
 "@THL<>unseal/text/script>>THL",
 "##r,..4?25,g,-130,b,..20?50,x,..-1?2,y,0,layer,1,txt,-+-+-+-+-+-+-+,a,-0.1,is,txt,align,left>>%/text/current/mirror>>THL/script/1",
 "#loop>>THL/script/run",
-//skeys
+//Main skeys
 "#name,Mstance,key,Home,com1,#Main>>~/stance>>~/skeys/new",
 "#name,MSR,key,End,com1,#once>>Main/script/run>>~/skeys/new",
 "#name,rmLine,key,Delete,com1,rmline/text/current>>%>>~/skeys/new",
 "#name,coml,key,KeyO,com1,%/text/current>>~/comline>>~/skeys/new",
 "#name,inl,key,KeyI,com1,%/text/current>>~/inline>>~/skeys/new",
-"#name,back,key,KeyB,com1,-/text/cn>>%>>~/skeys/new",
-"#name,next,key,KeyN,com1,+/text/cn>>%>>~/skeys/new",
+"#name,PrevLine,key,KeyB,com1,-/text/cn>>%>>~/skeys/new",
+"#name,NextLine,key,KeyN,com1,+/text/cn>>%>>~/skeys/new",
+"#name,SelStance,key,KeyM,com1,$/text/current>>~/stance>>~/skeys/new",
 "#name,OrbsList,key,Space,com1,~/orbs>>%/text>>~/skeys/new",
 "#name,KeysList,key,ControlRight,com1,~/skeys>>%/text>>~/skeys/new",
 //use wasd to move the selected orb aspect.. maybe a script can use a couple of lines to determine what orb and what aspect to move!!
@@ -6529,45 +6516,238 @@ var o = {
 //but are still around in some old sunya version... we ve writen quite a lot to get here huh but i think this is sunya single mode final
 //form. these skeys are really what we wanted initially. so special keayboard keys like Space and Home could be tested by users on
 //prerendering so users quickly understand all buttons can be custmized so its no problem if their keyboard is being funny configured
-"@OrbAspSel<>unseal/text>>OrbAspSel",
-//"AspRight",
-//"AspLeft",
-//"AspUp",
-//"AspDown",
-//ent movility
+
+//we configue these buttons once by default to work with text aspect.
+//and then when we call Asp conf option buttons to make proper adjusts on their functionality
+//WASD
+"@AspRight<>unseal/script>>AspRight",
+"#name,Right,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new",
+"@AspLeft<>unseal/script>>AspLeft",
+"#name,Left,key,KeyA,com1,#once>>AspLeft/script/run>>~/skeys/new",
+"@AspUp<>unseal/script>>AspUp",
+"#name,Up,key,KeyW,com1,#once>>AspUp/script/run>>~/skeys/new",
+"@AspDown<>unseal/script>>AspDown",
+"#name,Down,key,KeyS,com1,#once>>AspDown/script/run>>~/skeys/new",
+//E,R,F .. edit , run, freeze
+"@AspKE<>unseal/script>>AspKE",
+"#name,Repeat,key,KeyE,com1,#once>>AspKE/script/run>>~/skeys/new",
+"@AspKR<>unseal/script>>AspKR",
+"#name,Loop,key,KeyR,com1,#once>>AspKR/script/run>>~/skeys/new",
+"@AspKF<>unseal/script>>AspKF",
+"#name,Off,key,KeyF,com1,#once>>AspKF/script/run>>~/skeys/new",
+//T,G, Y,H, U,J , I,K , O,L, all these buttons we use to do different things depending on the aspect configuration we currently have
+"@AspKT<>unseal/script>>AspKT",
+"#name,KT,key,KeyT,com1,#once>>AspKT/script/run>>~/skeys/new",
+"@AspKG<>unseal/script>>AspKG",
+"#name,KG,key,KeyG,com1,#once>>AspKG/script/run>>~/skeys/new",
+"@AspKY<>unseal/script>>AspKY",
+"#name,KY,key,KeyY,com1,#once>>AspKY/script/run>>~/skeys/new",
+"@AspKH<>unseal/script>>AspKH",
+"#name,KH,key,KeyH,com1,#once>>AspKH/script/run>>~/skeys/new",
+"@AspKU<>unseal/script>>AspKU",
+"#name,KU,key,KeyU,com1,#once>>AspKU/script/run>>~/skeys/new",
+"@AspKJ<>unseal/script>>AspKJ",
+"#name,KJ,key,KeyJ,com1,#once>>AspKJ/script/run>>~/skeys/new",
+"@AspKK<>unseal/script>>AspKK",
+"#name,KK,key,KeyK,com1,#once>>AspKK/script/run>>~/skeys/new",
+"@AspKL<>unseal/script>>AspKL",
+"#name,KL,key,KeyL,com1,#once>>AspKL/script/run>>~/skeys/new",
+
+//aspect options skeys and scripts asociated...am thinking now.... we could straight up just change the line that
+//concerns the aspect.. no because we want to change many lines at once
+
+//text config
+"#name,AspTextConfOn,key,Digit1,com1,#once>>AspTextConf/script/run>>~/skeys/new",
+"@AspTextConf<>unseal/script>>AspTextConf",
+"##+50/text/x>>%>>AspRight/script/1>>AspTextConf/script/1",
+"###end>>AspRight/script/run>>AspRight/script/2>>AspTextConf/script/2",
+"##-50/text/x>>%>>AspLeft/script/1>>AspTextConf/script/3",
+"###end>>AspLeft/script/run>>AspLeft/script/2>>AspTextConf/script/4",
+"##-50/text/y>>%>>AspUp/script/1>>AspTextConf/script/5",
+"###end>>AspUp/script/run>>AspUp/script/2>>AspTextConf/script/6",
+"##+50/text/y>>%>>AspDown/script/1>>AspTextConf/script/7",
+"###end>>AspDown/script/run>>AspDown/script/2>>AspTextConf/script/8",
+
+//when we edit other aspects than text, adressing the specific beat is important,
+//so maybe we want to control repeat and loop on aspect run key
+
+//circle edit config
+"#name,AspCircleConfOn,key,Digit2,com1,#once>>AspCircleConf/script/run>>~/skeys/new",
+"@AspCircleConf<>unseal/script>>AspCircleConf",
+"##+50/circle/current/x>>%>>AspRight/script/1>>AspCircleConf/script/1",
+"###end>>AspRight/script/run>>AspRight/script/2>>AspCircleConf/script/2",
+"##-50/circle/current/x>>%>>AspLeft/script/1>>AspCircleConf/script/3",
+"###end>>AspLeft/script/run>>AspLeft/script/2>>AspCircleConf/script/4",
+"##-50/circle/current/y>>%>>AspUp/script/1>>AspCircleConf/script/5",
+"###end>>AspUp/script/run>>AspUp/script/2>>AspCircleConf/script/6",
+"##+50/circle/current/y>>%>>AspDown/script/1>>AspCircleConf/script/7",
+"###end>>AspDown/script/run>>AspDown/script/2>>AspCircleConf/script/8",
+"###repeat>>%/circle/run>>AspKE/script/1>>AspCircleConf/script/9",
+"###loop>>%/circle/run>>AspKR/script/1>>AspCircleConf/script/10",
+"###off>>%/circle/run>>AspKF/script/1>>AspCircleConf/script/11",
+"##+1/circle/current/radius>>%>>AspKT/script/1>>AspCircleConf/script/12",
+"###end>>AspKT/script/run>>AspKT/script/2>>AspCircleConf/script/13",
+"##-1/circle/current/radius>>%>>AspKG/script/1>>AspCircleConf/script/13",
+"###end>>AspKG/script/run>>AspKG/script/2>>AspCircleConf/script/14",
+	
+//so maybe we can genneralize to recycle keys for each edit mode. say rectangle aspect uses w and h, circle uses radius.
+//oscillators use gain and frequency
+
+//rect edit config
+"#name,AspRectConfOn,key,Digit3,com1,#once>>AspRectConf/script/run>>~/skeys/new",
+"@AspRectConf<>unseal/script>>AspRectConf",
+"##+50/rectangle/current/x>>%>>AspRight/script/1>>AspRectConf/script/1",
+"###end>>AspRight/script/run>>AspRight/script/2>>AspRectConf/script/2",
+"##-50/rectangle/current/x>>%>>AspLeft/script/1>>AspRectConf/script/3",
+"###end>>AspLeft/script/run>>AspLeft/script/2>>AspRectConf/script/4",
+"##-50/rectangle/current/y>>%>>AspUp/script/1>>AspRectConf/script/5",
+"###end>>AspUp/script/run>>AspUp/script/2>>AspRectConf/script/6",
+"##+50/rectangle/current/y>>%>>AspDown/script/1>>AspRectConf/script/7",
+"###end>>AspDown/script/run>>AspDown/script/2>>AspRectConf/script/8",
+"###repeat>>%/rectangle/run>>AspKE/script/1>>AspRectConf/script/9",
+"###loop>>%/rectangle/run>>AspKR/script/1>>AspRectConf/script/10",
+"###off>>%/rectangle/run>>AspKF/script/1>>AspRectConf/script/11",
+"##+1/rectangle/current/w>>%>>AspKT/script/1>>AspRectConf/script/12",
+"###end>>AspKT/script/run>>AspKT/script/2>>AspRectConf/script/13",
+"##-1/rectangle/current/w>>%>>AspKG/script/1>>AspRectConf/script/14",
+"###end>>AspKG/script/run>>AspKG/script/2>>AspRectConf/script/15",
+"##+1/rectangle/current/h>>%>>AspKY/script/1>>AspRectConf/script/16",
+"###end>>AspKY/script/run>>AspKY/script/2>>AspRectConf/script/17",
+"##-1/rectangle/current/h>>%>>AspKH/script/1>>AspRectConf/script/18",
+"###end>>AspKH/script/run>>AspKH/script/2>>AspRectConf/script/19",
+
+//track edit config.. but we are not really manually playing around much with these dont we. we want to feed counters into these
+//params
+"#name,AspTrackConfOn,key,Digit4,com1,#once>>AspTrackConf/script/run>>~/skeys/new",
+"@AspTrackConf<>unseal/script>>AspTrackConf",
+				//is:'track',
+				//r:230, g:230, b:230, a:0.8,// cx:eX, cy:eY, x:0, y:0, 
+				//offspeed:0.05, posx, posy
+				//offsx:0, offsy:0, tradx:100, trady:100,
+				//cx:eX, cy:eY, layer:0
+
+"##+1/track/current/tradx>>%>>AspKT/script/1>>AspTrackConf/script/1",
+"###end>>AspKT/script/run>>AspKT/script/2>>AspTrackConf/script/2",
+"##-1/track/current/tradx>>%>>AspKG/script/1>>AspTrackConf/script/3",
+"###end>>AspKG/script/run>>AspKG/script/2>>AspTrackConf/script/4",
+"##-1/track/current/trady>>%>>AspKY/script/1>>AspTrackConf/script/5",
+"###end>>AspKY/script/run>>AspKY/script/2>>AspTrackConf/script/6",
+"##+1/track/current/trady>>%>>AspKH/script/1>>AspTrackConf/script/7",
+"###end>>AspKH/script/run>>AspKH/script/2>>AspTrackConf/script/8",
+"###repeat>>%/track/run>>AspKE/script/1>>AspTrackConf/script/9",
+"###loop>>%/track/run>>AspKR/script/1>>AspTrackConf/script/10",
+"###off>>%/track/run>>AspKF/script/1>>AspTrackConf/script/11",
+//"##+1/track/current/w>>%>>AspKT/script/1>>AspTrackConf/script/12",
+//"###end>>AspKT/script/run>>AspKT/script/2>>AspTrackConf/script/13",
+//"##-1/track/current/w>>%>>AspKG/script/1>>AspTrackConf/script/14",
+//"###end>>AspKG/script/run>>AspKG/script/2>>AspTrackConf/script/15",
+//"##+1/track/current/h>>%>>AspKY/script/1>>AspTrackConf/script/16",
+//"###end>>AspKY/script/run>>AspKY/script/2>>AspTrackConf/script/17",
+//"##-1/track/current/h>>%>>AspKH/script/1>>AspTrackConf/script/18",
+//"###end>>AspKH/script/run>>AspKH/script/2>>AspTrackConf/script/19",
+
+//ent movility. also needs to be modularized. maybe with Digit0..
 "@EntRight<>unseal/script>>EntRight",
 "#+50/x>>~>>EntRight/script/1",
-"#end>>EntRight/script/run>>EntRight/script/2",
+"##end>>EntRight/script/run>>EntRight/script/2",
 "#name,Right,key,ArrowRight,com1,#once>>EntRight/script/run>>~/skeys/new",
 "@EntLeft<>unseal/script>>EntLeft",
 "#-50/x>>~>>EntLeft/script/1",
-"#end>>EntLeft/script/run>>EntLeft/script/2",
+"##end>>EntLeft/script/run>>EntLeft/script/2",
 "#name,Left,key,ArrowLeft,com1,#once>>EntLeft/script/run>>~/skeys/new",
 "@EntUp<>unseal/script>>EntUp",
 "#-50/y>>~>>EntUp/script/1",
-"#end>>EntUp/script/run>>EntUp/script/2",
+"##end>>EntUp/script/run>>EntUp/script/2",
 "#name,Up,key,ArrowUp,com1,#once>>EntUp/script/run>>~/skeys/new",
 "@EntDown<>unseal/script>>EntDown",
 "#+50/y>>~>>EntDown/script/1",
-"#end>>EntDown/script/run>>EntDown/script/2",
+"##end>>EntDown/script/run>>EntDown/script/2",
 "#name,Down,key,ArrowDown,com1,#once>>EntDown/script/run>>~/skeys/new",
-///loop from 0 to 6.2 and back again to zero
-"@Loop62<>unseal/text/script>>Loop62",
-"#0>>Loop62/text/1",
+
+//loop from 0 to 6.2 and back again to zero.... maybe we can create a script to produce a custom counter and put it somewhere..
+//to be used by whatever we want... and now that we are using numbers form datalines .. we might as well.. couple the random number
+//generator to the text system itself.. instead of doing it on the frames directly... tho that system is kinda neat.. works fine.
+//but we do need datalines to be able to create random values. within specified range. ok lets check that out now. we want counters
+//and randomizers as datalines... we good for now, we can just ask a randomized param from a state and get the number clean
+//lets make another counter script
+"@Loops<>unseal/text/script>>Loops",
+"#+500>>Loops/text/x",	
+"#0>>Loops/text/1",
+"#0>>Loops/text/3",
+"#200>>Loops/text/4",
+"#0>>Loops/text/5",
+"#100>>Loops/text/6",
+"#0>>Loops/text/7",
+//loop6.2 with 2 decimals from 0 to 6.2, the whole circle in radians
 "@Loop62B<>unseal/script>>Loop62B",
-"#+0.01>>Loop62/text/1>>Loop62B/script",
+"#+0.01>>Loops/text/1>>Loop62B/script",
 "#loop>>Loop62B/script/run",
-"@Loop62Limit<>unseal/text/script>>Loop62Limit",
-"#6.2>>Loop62/text/2",
-"#Loop62/text/1==Loop62/text/2<>#0>>Loop62/text/1>>Loop62Limit/script",
+"@Loop62Limit<>unseal/script>>Loop62Limit",
+"#6.3>>Loops/text/2",
+"#Loops/text/1==Loops/text/2<>#0>>Loops/text/1>>Loop62Limit/script",
 "#loop>>Loop62Limit/script/run",
+//loop200 no decimals. 0 to 200 and restart from zero
+"@Loop200<>unseal/script>>Loop200",
+"#+1>>Loops/text/3>>Loop200/script",
+"#loop>>Loop200/script/run",
+"@Loop200Limit<>unseal/script>>Loop200Limit",
+"#Loops/text/3==Loops/text/4<>#0>>Loops/text/3>>Loop200Limit/script",
+"#loop>>Loop200Limit/script/run",
+//loop200 back and forth up
+"@Loop200bnfUp<>unseal/script>>Loop200bnfUp",
+"#+1>>Loops/text/5>>Loop200bnfUp/script",
+"#loop>>Loop200bnfUp/script/run",
+//loop200 back and forth down
+"@Loop200bnfDown<>unseal/script>>Loop200bnfDown",
+"#-1>>Loops/text/5>>Loop200bnfDown/script",
+//limits
+"@Loop200bnfUpLimit1<>unseal/script>>Loop200bnfUpLimit1",
+"#loop>>Loop200bnfUpLimit1/script/run",
+"@Loop200bnfDownLimit1<>unseal/script>>Loop200bnfDownLimit1",
+"#loop>>Loop200bnfDownLimit1/script/run",
+"@Loop200bnfUpLimit2<>unseal/script>>Loop200bnfUpLimit2",
+"#loop>>Loop200bnfUpLimit2/script/run",
+"@Loop200bnfDownLimit2<>unseal/script>>Loop200bnfDownLimit2",
+"#loop>>Loop200bnfDownLimit2/script/run",
+//limit up
+"#Loops/text/5==Loops/text/6<>#off>>Loop200bnfUp/script/run>>Loop200bnfUpLimit1/script",
+"#Loops/text/5==Loops/text/6<>#loop>>Loop200bnfDown/script/run>>Loop200bnfUpLimit2/script",
+//limit down	
+"#Loops/text/5==Loops/text/7<>#off>>Loop200bnfDown/script/run>>Loop200bnfDownLimit1/script",
+"#Loops/text/5==Loops/text/7<>#loop>>Loop200bnfUp/script/run>>Loop200bnfDownLimit2/script",
+
 //make a track fast
 "@T<>unseal/track/text/script>>T",
-"#-300>>T/text/x",
+"#-700>>T/text/x",
 "#loop>>T/track/run",
-"#T>>T/text>>T/script",
+//study teh patterns
+"#T>>T/text>>T/script/1",
 "#loop>>T/script/run",
-"#T>>~/stance"
+//"#T>>~/stance",
+//connect counters to track
+//offs
+"@Offsx<>unseal/script>>Offsx",
+"#Loops/text/1>>T/track/1/offsx>>Offsx/script",
+"#loop>>Offsx/script/run",
+"@Offsy<>unseal/script>>Offsy",
+"#Loops/text/1>>T/track/1/offsy>>Offsy/script",
+"#loop>>Offsy/script/run",
+//rads
+"@Tradx<>unseal/script>>Tradx",
+"#Loops/text/5>>T/track/1/tradx>>Tradx/script",
+"#loop>>Tradx/script/run",
+"@Trady<>unseal/script>>Trady",
+"#Loops/text/5>>T/track/1/trady>>Trady/script",
+"#loop>>Trady/script/run",
+//
+"@Cx<>unseal/script>>Cx",
+"#Loops/text/5>>T/track/1/cx>>Cx/script",
+"#loop>>Cx/script/run",
+"@Cy<>unseal/script>>Cy",
+"#Loops/text/5>>T/track/1/cy>>Cy/script",
+"#loop>>Cy/script/run"
+
+
 //*/
 
 	]
