@@ -2068,7 +2068,6 @@ const comRiTarget = function(signal,target,St){
 	if(pol!=0){
 
 
-		//console.log(pol);
 //we simply need to add pol to the target and check if its a valid operation. signal/k1/k2/k3
 		if(tent){ //here goes polarity signals into entity keys
 			if(k1=='x'){
@@ -2138,6 +2137,7 @@ const comRiTarget = function(signal,target,St){
 			if(to[k1]){ //text aspect unsealed?
 			//only pol/text/x  locates x and y on k2 so far.. because we move all lines of the text at once
 			//this is just too convenient not to have. working on txtX and txtY makes this possible
+		//but now maybe track will also go in here...
 				if(k2=='x'){ 
 					//to.txtX=to.txtX+pol;
 					to.txtX += pol;
@@ -2155,22 +2155,16 @@ const comRiTarget = function(signal,target,St){
 				if(to[k1]){ //orb Aspect is unsealed.
 					switch(k1){
 					case 'text':
-						//var contstr = 'txtLi'; 
 						var bstr = 'txtB'; break
 					case 'script':
-						//var contstr = 'scC';
 						var bstr = 'scB'; break
 					case 'circle':
-						//var contstr = 'cirF';
 						var bstr = 'cirB'; break
 					case 'rectangle':
-						//var contstr = 'rectF';
 						var bstr = 'rectB'; break
 					case 'image':
-						//var contstr = 'imgF';
 						var bstr = 'imgB'; break
 					case 'track':
-						//var contstr = 'imgF';
 						var bstr = 'trackB'; break
 
 					//case 'oscillator':
@@ -2192,7 +2186,7 @@ const comRiTarget = function(signal,target,St){
 //beatParam(o,cont,key,sub,op,pol) . this function is almost written already !! 
 //pol/aspect/line/param  signal/k1/k2/k3
 			if(k3){ 
-				o.o = beatParam(to,k1,k2,k3,undefined,pol); //this returns a neat output
+				to.o = beatParam(to,k1,k2,k3,undefined,pol); //this returns a neat output
 				return
 			}
 			
@@ -2255,13 +2249,17 @@ const comRiTarget = function(signal,target,St){
 			case 'all':
 				var kstr = 'all';
 			case 'current':
-				var kstr = to[bstr]-1; break
+				var kstr = to[bstr]-1;
+				if(isNaN(kstr)){return 'end'}
+				break
 			case 'last':
 				var kstr = to[contstr].length-1; break
+				if(isNaN(kstr)){return 'end'}
 			default:
 				//line is a number now.. not sure if parse is necesary again.. ? 
 				var k = parseFloat(k2);
-				var kstr = k-1; var nan = isNaN(kstr); if(nan){return 'end'}
+				var kstr = k-1; 
+				if(isNaN(kstr)){return 'end'}
 				break
 		}
 //now we check if this line exists, if so then remove it.
@@ -2269,8 +2267,8 @@ const comRiTarget = function(signal,target,St){
 			//if(k1=='oscillator'){} ////we need to remove all oscillator tones if active..
 			to[contstr].splice(0); return
 		}
-		var B = to[contstr][kstr];
-		if(B){
+		var B = to[contstr];//[kstr];
+		if(B[kstr]){
 			to[contstr].splice(kstr,1); 
 			if(k1=='text'){
 				dESpacer(to);
@@ -3227,6 +3225,19 @@ const putRiValue = function(op,RS,St){//,pol){
 	if(SS[0]=='~'){var ent = true;}
 	if(SS[0]=='$'){var o = Fting(Orbs,'name',St);}//else{var o = Fting(Orbs,'name',SS[0]);}
 	if(SS[0]=='%'){var o = Fting(Orbs,'name',stancE);} //.. this one might need tunning.. for what we really want
+
+//we can use a value from op(left side) and use it to create a new orb name
+	if(SS[0]=='@'){
+// neworbname>>@
+		//look if the name already has been asigned to an orb. what if it has
+		let l1 = staNce.length;
+		while(l1--){if(op[0]==staNce[l1]){return 'end'} }
+		var o = OrbSoul();
+		o.name=op[0]; Orbs.push(o); staNce.push(o.name);
+		Eout = '@'+op[0];
+		return 
+	}
+
 	if(o==undefined){var o = Fting(Orbs,'name',SS[0]);}
 	if(o==undefined){if(ent==undefined){return 'end'}}
 
@@ -3690,6 +3701,14 @@ const putRiValue = function(op,RS,St){//,pol){
 						//return
 					//}
 
+// >>orb/script/new
+					if(ckey=='new'){
+						for (var i2 = 0; i2 < op.length; i2++) {
+							o.scC.push(op[i2]);
+						}
+						return
+					}
+
 					if(ckey=='cn'){
 // >>orb/script/cn
 						//should only accept numbers.. max is number of lines in script
@@ -3774,6 +3793,15 @@ const putRiValue = function(op,RS,St){//,pol){
 						//	return
 						//}
 					}
+
+// >>orb/image/new
+					if(ckey=='new'){
+						for (var i2 = 0; i2 < op.length; i2++) {
+							o.imgF.push(op[i2]);
+						}
+						return
+					}
+
 					if(ckey=='mirror'){
 //>>orb/image/mirror
 //mirror pretty much requires op because... what could mirror do on the left side RS? ... one sec $/image/mirror>> ... maybe an instruction
@@ -3851,6 +3879,15 @@ const putRiValue = function(op,RS,St){//,pol){
 						//	return
 						//}
 					}
+
+// >>orb/circle/new
+					if(ckey=='new'){
+						for (var i2 = 0; i2 < op.length; i2++) {
+							o.cirF.push(op[i2]);
+						}
+						return
+					}				
+
 					if(ckey=='mirror'){
 // >>orb/circle/mirror
 //mirror pretty much requires op because... what could mirror do on the left side RS? ... one sec $/circle/mirror>> ... maybe an instruction
@@ -3924,6 +3961,14 @@ const putRiValue = function(op,RS,St){//,pol){
 // >>orb/rectangle/cn
 						// maybe we should check if the number is valid...
 						o.rectB=op[0];
+						return
+					}
+
+// >>orb/rectangle/new
+					if(ckey=='new'){
+						for (var i2 = 0; i2 < op.length; i2++) {
+							o.rectF.push(op[i2]);
+						}
 						return
 					}
 
@@ -4031,6 +4076,14 @@ const putRiValue = function(op,RS,St){//,pol){
 						//	o.oscR=run[res];
 						//	return //[run[res]]
 						//}
+					}
+//this ok?
+// >>orb/oscillator/new
+					if(ckey=='new'){
+						for (var i2 = 0; i2 < op.length; i2++) {
+							o.oscTL.push(op[i2]);
+						}
+						return
 					}
 					//...
 				}
@@ -4369,16 +4422,26 @@ const beatParam = function(o,cont,key,sub,op,pol){
 			break
 		return //return if no cont match
 	}
+
+	if(o[contstr]==undefined){return}
+
 	//.. key needs to create a number but to access the number.. we need the container to tell use its corresponding beat
 	switch(key){
 		case 'current':
-			var kstr = o[bstr]-1; break
+			var kstr = o[bstr]-1;//-1;
+			if(isNaN(kstr)){return}
+			break
 		case 'last':
-			var kstr = o[contstr].length-1; break
+			var ocont = o[contstr];
+			if(ocont==undefined){return}
+			var kstr = o[contstr].length-1;
+			if(isNaN(kstr)){return}
+			break
 		default:
 			//key is a number now.. not sure if parse is necesary again.. ? 
 			var k = parseFloat(key);
-			var kstr = k-1; var nan = isNaN(kstr); if(nan){return}
+			var kstr = k-1; 
+			if(isNaN(kstr)){return}
 			break
 	}
 //now we need to ask if adress of beat even exist and then use sub to look for its pair value on the target beat
@@ -4503,7 +4566,7 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 
 //in case its not  a literal, we check if the target is trying to point us to a value on a text 
 			//.. we dont want to do all these stuf when we have a pol>>orb/text/line structure....!!!!!!!!!!!!!!!!!!!
-			//we need to do an exception for this one case
+			//we need to do an exception for this case
 			var ST = MS[0].split('/')
 			if(ST.length==1){//pol>>orb/text/line  exception
 				var res = comRiTarget(MS[0],MS[1],S);		
@@ -4546,10 +4609,11 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 			}
 	////////
 			if(RST){
+//signal>>targetformtext
 				var res = comRiTarget(sig,RST,S);		
 				if(res=='end'){return 'end'} return
 			}
-
+//signal>>orbname
 			var res = comRiTarget(sig,MS[1],S);		
 			if(res=='end'){return 'end'} return
 
@@ -6482,273 +6546,195 @@ var o = {
 */
 
 
-///*
-//for testing purposes
-//main scripter
-"@Main<>unseal/text/script/circle/rectangle/oscillator/image>>Main",
-"#+700>>Main/text/x",
-"#Main>>~/stance",
-//"@MainPos<>unseal/script>>MainPos",
-//"#~/screenx>>Main/text/x<>~/screeny40>>Main/text/y>>MainPos/script/1",
-//"#loop>>MainPos/script/run",
-"@THL<>unseal/text/script>>THL",
-"##r,..4?25,g,-130,b,..20?50,x,..-1?2,y,0,layer,1,txt,-+-+-+-+-+-+-+,a,-0.1,is,txt,align,left>>%/text/current/mirror>>THL/script/1",
-"#loop>>THL/script/run",
-//Main skeys
-"#name,Mstance,key,Home,com1,#Main>>~/stance>>~/skeys/new",
-"#name,MSR,key,End,com1,#once>>Main/script/run>>~/skeys/new",
-"#name,rmLine,key,Delete,com1,rmline/text/current>>%>>~/skeys/new",
-"#name,coml,key,KeyO,com1,%/text/current>>~/comline>>~/skeys/new",
-"#name,inl,key,KeyI,com1,%/text/current>>~/inline>>~/skeys/new",
-"#name,PrevLine,key,KeyB,com1,-/text/cn>>%>>~/skeys/new",
-"#name,NextLine,key,KeyN,com1,+/text/cn>>%>>~/skeys/new",
-"#name,SelStance,key,KeyM,com1,$/text/current>>~/stance>>~/skeys/new",
-"#name,OrbsList,key,Space,com1,~/orbs>>%/text>>~/skeys/new",
-"#name,KeysList,key,ControlRight,com1,~/skeys>>%/text>>~/skeys/new",
-//use wasd to move the selected orb aspect.. maybe a script can use a couple of lines to determine what orb and what aspect to move!!
-//.. hard to do with aspect.. but maybe a different aproach. just create buttons on the fly for each ocassion. so when we press the
-//control button while on a stance, we have a brief time to select an aspect. once we do, we call a script to create buttons
-//acording to what we selected.. better yet.. we just select the option previously no need to quick select option
-//but the orbs for displacing already exist and.. are already configured, we just use option button to link the set to WASD at any moment.
-//Of course in this case WASD will use the stance orb % to send the displacement signals on the aspect we choose. this is the right
-//way to do it i think. and we can go further. besides setting up WASD, we can set up other buttons to play around with aspects params
-//Kinda like loading a whole set of buttons to work with each specific aspect.. like old edit systems.. yes the ones you brutally erased
-//but are still around in some old sunya version... we ve writen quite a lot to get here huh but i think this is sunya single mode final
-//form. these skeys are really what we wanted initially. so special keayboard keys like Space and Home could be tested by users on
-//prerendering so users quickly understand all buttons can be custmized so its no problem if their keyboard is being funny configured
+//OK here is an idea. Lets make Digit0 call for a general purpuse script that sets up an interface to manipulate orbs and move
+//around the screen with ease. Calling this script means we create the buttons, we create orb to run when buttons are perssed
+//and we create the script lines for these buttons. Each digit will create an interface to manage a specific aspect.
+		//
+		//
 
-//we configue these buttons once by default to work with text aspect.
-//and then when we call Asp conf option buttons to make proper adjusts on their functionality
+//General Purpuse Main Short Keys . Digit0
+"#name,GPSkeys,key,Digit0,com1,#once>>GPSkeysConf/script/run>>~/skeys/new",
+"@GPSkeysConf<>unseal/script>>GPSkeysConf",
+"#@Main<>unseal/text/script>>Main>>GPSkeysConf/script/new",
+
+"##Preparing General Purpuse Main Shortcut keys...>>Main/text>>GPSkeysConf/script/new",
+
+"##Main>>~/stance>>GPSkeysConf/script/new",
+"#@THL<>unseal/script>>THL>>GPSkeysConf/script/new",
+"###r,..4?25,g,-130,b,..20?50,x,..-1?2,y,0,layer,1,txt,-+-+-+-+-+-+-+,a,-0.1>>%/text/current/mirror>>THL/script/1>>GPSkeysConf/script/new",
+"##loop>>THL/script/run>>GPSkeysConf/script/new",
+"##name,MainToStance,key,Home,com1,#Main>>~/stance>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,MainScriptRun,key,End,com1,#once>>Main/script/run>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,RmLine,key,Delete,com1,rmline/text/current>>%>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,ComLineGrab,key,KeyO,com1,%/text/current>>~/comline>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,InLineGrab,key,KeyI,com1,%/text/current>>~/inline>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,PrevLine,key,KeyB,com1,-/text/cn>>%>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,NextLine,key,KeyN,com1,+/text/cn>>%>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,SelStance,key,KeyM,com1,$/text/current>>~/stance>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,OrbsList,key,Space,com1,~/orbs>>%/text>>~/skeys/new>>GPSkeysConf/script/new",
+"##name,SkeysList,key,ControlRight,com1,~/skeys>>%/text>>~/skeys/new>>GPSkeysConf/script/new",
+
+"##Preparing General Purpuse Main Shortcut keys......>>Main/text>>GPSkeysConf/script/new",
+
+"#@ArrowRight<>unseal/script>>ArrowRight>>GPSkeysConf/script/new",
+"##+50/x>>~>>ArrowRight/script/1>>GPSkeysConf/script/new",
+"###end>>ArrowRight/script/run>>ArrowRight/script/2>>GPSkeysConf/script/new",
+"##name,Right,key,ArrowRight,com1,#once>>ArrowRight/script/run>>~/skeys/new>>GPSkeysConf/script/new",
+
+"#@ArrowLeft<>unseal/script>>ArrowLeft>>GPSkeysConf/script/new",
+"##-50/x>>~>>ArrowLeft/script/1>>GPSkeysConf/script/new",
+"###end>>ArrowLeft/script/run>>ArrowLeft/script/2>>GPSkeysConf/script/new",
+"##name,Left,key,ArrowLeft,com1,#once>>ArrowLeft/script/run>>~/skeys/new>>GPSkeysConf/script/new",
+
+"#@ArrowUp<>unseal/script>>ArrowUp>>GPSkeysConf/script/new",
+"##-50/y>>~>>ArrowUp/script/1>>GPSkeysConf/script/new",
+"###end>>ArrowUp/script/run>>ArrowUp/script/2>>GPSkeysConf/script/new",
+"##name,Up,key,ArrowUp,com1,#once>>ArrowUp/script/run>>~/skeys/new>>GPSkeysConf/script/new",
+
+"#@ArrowDown<>unseal/script>>ArrowDown>>GPSkeysConf/script/new",
+"##+50/y>>~>>ArrowDown/script/1>>GPSkeysConf/script/new",
+"###end>>ArrowDown/script/run>>ArrowDown/script/2>>GPSkeysConf/script/new",
+"##name,Down,key,ArrowDown,com1,#once>>ArrowDown/script/run>>~/skeys/new>>GPSkeysConf/script/new",
+
+"##GPMS configuration is ready. Press Space to list all Orbs.>>Main/text/new>>GPSkeysConf/script/new",
+
+//text displace config Digit1
 //WASD
-"@AspRight<>unseal/script>>AspRight",
-"#name,Right,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new",
-"@AspLeft<>unseal/script>>AspLeft",
-"#name,Left,key,KeyA,com1,#once>>AspLeft/script/run>>~/skeys/new",
-"@AspUp<>unseal/script>>AspUp",
-"#name,Up,key,KeyW,com1,#once>>AspUp/script/run>>~/skeys/new",
-"@AspDown<>unseal/script>>AspDown",
-"#name,Down,key,KeyS,com1,#once>>AspDown/script/run>>~/skeys/new",
-//E,R,F .. edit , run, freeze
-"@AspKE<>unseal/script>>AspKE",
-"#name,Repeat,key,KeyE,com1,#once>>AspKE/script/run>>~/skeys/new",
-"@AspKR<>unseal/script>>AspKR",
-"#name,Loop,key,KeyR,com1,#once>>AspKR/script/run>>~/skeys/new",
-"@AspKF<>unseal/script>>AspKF",
-"#name,Off,key,KeyF,com1,#once>>AspKF/script/run>>~/skeys/new",
-//T,G, Y,H, U,J , I,K , O,L, all these buttons we use to do different things depending on the aspect configuration we currently have
-"@AspKT<>unseal/script>>AspKT",
-"#name,KT,key,KeyT,com1,#once>>AspKT/script/run>>~/skeys/new",
-"@AspKG<>unseal/script>>AspKG",
-"#name,KG,key,KeyG,com1,#once>>AspKG/script/run>>~/skeys/new",
-"@AspKY<>unseal/script>>AspKY",
-"#name,KY,key,KeyY,com1,#once>>AspKY/script/run>>~/skeys/new",
-"@AspKH<>unseal/script>>AspKH",
-"#name,KH,key,KeyH,com1,#once>>AspKH/script/run>>~/skeys/new",
-"@AspKU<>unseal/script>>AspKU",
-"#name,KU,key,KeyU,com1,#once>>AspKU/script/run>>~/skeys/new",
-"@AspKJ<>unseal/script>>AspKJ",
-"#name,KJ,key,KeyJ,com1,#once>>AspKJ/script/run>>~/skeys/new",
-"@AspKK<>unseal/script>>AspKK",
-"#name,KK,key,KeyK,com1,#once>>AspKK/script/run>>~/skeys/new",
-"@AspKL<>unseal/script>>AspKL",
-"#name,KL,key,KeyL,com1,#once>>AspKL/script/run>>~/skeys/new",
+"#name,TextConfOn,key,Digit1,com1,#once>>TextConf/script/run>>~/skeys/new",
+"@TextConf<>unseal/text/script>>TextConf",
 
-//aspect options skeys and scripts asociated...am thinking now.... we could straight up just change the line that
-//concerns the aspect.. no because we want to change many lines at once
+"##Preparing Text Aspect configuration...>>Main/text>>TextConf/script/new",
 
-//text config
-"#name,AspTextConfOn,key,Digit1,com1,#once>>AspTextConf/script/run>>~/skeys/new",
-"@AspTextConf<>unseal/script>>AspTextConf",
-"##+50/text/x>>%>>AspRight/script/1>>AspTextConf/script/1",
-"###end>>AspRight/script/run>>AspRight/script/2>>AspTextConf/script/2",
-"##-50/text/x>>%>>AspLeft/script/1>>AspTextConf/script/3",
-"###end>>AspLeft/script/run>>AspLeft/script/2>>AspTextConf/script/4",
-"##-50/text/y>>%>>AspUp/script/1>>AspTextConf/script/5",
-"###end>>AspUp/script/run>>AspUp/script/2>>AspTextConf/script/6",
-"##+50/text/y>>%>>AspDown/script/1>>AspTextConf/script/7",
-"###end>>AspDown/script/run>>AspDown/script/2>>AspTextConf/script/8",
+"#@AspRight<>unseal/script>>AspRight>>TextConf/script/new",
+"##name,AspRight,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new>>TextConf/script/new",
+"##+50/text/x>>%>>AspRight/script/1>>TextConf/script/new",
+"###end>>AspRight/script/run>>AspRight/script/2>>TextConf/script/new",
 
-//when we edit other aspects than text, adressing the specific beat is important,
-//so maybe we want to control repeat and loop on aspect run key
+"#@AspLeft<>unseal/script>>AspLeft>>TextConf/script/new",
+"##name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run>>~/skeys/new>>TextConf/script/new",
+"##-50/text/x>>%>>AspLeft/script/1>>TextConf/script/new",
+"###end>>AspLeft/script/run>>AspLeft/script/2>>TextConf/script/new",
 
-//circle edit config
+"#@AspUp<>unseal/script>>AspUp>>TextConf/script/new",
+"##name,AspUp,key,KeyW,com1,#once>>AspUp/script/run>>~/skeys/new>>TextConf/script/new",
+"##-50/text/y>>%>>AspUp/script/1>>TextConf/script/new",
+"###end>>AspUp/script/run>>AspUp/script/2>>TextConf/script/new",
+
+"#@AspDown<>unseal/script>>AspDown>>TextConf/script/new",
+"##name,AspDown,key,KeyS,com1,#once>>AspDown/script/run>>~/skeys/new>>TextConf/script/new",
+"##+50/text/y>>%>>AspDown/script/1>>TextConf/script/new",
+"###end>>AspDown/script/run>>AspDown/script/2>>TextConf/script/new",
+
+"##Text Aspect configuration is set. Use WASD to displace text lines.>>Main/text/new>>TextConf/script/new",
+
+//Circle edit config Digit2, WASD, and others
 "#name,AspCircleConfOn,key,Digit2,com1,#once>>AspCircleConf/script/run>>~/skeys/new",
 "@AspCircleConf<>unseal/script>>AspCircleConf",
-"##+50/circle/current/x>>%>>AspRight/script/1>>AspCircleConf/script/1",
-"###end>>AspRight/script/run>>AspRight/script/2>>AspCircleConf/script/2",
-"##-50/circle/current/x>>%>>AspLeft/script/1>>AspCircleConf/script/3",
-"###end>>AspLeft/script/run>>AspLeft/script/2>>AspCircleConf/script/4",
-"##-50/circle/current/y>>%>>AspUp/script/1>>AspCircleConf/script/5",
-"###end>>AspUp/script/run>>AspUp/script/2>>AspCircleConf/script/6",
-"##+50/circle/current/y>>%>>AspDown/script/1>>AspCircleConf/script/7",
-"###end>>AspDown/script/run>>AspDown/script/2>>AspCircleConf/script/8",
-"###repeat>>%/circle/run>>AspKE/script/1>>AspCircleConf/script/9",
-"###loop>>%/circle/run>>AspKR/script/1>>AspCircleConf/script/10",
-"###off>>%/circle/run>>AspKF/script/1>>AspCircleConf/script/11",
-"##+1/circle/current/radius>>%>>AspKT/script/1>>AspCircleConf/script/12",
-"###end>>AspKT/script/run>>AspKT/script/2>>AspCircleConf/script/13",
-"##-1/circle/current/radius>>%>>AspKG/script/1>>AspCircleConf/script/13",
-"###end>>AspKG/script/run>>AspKG/script/2>>AspCircleConf/script/14",
-	
-//so maybe we can genneralize to recycle keys for each edit mode. say rectangle aspect uses w and h, circle uses radius.
-//oscillators use gain and frequency
 
-//rect edit config
+"##Preparing Circle Edit configuration...>>Main/text>>AspCircleConf/script/new",
+
+"#@AspRight<>unseal/script>>AspRight>>AspCircleConf/script/new",
+"##name,AspRight,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new>>AspCircleConf/script/new",
+"##+50/circle/current/x>>%>>AspRight/script/1>>AspCircleConf/script/new",
+"###end>>AspRight/script/run>>AspRight/script/2>>AspCircleConf/script/new",
+
+"#@AspLeft<>unseal/script>>AspLeft>>AspCircleConf/script/new",
+"##name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run>>~/skeys/new>>AspCircleConf/script/new",
+"##-50/circle/current/x>>%>>AspLeft/script/1>>AspCircleConf/script/new",
+"###end>>AspLeft/script/run>>AspLeft/script/2>>AspCircleConf/script/new",
+
+"#@AspUp<>unseal/script>>AspUp>>AspCircleConf/script/new",
+"##name,AspUp,key,KeyW,com1,#once>>AspUp/script/run>>~/skeys/new>>AspCircleConf/script/new",
+"##-50/circle/current/y>>%>>AspUp/script/1>>AspCircleConf/script/new",
+"###end>>AspUp/script/run>>AspUp/script/2>>AspCircleConf/script/new",
+
+"#@AspDown<>unseal/script>>AspDown>>AspCircleConf/script/new",
+"##name,AspDown,key,KeyS,com1,#once>>AspDown/script/run>>~/skeys/new>>AspCircleConf/script/new",
+"##+50/circle/current/y>>%>>AspDown/script/1>>AspCircleConf/script/new",
+"###end>>AspDown/script/run>>AspDown/script/2>>AspCircleConf/script/new",
+
+"#@AspKE<>unseal/script>>AspKE>>AspCircleConf/script/new",
+"##name,Repeat,key,KeyE,com1,#once>>AspKE/script/run>>~/skeys/new>>AspCircleConf/script/new",
+"###repeat>>%/circle/run>>AspKE/script/1>>AspCircleConf/script/new",
+
+"#@AspKR<>unseal/script>>AspKR>>AspCircleConf/script/new",
+"##name,Loop,key,KeyR,com1,#once>>AspKR/script/run>>~/skeys/new>>AspCircleConf/script/new",	
+"###loop>>%/circle/run>>AspKR/script/1>>AspCircleConf/script/new",
+
+"#@AspKF<>unseal/script>>AspKF>>AspCircleConf/script/new",
+"##name,Off,key,KeyF,com1,#once>>AspKF/script/run>>~/skeys/new>>AspCircleConf/script/new",	
+"###off>>%/circle/run>>AspKF/script/1>>AspCircleConf/script/new",
+
+"#@AspKT<>unseal/script>>AspKT>>AspCircleConf/script/new",
+"##name,KT,key,KeyT,com1,#once>>AspKT/script/run>>~/skeys/new>>AspCircleConf/script/new",
+"##+1/circle/current/radius>>%>>AspKT/script/1>>AspCircleConf/script/new",
+"###end>>AspKT/script/run>>AspKT/script/2>>AspCircleConf/script/new",
+
+"#@AspKG<>unseal/script>>AspKG>>AspCircleConf/script/new",
+"##name,KG,key,KeyG,com1,#once>>AspKG/script/run>>~/skeys/new>>AspCircleConf/script/new",
+"##-1/circle/current/radius>>%>>AspKG/script/1>>AspCircleConf/script/new",
+"###end>>AspKG/script/run>>AspKG/script/2>>AspCircleConf/script/new",
+
+"##Circle Edit configuration is set.>>Main/text>>AspCircleConf/script/new",	
+
+//Rect edit config . Digit3 , WASD and others
 "#name,AspRectConfOn,key,Digit3,com1,#once>>AspRectConf/script/run>>~/skeys/new",
 "@AspRectConf<>unseal/script>>AspRectConf",
-"##+50/rectangle/current/x>>%>>AspRight/script/1>>AspRectConf/script/1",
-"###end>>AspRight/script/run>>AspRight/script/2>>AspRectConf/script/2",
-"##-50/rectangle/current/x>>%>>AspLeft/script/1>>AspRectConf/script/3",
-"###end>>AspLeft/script/run>>AspLeft/script/2>>AspRectConf/script/4",
-"##-50/rectangle/current/y>>%>>AspUp/script/1>>AspRectConf/script/5",
-"###end>>AspUp/script/run>>AspUp/script/2>>AspRectConf/script/6",
-"##+50/rectangle/current/y>>%>>AspDown/script/1>>AspRectConf/script/7",
-"###end>>AspDown/script/run>>AspDown/script/2>>AspRectConf/script/8",
-"###repeat>>%/rectangle/run>>AspKE/script/1>>AspRectConf/script/9",
-"###loop>>%/rectangle/run>>AspKR/script/1>>AspRectConf/script/10",
-"###off>>%/rectangle/run>>AspKF/script/1>>AspRectConf/script/11",
-"##+1/rectangle/current/w>>%>>AspKT/script/1>>AspRectConf/script/12",
-"###end>>AspKT/script/run>>AspKT/script/2>>AspRectConf/script/13",
-"##-1/rectangle/current/w>>%>>AspKG/script/1>>AspRectConf/script/14",
-"###end>>AspKG/script/run>>AspKG/script/2>>AspRectConf/script/15",
-"##+1/rectangle/current/h>>%>>AspKY/script/1>>AspRectConf/script/16",
-"###end>>AspKY/script/run>>AspKY/script/2>>AspRectConf/script/17",
-"##-1/rectangle/current/h>>%>>AspKH/script/1>>AspRectConf/script/18",
-"###end>>AspKH/script/run>>AspKH/script/2>>AspRectConf/script/19",
 
-//track edit config.. but we are not really manually playing around much with these dont we. we want to feed counters into these
-//params
-"#name,AspTrackConfOn,key,Digit4,com1,#once>>AspTrackConf/script/run>>~/skeys/new",
-"@AspTrackConf<>unseal/script>>AspTrackConf",
-				//is:'track',
-				//r:230, g:230, b:230, a:0.8,// cx:eX, cy:eY, x:0, y:0, 
-				//offspeed:0.05, posx, posy
-				//offsx:0, offsy:0, tradx:100, trady:100,
-				//cx:eX, cy:eY, layer:0
+"#@AspRight<>unseal/script>>AspRight>>AspRectConf/script/new",
+"##name,AspRight,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##+50/rectangle/current/x>>%>>AspRight/script/1>>AspRectConf/script/new",
+"###end>>AspRight/script/run>>AspRight/script/2>>AspRectConf/script/new",
 
-"##+1/track/current/tradx>>%>>AspKT/script/1>>AspTrackConf/script/1",
-"###end>>AspKT/script/run>>AspKT/script/2>>AspTrackConf/script/2",
-"##-1/track/current/tradx>>%>>AspKG/script/1>>AspTrackConf/script/3",
-"###end>>AspKG/script/run>>AspKG/script/2>>AspTrackConf/script/4",
-"##-1/track/current/trady>>%>>AspKY/script/1>>AspTrackConf/script/5",
-"###end>>AspKY/script/run>>AspKY/script/2>>AspTrackConf/script/6",
-"##+1/track/current/trady>>%>>AspKH/script/1>>AspTrackConf/script/7",
-"###end>>AspKH/script/run>>AspKH/script/2>>AspTrackConf/script/8",
-"###repeat>>%/track/run>>AspKE/script/1>>AspTrackConf/script/9",
-"###loop>>%/track/run>>AspKR/script/1>>AspTrackConf/script/10",
-"###off>>%/track/run>>AspKF/script/1>>AspTrackConf/script/11",
-//"##+1/track/current/w>>%>>AspKT/script/1>>AspTrackConf/script/12",
-//"###end>>AspKT/script/run>>AspKT/script/2>>AspTrackConf/script/13",
-//"##-1/track/current/w>>%>>AspKG/script/1>>AspTrackConf/script/14",
-//"###end>>AspKG/script/run>>AspKG/script/2>>AspTrackConf/script/15",
-//"##+1/track/current/h>>%>>AspKY/script/1>>AspTrackConf/script/16",
-//"###end>>AspKY/script/run>>AspKY/script/2>>AspTrackConf/script/17",
-//"##-1/track/current/h>>%>>AspKH/script/1>>AspTrackConf/script/18",
-//"###end>>AspKH/script/run>>AspKH/script/2>>AspTrackConf/script/19",
+"#@AspLeft<>unseal/script>>AspLeft>>AspRectConf/script/new",
+"##name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##-50/rectangle/current/x>>%>>AspLeft/script/1>>AspRectConf/script/new",
+"###end>>AspLeft/script/run>>AspLeft/script/2>>AspRectConf/script/new",
 
-//ent movility. also needs to be modularized. maybe with Digit0..
-"@EntRight<>unseal/script>>EntRight",
-"#+50/x>>~>>EntRight/script/1",
-"##end>>EntRight/script/run>>EntRight/script/2",
-"#name,Right,key,ArrowRight,com1,#once>>EntRight/script/run>>~/skeys/new",
-"@EntLeft<>unseal/script>>EntLeft",
-"#-50/x>>~>>EntLeft/script/1",
-"##end>>EntLeft/script/run>>EntLeft/script/2",
-"#name,Left,key,ArrowLeft,com1,#once>>EntLeft/script/run>>~/skeys/new",
-"@EntUp<>unseal/script>>EntUp",
-"#-50/y>>~>>EntUp/script/1",
-"##end>>EntUp/script/run>>EntUp/script/2",
-"#name,Up,key,ArrowUp,com1,#once>>EntUp/script/run>>~/skeys/new",
-"@EntDown<>unseal/script>>EntDown",
-"#+50/y>>~>>EntDown/script/1",
-"##end>>EntDown/script/run>>EntDown/script/2",
-"#name,Down,key,ArrowDown,com1,#once>>EntDown/script/run>>~/skeys/new",
+"#@AspUp<>unseal/script>>AspUp>>AspRectConf/script/new",
+"##name,AspUp,key,KeyW,com1,#once>>AspUp/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##-50/rectangle/current/y>>%>>AspUp/script/1>>AspRectConf/script/new",
+"###end>>AspUp/script/run>>AspUp/script/2>>AspRectConf/script/new",
 
-//loop from 0 to 6.2 and back again to zero.... maybe we can create a script to produce a custom counter and put it somewhere..
-//to be used by whatever we want... and now that we are using numbers form datalines .. we might as well.. couple the random number
-//generator to the text system itself.. instead of doing it on the frames directly... tho that system is kinda neat.. works fine.
-//but we do need datalines to be able to create random values. within specified range. ok lets check that out now. we want counters
-//and randomizers as datalines... we good for now, we can just ask a randomized param from a state and get the number clean
-//lets make another counter script
-"@Loops<>unseal/text/script>>Loops",
-"#+500>>Loops/text/x",	
-"#0>>Loops/text/1",
-"#0>>Loops/text/3",
-"#200>>Loops/text/4",
-"#0>>Loops/text/5",
-"#100>>Loops/text/6",
-"#0>>Loops/text/7",
-//loop6.2 with 2 decimals from 0 to 6.2, the whole circle in radians
-"@Loop62B<>unseal/script>>Loop62B",
-"#+0.01>>Loops/text/1>>Loop62B/script",
-"#loop>>Loop62B/script/run",
-"@Loop62Limit<>unseal/script>>Loop62Limit",
-"#6.3>>Loops/text/2",
-"#Loops/text/1==Loops/text/2<>#0>>Loops/text/1>>Loop62Limit/script",
-"#loop>>Loop62Limit/script/run",
-//loop200 no decimals. 0 to 200 and restart from zero
-"@Loop200<>unseal/script>>Loop200",
-"#+1>>Loops/text/3>>Loop200/script",
-"#loop>>Loop200/script/run",
-"@Loop200Limit<>unseal/script>>Loop200Limit",
-"#Loops/text/3==Loops/text/4<>#0>>Loops/text/3>>Loop200Limit/script",
-"#loop>>Loop200Limit/script/run",
-//loop200 back and forth up
-"@Loop200bnfUp<>unseal/script>>Loop200bnfUp",
-"#+1>>Loops/text/5>>Loop200bnfUp/script",
-"#loop>>Loop200bnfUp/script/run",
-//loop200 back and forth down
-"@Loop200bnfDown<>unseal/script>>Loop200bnfDown",
-"#-1>>Loops/text/5>>Loop200bnfDown/script",
-//limits
-"@Loop200bnfUpLimit1<>unseal/script>>Loop200bnfUpLimit1",
-"#loop>>Loop200bnfUpLimit1/script/run",
-"@Loop200bnfDownLimit1<>unseal/script>>Loop200bnfDownLimit1",
-"#loop>>Loop200bnfDownLimit1/script/run",
-"@Loop200bnfUpLimit2<>unseal/script>>Loop200bnfUpLimit2",
-"#loop>>Loop200bnfUpLimit2/script/run",
-"@Loop200bnfDownLimit2<>unseal/script>>Loop200bnfDownLimit2",
-"#loop>>Loop200bnfDownLimit2/script/run",
-//limit up
-"#Loops/text/5==Loops/text/6<>#off>>Loop200bnfUp/script/run>>Loop200bnfUpLimit1/script",
-"#Loops/text/5==Loops/text/6<>#loop>>Loop200bnfDown/script/run>>Loop200bnfUpLimit2/script",
-//limit down	
-"#Loops/text/5==Loops/text/7<>#off>>Loop200bnfDown/script/run>>Loop200bnfDownLimit1/script",
-"#Loops/text/5==Loops/text/7<>#loop>>Loop200bnfUp/script/run>>Loop200bnfDownLimit2/script",
+"#@AspDown<>unseal/script>>AspDown>>AspRectConf/script/new",
+"##name,AspDown,key,KeyS,com1,#once>>AspDown/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##+50/rectangle/current/y>>%>>AspDown/script/1>>AspRectConf/script/new",
+"###end>>AspDown/script/run>>AspDown/script/2>>AspRectConf/script/new",
 
-//make a track fast
-"@T<>unseal/track/text/script>>T",
-"#-700>>T/text/x",
-"#loop>>T/track/run",
-//study teh patterns
-"#T>>T/text>>T/script/1",
-"#loop>>T/script/run",
-//"#T>>~/stance",
-//connect counters to track
-//offs
-"@Offsx<>unseal/script>>Offsx",
-"#Loops/text/1>>T/track/1/offsx>>Offsx/script",
-"#loop>>Offsx/script/run",
-"@Offsy<>unseal/script>>Offsy",
-"#Loops/text/1>>T/track/1/offsy>>Offsy/script",
-"#loop>>Offsy/script/run",
-//rads
-"@Tradx<>unseal/script>>Tradx",
-"#Loops/text/5>>T/track/1/tradx>>Tradx/script",
-"#loop>>Tradx/script/run",
-"@Trady<>unseal/script>>Trady",
-"#Loops/text/5>>T/track/1/trady>>Trady/script",
-"#loop>>Trady/script/run",
-//
-"@Cx<>unseal/script>>Cx",
-"#Loops/text/5>>T/track/1/cx>>Cx/script",
-"#loop>>Cx/script/run",
-"@Cy<>unseal/script>>Cy",
-"#Loops/text/5>>T/track/1/cy>>Cy/script",
-"#loop>>Cy/script/run"
+"#@AspKE<>unseal/script>>AspKE>>AspRectConf/script/new",
+"##name,Repeat,key,KeyE,com1,#once>>AspKE/script/run>>~/skeys/new>>AspRectConf/script/new",
+"###repeat>>%/rectangle/run>>AspKE/script/1>>AspRectConf/script/new",
+
+"#@AspKR<>unseal/script>>AspKR>>AspRectConf/script/new",
+"##name,Loop,key,KeyR,com1,#once>>AspKR/script/run>>~/skeys/new>>AspRectConf/script/new",
+"###loop>>%/rectangle/run>>AspKR/script/1>>AspRectConf/script/new",
+
+"#@AspKF<>unseal/script>>AspKF>>AspRectConf/script/new",
+"##name,Off,key,KeyF,com1,#once>>AspKF/script/run>>~/skeys/new>>AspRectConf/script/new",
+"###off>>%/rectangle/run>>AspKF/script/1>>AspRectConf/script/new",
+
+"#@AspKT<>unseal/script>>AspKT>>AspRectConf/script/new",
+"##name,KT,key,KeyT,com1,#once>>AspKT/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##+1/rectangle/current/w>>%>>AspKT/script/1>>AspRectConf/script/new",
+"###end>>AspKT/script/run>>AspKT/script/2>>AspRectConf/script/new",
+
+"#@AspKG<>unseal/script>>AspKG>>AspRectConf/script/new",
+"##name,KG,key,KeyG,com1,#once>>AspKG/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##-1/rectangle/current/w>>%>>AspKG/script/1>>AspRectConf/script/new",
+"###end>>AspKG/script/run>>AspKG/script/2>>AspRectConf/script/new",
+
+"#@AspKY<>unseal/script>>AspKY>>AspRectConf/script/new",
+"##name,KY,key,KeyY,com1,#once>>AspKY/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##+1/rectangle/current/h>>%>>AspKY/script/1>>AspRectConf/script/new",
+"###end>>AspKY/script/run>>AspKY/script/2>>AspRectConf/script/new",
+
+"#@AspKH<>unseal/script>>AspKH>>AspRectConf/script/new",
+"##name,KH,key,KeyH,com1,#once>>AspKH/script/run>>~/skeys/new>>AspRectConf/script/new",
+"##-1/rectangle/current/h>>%>>AspKH/script/1>>AspRectConf/script/new",
+"###end>>AspKH/script/run>>AspKH/script/2>>AspRectConf/script/new"
 
 
-//*/
+
 
 	]
 
