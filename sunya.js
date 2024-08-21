@@ -1990,12 +1990,19 @@ const getCom = function(C){
 		return 'end'
 	}
 
+//these are fun.....
+	if(C=='kaoz'){kaoz = true; return true}
+
+	if(C=='zai'){kaoz = false; return true}
+
+//we need a command to capture images on the screen... and create an image buffer.... maybe its a rectangle aspect key skill.....
+
 	return
 }//getCom
 
 
 
-//we should be able to say delete>>orb/text/1 and leave this on an orb as an instruction. so comRiTarget only couls evaluate
+//we should be able to say delete>>orb/text/1 and leave this on an orb as an instruction. so comRiTarget only could evaluate
 //RS text like this... but its a problem because some signals use orb/key as target.. left>>orb/text .. left>>orb/text/1
 //so maybe we can throw an exception here, since all we really want is to use specific lines as targets, so its always 2 '/' on
 //right side. Other signals use max 1 '/' on right side.. but this is kinda inconsistent
@@ -2003,8 +2010,6 @@ const getCom = function(C){
 //WE cCOULD by default evaluate RS from comRiTarget as RSout instead of orb/key format.. this would keep consistency and allow
 //for more versatile signal script writing.... !!!!!!
 //return undefined on success, return 'end' otherwise
-//
-//
 const comRiTarget = function(signal,target,St){
 //so we already know signal is a signal not a target so not a retrieve command. lets analyze the signal by dividing it with '/'
 //signal . signal/aspect/line/param   . each signal uses more or less number of '/' .
@@ -2024,7 +2029,7 @@ const comRiTarget = function(signal,target,St){
 //signal/k1/k2/k3
 	var SS = signal.split('/');  //
 	var sig = SS[0]; var k1 = SS[1]; var k2 = SS[2]; var k3 = SS[3];
-
+// seal/aspect/aspect>>targetorb
 	if(sig=='seal'){
 		for (var i = 1; i < SS.length; i++) { 
 			//var asp = SS[i]; 
@@ -2032,11 +2037,27 @@ const comRiTarget = function(signal,target,St){
 		} 
 		return
 	}
+// unseal/aspect/aspect>>targetorb
 	if(sig=='unseal'){
 		for (var i = 1; i < SS.length; i++) { SoulSeal(to,SS[i]); } return
 	}
 
-//we can check for polarity here now
+// clone/newname>>targetorb
+	if(sig=='clone'){
+		//look if the name already has been asigned to an orb. what if it has
+		if(k1==undefined){return 'end'}
+		let l1 = staNce.length;
+		while(l1--){if(k1==staNce[l1]){return 'end'} }
+		var newo = JSON.parse(JSON.stringify(to));
+		newo.name = k1;
+		if(newo.script){newo.script=false} //we dont want to run the same scripts. that would be confusing.. maybe just seal aspects
+		if(newo.oscillator){newo.oscillator=false} //oscillators can be too annoying..we need to do the same with audio
+		//.. maybe other aspects need atention to detail here as well
+		Orbs.push(newo); staNce.push(newo.name);
+		Eout = '@'+newo.name;
+		return
+	}
+
 //... so right now we cant use polarity on beats that dont contain the target parameter but we can create those parameter
 //using transfer commands..
 //ok so maybe we want to be able to use polarity on data lines...... like  +123>>orb/text/line ... yeah thats neat
@@ -2058,7 +2079,6 @@ const comRiTarget = function(signal,target,St){
 		}else{var pol = -1;}
 	}
 
-//signals will no hold elements that we were placing on RS previously so this needs reestructuring.
 // sig to tent k1 k2 k3 pol
 
 //.. maybe we can work with pol right from here. for clarity s sake, it should be in here, not on putRiValue. details details
@@ -2347,7 +2367,7 @@ const getLeValue = function(LS,St){
 //we probably want to be able to learn from here, what aspects does the orb has active
 			);
 			
-			if(o.text){
+			if(o.txtLi){
 				//asp.push('text');
 				res.push(
 
@@ -2360,7 +2380,7 @@ const getLeValue = function(LS,St){
 					//o.name+'/text'
 				);
 			}
-			if(o.script){
+			if(o.scC){
 				//asp.push('script');
 				res.push(
 					'/script/run: '+o.scR,
@@ -2369,7 +2389,7 @@ const getLeValue = function(LS,St){
 					'/out: '+o.o
 				);
 			}
-			if(o.circle){
+			if(o.cirF){
 				//asp.push('circle');
 				res.push(
 					'/circle/x: '+o.cirS.x,
@@ -2380,7 +2400,7 @@ const getLeValue = function(LS,St){
 					'/circle/cn: '+o.cirB
 				);
 			}
-			if(o.rectangle){
+			if(o.rectF){
 				//asp.push('rectangle');
 				res.push(
 					'/rectangle/x: '+o.rectS.x,
@@ -2393,7 +2413,7 @@ const getLeValue = function(LS,St){
 
 				);
 			}
-			if(o.track){
+			if(o.trackF){
 				res.push(
 				///r:230, g:230, b:230, a:0.8, cx:eX, cy:eY, x:0, y:0, is:'track',
 				///offspeed:0.01, offset:0, tRad: 100, tCX:eX, tCY:eY, layer:0
@@ -2411,14 +2431,14 @@ const getLeValue = function(LS,St){
 					'/track/cn: '+o.trackB
 				);
 			}
-			if(o.oscillator){
+			if(o.oscTL){
 				//asp.push('oscillator');
 				res.push(
 					'/oscillator/run: '+o.oscR
 					//'/oscillator'
 				);
 			}
-			if(o.image){
+			if(o.imgF){
 				//asp.push('image');
 				res.push(
 					'/image/cx: '+o.imgS.cx,
@@ -2638,7 +2658,7 @@ const getLeValue = function(LS,St){
 					//
 				case 'text':
 //orb/text>>
-					if(o.text){
+					if(o.txtLi){
 						var dla = [];
 						for (var i = 0; i <= o.txtLi.length-1; i++) {
 							var tl = o.txtLi[i].txt;
@@ -2651,7 +2671,7 @@ const getLeValue = function(LS,St){
 
 				case 'script':
 //orb/script>>
-					if(o.script){
+					if(o.scC){
 						var scla = [];
 						for (var i = 0; i <= o.scC.length-1; i++) {
 							var scl = o.scC[i];
@@ -2662,7 +2682,7 @@ const getLeValue = function(LS,St){
 					return 'end'
 				case 'circle':
 //orb/circle>>
-					if(o.circle){
+					if(o.cirF){
 						var btt = [];
 						for (var i = 0; i <= o.cirF.length-1; i++) {
 							var bt = o.cirF[i].toString();
@@ -2674,7 +2694,7 @@ const getLeValue = function(LS,St){
 
 				case 'rectangle':
 //orb/rectangle>>
-					if(o.rectangle){
+					if(o.rectF){
 						var btt = [];
 						for (var i = 0; i <= o.rectF.length-1; i++) {
 							var bt = o.rectF[i].toString();
@@ -2685,7 +2705,7 @@ const getLeValue = function(LS,St){
 					return 'end'
 				case 'image':
 //orb/image>>
-					if(o.image){
+					if(o.imgF){
 						var btt = [];
 						for (var i = 0; i <= o.imgF.length-1; i++) {
 							var bt = o.imgF[i].toString();
@@ -2696,7 +2716,7 @@ const getLeValue = function(LS,St){
 					return 'end'
 				case 'oscillator':
 //orb/oscillator>>
-					if(o.oscillator){
+					if(o.oscTL){
 						var tla = [];
 						for (var i = 0; i <= o.oscTL.length-1; i++) {
 							var tl = o.oscTL[i].toString();
@@ -2707,7 +2727,7 @@ const getLeValue = function(LS,St){
 					return 'end'
 //orb/track>>
 				case 'track':
-					if(o.track){
+					if(o.trackF){
 						var tla = [];
 						for (var i = 0; i <= o.trackF.length-1; i++) {
 							var tl = o.trackF[i].toString();
@@ -2732,7 +2752,7 @@ const getLeValue = function(LS,St){
 		if(o){
 			var cont = SS[1]; var ckey = SS[2];
 			if(cont=='text'){
-				if(o.text){
+				if(o.txtLi){
 // orb/text/x>>
 					if(ckey=='x'){return [o.txtX];}
 // orb/text/y>>
@@ -2772,7 +2792,7 @@ const getLeValue = function(LS,St){
 			}//text
 
 			if(cont=='script'){
-				if(o.script){
+				if(o.scC){
 					//.. hmm polarity on run seems unnecesary.. but this is an interesting aproach
 					if(ckey=='run'){
 // orb/script/run
@@ -2808,7 +2828,7 @@ const getLeValue = function(LS,St){
 
 			if(cont=='image'){
 
-				if(o.image){
+				if(o.imgF){
 //these return the current image center.. thats ok we can work with that i think
 // orb/image/x
 					if(ckey=='x'){return [o.imgS.cx+o.imgS.px];}
@@ -2847,7 +2867,7 @@ const getLeValue = function(LS,St){
 
 //.. rememeber we need to consider text to beat and beat to text format transfomations in all these beat manipulations
 			if(cont=='circle'){
-				if(o.circle){
+				if(o.cirF){
 
 // orb/circle/x
 					if(ckey=='x'){return [o.cirS.x];}
@@ -2894,7 +2914,7 @@ const getLeValue = function(LS,St){
 			}//circle
 
 			if(cont=='rectangle'){
-				if(o.rectangle){
+				if(o.rectF){
 //... i think its ok to just return the state coordinates if we just ask the aspect directly... might be interesting
 					//
 // orb/rectangle/x
@@ -2941,7 +2961,7 @@ const getLeValue = function(LS,St){
 
 
 			if(cont=='track'){
-				if(o.track){
+				if(o.trackF){
 // orb/track/cx
 					//if(ckey=='cx'){return [o.trackS.cx];}
 // orb/track/cy
@@ -2987,7 +3007,7 @@ const getLeValue = function(LS,St){
 			}
 
 			if(cont=='oscillator'){
-				if(o.oscillator){
+				if(o.oscTL){
 //orb/oscillator/run>>
 					if(ckey=='run'){return [o.oscR]	}
 //.. osc and audio works differently. there is no current beat selected because all tone lines run at once and are monitored by hearall
@@ -3032,7 +3052,7 @@ const getLeValue = function(LS,St){
 			// o , cont, ckey, sub . we are retrieving here RS[1] is cont , RS[2] is ckey
 
 			if(cont=='text'){
-				if(o.text){
+				if(o.txtLi){
 					if(o.txtLi.length==0){return 'end'}//nothing here
 					if(ckey=='last'){
 						var lastl = o.txtLi[o.txtLi.length-1];
@@ -3142,7 +3162,7 @@ const getLeValue = function(LS,St){
 // orb/aspect/key/sub>>
 //this can probably be optimized......!!!!!!!!  its all using beatParam
 			if(cont=='circle'){
-				if(o.circle){
+				if(o.cirF){
 // orb/circle/beat/param>>
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
@@ -3151,7 +3171,7 @@ const getLeValue = function(LS,St){
 				}
 			}
 			if(cont=='rectangle'){
-				if(o.rectangle){
+				if(o.rectF){
 // orb/rectangle/beat/param>>
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
@@ -3160,7 +3180,7 @@ const getLeValue = function(LS,St){
 				}
 			}
 			if(cont=='image'){
-				if(o.image){
+				if(o.imgF){
 // orb/image/beat/param>>
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
@@ -3171,7 +3191,7 @@ const getLeValue = function(LS,St){
 
 
 			if(cont=='track'){
-				if(o.track){
+				if(o.trackF){
 // orb/track/beat/param>>
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
@@ -3184,7 +3204,7 @@ const getLeValue = function(LS,St){
 //we ant here something like: 
 			if(cont=='oscillator'){
 //orb/oscillator/toneline/param>>
-				if(o.oscillator){
+				if(o.oscTL){
 //ok we need to find the tone line thats playing... and change the parameters of the tone state directly.
 					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					if(ret==undefined){return 'end'}
@@ -3195,12 +3215,12 @@ const getLeValue = function(LS,St){
 			}
 			if(cont=='audio'){
 //orb/audio/audioline/param>>
-				if(o.audio){
+				//if(o.audio){
 					//var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
 					//if(ret==undefined){return 'end'}
 					//o.o = ret;//.toString();
 					//return [ret[2]]
-				}		
+				//}		
 			}
 		}
 
@@ -3277,12 +3297,7 @@ const putRiValue = function(op,RS,St){//,pol){
 					var treq1 = [0,eY];
 					var treq2 = [0,-(op[0])]
 					transLate.push(treq1,treq2);
-					//ctx0.translate(0,eY); ctx0.translate(0,-(op[0]));
 					eY=op[0]; return
-					//var res = eY+pol;
-					//ctx0.translate(0,-pol); //... remmeber when we translate we need to think in reverse.. yup crazy
-					//eY=res;
-					//return
 
 				case 'dsignat':
 // >>~/dsignat
@@ -3316,26 +3331,7 @@ const putRiValue = function(op,RS,St){//,pol){
 					if(op[0]=='~'){stancE='~'; return}
 					var ns = Fting(Orbs,'name',op[0]);
 					if(ns){stancE=op[0]; return }else{ return 'end'}
-						//return //[stancE]
-					/*
-					}else{
-						var n = staNce.indexOf(stancE);
-						var res = n+pol;
-						if(res<=0){stancE = '~'; return 'end'}
-						if(res>(staNce.length-1)){ return 'end'}//res--;}
-						var l = staNce.length; 
-						while(l--){
-							var name = staNce[l];
-							if(l==res){
-								stancE = name;
-								return //[stancE]
-							}
-						}
-						//if no match, just return to initial stance. and return end because operation failed
-						stancE = '~';
-						return 'end'//['~']
-					}
-					*/
+
 		//These commands rule. 
 				case 'inline':
 // >>~/inline
@@ -3387,7 +3383,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 				case 'script':
 // >>orb/script
-					if(o.script){
+					if(o.scC){
 					//op should be an array with instructions
 						o.scB=1; o.scC = op; return //[]  //not sure what to return here
 					}
@@ -3395,7 +3391,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 				case 'circle':
 // >>orb/circle
-					if(o.circle){
+					if(o.cirF){
 		//so circle should return circle beats on string format.. beat to array
 						var ncb = [];
 						for (var i = 0; i <= op.length-1; i++) {
@@ -3411,7 +3407,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 				case 'rectangle':
 // >>orb/rectangle
-					if(o.rectangle){
+					if(o.rectF){
 						var ncb = [];
 						for (var i = 0; i <= op.length-1; i++) {
 							var ttb = txtToB(op[i]);
@@ -3423,7 +3419,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 				case 'image':
 // >>orb/image
-					if(o.image){
+					if(o.imgF){
 						var ncb = [];
 						for (var i = 0; i <= op.length-1; i++) {
 							var ttb = txtToB(op[i]);
@@ -3436,7 +3432,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 				case 'track' :
 // >>orb/track
-					if(o.track){
+					if(o.trackF){
 						var ncb = [];
 						for (var i = 0; i <= op.length-1; i++) {
 							var ttb = txtToB(op[i]);
@@ -3451,7 +3447,7 @@ const putRiValue = function(op,RS,St){//,pol){
 					return 'end'
 
 				case 'text':
-					if(o.text){
+					if(o.txtLi){
 // >>orb/text
 //so, we can place multilines on a data container by passing in an array with lines on op
 //this command needs to clear previous data. we want to create a text from scratch using the data provided on op
@@ -3483,7 +3479,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 				case 'oscillator':
 // >>orb/oscillator
-					if(o.oscillator){
+					if(o.oscTL){
 						var nob = [];
 						for (var i = 0; i <= op.length-1; i++) {
 							var ttb = txtToB(op[i]);
@@ -3533,7 +3529,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 		if(o){
 			if(cont=='text'){
-				if(o.text){
+				if(o.txtLi){
 //these text/x and y to move all lines at once are ok .
 //... these x and y command take literal numbers
 					if(ckey=='x'){
@@ -3680,7 +3676,7 @@ const putRiValue = function(op,RS,St){//,pol){
 			}//text
 
 			if(cont=='script'){
-				if(o.script){
+				if(o.scC){
 				//.. hmm polarity on run seems unnecesary.. but this is an interesting aproach
 					if(ckey=='run'){
 // >>orb/script/run
@@ -3734,7 +3730,7 @@ const putRiValue = function(op,RS,St){//,pol){
 			}//script
 
 			if(cont=='image'){
-				if(o.image){
+				if(o.imgF){
 					if(ckey=='file'){
 // >>orb/image/file
 		//loading a file should should create a beat by default with image default properties? we expect a file name on op
@@ -3830,7 +3826,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 		//.. rememeber we need to consider text to beat and beat to text format transfomations in all these beat manipulations
 			if(cont=='circle'){
-				if(o.circle){
+				if(o.cirF){
 //... yeah this cannot be. we dont want to change states we want to change beats directly !!!!!!!!!!!
 /*
 					if(ckey=='x'){
@@ -3934,7 +3930,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 
 			if(cont=='rectangle'){
-				if(o.rectangle){
+				if(o.rectF){
 /*
 //deprecated. no need to change rects states directly... but maybe we could use rectangle center refference....... but its not consistent
 					if(ckey=='x'){
@@ -4006,7 +4002,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 
 			if(cont=='track'){
-				if(o.track){
+				if(o.trackF){
 // >>orb/track/run
 					if(ckey=='run'){
 						o.trackR=op[0];
@@ -4061,7 +4057,7 @@ const putRiValue = function(op,RS,St){//,pol){
 
 //osc are different. incomplete
 			if(cont=='oscillator'){
-				if(o.oscillator){
+				if(o.oscTL){
 					if(ckey=='run'){
 // ?>>orb/oscillator/run
 						//if(pol==0){
@@ -4104,7 +4100,7 @@ const putRiValue = function(op,RS,St){//,pol){
 			// o , pol, op , cont, ckey, sub . we are retrieving here CS[1] is cont , CS[2] is ckey
 
 			if(cont=='text'){
-				if(o.text){
+				if(o.txtLi){
 					if(o.txtLi.length==0){return 'end'}//nothing here
 
 					if(ckey=='last'){
@@ -4286,7 +4282,7 @@ const putRiValue = function(op,RS,St){//,pol){
 			}//text
 
 			if(cont=='circle'){
-				if(o.circle){
+				if(o.cirF){
 // ?>>orb/circle/beat/param
 					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
 					if(ret==undefined){return 'end'}
@@ -4295,7 +4291,7 @@ const putRiValue = function(op,RS,St){//,pol){
 				}
 			}
 			if(cont=='rectangle'){
-				if(o.rectangle){
+				if(o.rectF){
 // ?>>orb/rectangle/beat/param
 					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
 					if(ret==undefined){return 'end'}
@@ -4304,7 +4300,7 @@ const putRiValue = function(op,RS,St){//,pol){
 				}
 			}
 			if(cont=='image'){
-				if(o.image){
+				if(o.imgF){
 // ?>>orb/image/beat/param
 					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
 					if(ret==undefined){return 'end'}
@@ -4314,7 +4310,7 @@ const putRiValue = function(op,RS,St){//,pol){
 			}
 
 			if(cont=='track'){
-				if(o.track){
+				if(o.trackF){
 // ?>>orb/track/beat/param
 					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
 					if(ret==undefined){return 'end'}
@@ -4327,7 +4323,7 @@ const putRiValue = function(op,RS,St){//,pol){
 //audios are a bit different because commands changing params act on existing audio objects. 
 			if(cont=='oscillator'){
 //orb/oscillator/toneline/param
-				if(o.oscillator){
+				if(o.oscTL){
 //ok we need to find the tone line thats playing... and change the parameters of the tone state directly.
 					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
 					if(ret==undefined){return 'end'}
@@ -4360,14 +4356,6 @@ const txtToB = function(txt){
 		}else{
 			beat.push(nv);
 		}
-/*
-		if(numba==false){
-			beat.push(nv)
-		}else{
-			//.. here we could have '..'... but this is good okoko one sec
-			beat.push(ba[i]);
-		}
-*/
 	}
 	return beat
 }
@@ -4474,7 +4462,7 @@ const beatParam = function(o,cont,key,sub,op,pol){
 		}
 		
 	}
-}
+}//beatParam
 
 
 
@@ -4535,6 +4523,34 @@ const comA = function(S,C){
 		if(lsout==rsout){ if(lsout=='sig'){ return 'end'} return }else{ return 'end' }//lol this works just fine
 	}// '=='
 
+//so conditions using '==' are perfectly fine when dealing with text lines.. but dealing with number counters is not ideal because
+//sometimes numbers will skip the condition because we might use counters adding by values higher than 1. So we can
+//just implement <= >= right here to prevent this.
+ 	var MS = C.split('>=');
+	if(MS.length==2){ // just 2 sides to compare
+//conditions dont use # no more. literals will now used exlusively to create values to be used later. conditions check from text
+//or other containers
+		var LSout = getLeValue(MS[0],S); var RSout = getLeValue(MS[1],S);
+//condition >=		
+//check for left side as retrieve value.  check right side also as retrieve value. check if its numbers we can work with.compare
+		if(isNaN(LSout)){return 'end'} if(isNaN(RSout)){return 'end'}
+//return and let second ins run if any, return end if condition wasnt met.
+		if(LSout[0]>=RSout[0]){ return }else{ return 'end' }
+	}// '>='
+
+ 	var MS = C.split('<=');
+	if(MS.length==2){ // just 2 sides to compare
+//conditions dont use # no more. literals will now used exlusively to create values to be used later. conditions check from text
+//or other containers
+		var LSout = getLeValue(MS[0],S); var RSout = getLeValue(MS[1],S);
+//condition <=		
+//check for left side as retrieve value.  check right side also as retrieve value. check if its numbers we can work with.compare
+		if(isNaN(LSout)){return 'end'} if(isNaN(RSout)){return 'end'}
+//return and let second ins run if any, return end if condition wasnt met.
+		if(LSout[0]<=RSout[0]){ return }else{ return 'end' }
+	}// '<='
+
+
 /*
 so maybe we do need math .. i can imagine taking 2 values, puting them on a text, then using those values to perform
 aditions , subtractions... and even divisions... or multiplications.. operation would return 'math/res' and then we use
@@ -4558,7 +4574,7 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 		if(LS=='end'){return 'end'}
 
 		if(LS=='sig'){
-//so signals targets can now be literals or can point to a line on a list. we can always expect an orb or an entity name.
+//so signals targets can now be literals? i think not. or can point to a line on a list. we can always expect an orb or an entity name.
 //so if LS is a signal, then RS needs to be a name. we only need to ask if it reffers to a text line or if its a literal
 //... do we really need literals on signals targets?.. we already built the signal annalises function to work using the name
 //of an orb or an entity.. thats all we need realy because the signal details all go on left side.. sig/k1/k2/k3>>target
@@ -4582,6 +4598,71 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 			//if(oft==undefined){return 'end'}
 	// signal>>oft/aft/lft
 			if(aft=='text'){
+//so in here... if lft is undefined, its just orb/text.. exactly what we need for modularize signal..
+				if(lft==undefined){
+//.. but we need a way to create this structure using diferent names... or a way to change all names used by the counter structure..
+//Not only we would have to change the names of the orbs used bbut also the names that appear on the lines on all the scripts involved
+//it would have to be a function. a signal to be used on a text orb containing all the names we want to replace
+//text.replaceAll(pattern,replacement);
+//so the signal uses params with all patterns and replacements. sig/pattern1/replacement1/pattern2/replacement2..
+//we need to optimize this operation to work with our purpuse which is adapting an existing group of script orbs that work as a structure.
+//.. so maybe we could feed a list of orbs into the signal. the function will annalize all script lines on  each orb, and use the
+//line with patterns and replacements on every line and replace them. sinthax could be
+//modularize/pattern1/replacement1/pattern2/replacement2>>orb/text    The text should hold special formated lines, each line holding
+//a target orb and its target aspect. So the modularize function can work on any aspect or orb names.. script, text,circle,name.. etc
+//we can create multiple changes at once. This is an interesting operation with many utilities... yeah lets implement that.
+//orbname/aspect
+//orbname2/aspect... and so on
+//so modularize always expects a list with orb/aspect lines... working fine. good one... but... oopsie..
+//because we actually want to
+//be able to use a text line with patterns and replacements............ hmm . pattern1,replacement1,pattern2,replacement2 ...
+//lineofpatternsandreplacements>>orbname/clone ... this makes more sense i think.. but we need to be able to .... wait
+//we can also modularize a text line... we can modularize any container... this is good. dont get greedy. am sure we can do
+//really crazy stuff with this already..
+			//////////////////////////
+			if(ST[0]=='modularize'){
+// modularize/pattern1/replacement1/pattern2/replacement2>>orb/text
+				for (var i = 0; i < oft.txtLi.length; i++) {
+					var tl = oft.txtLi[i].txt;
+		//we use each line on the text to find a target
+					var oa = tl.split('/');// orb/aspect pair
+					var mo = Fting(Orbs,'name',oa[0]); //modularizing orb
+					if(mo){
+						switch(oa[1]){
+							case 'script':
+								if(mo['scC']){
+						//we check for every script line
+									for (var i2 = 0; i2 < mo.scC.length; i2++){
+										var scrl = mo.scC[i2];
+	//and replace values using ST parameters. form ST[1] forward on we find pattern/replacement pairs .
+	//we begin the loop at 1 and increase by 2 . text.replaceAll(pattern,replacement);
+										for (var i3 = 1; i3 < ST.length; i3+=2){
+											var nl = mo.scC[i2].replaceAll(ST[i3],ST[i3+1]);
+											mo.scC[i2]=nl;
+								//lets just also replace name here for now..
+											if(mo.name==ST[i3]){
+												var si = staNce.indexOf(mo.name);
+												var rname = [ST[i3+1],si];
+											}
+										}
+									}
+								}	
+								break
+							//case 'text':
+							//case 'circle':
+						}//switch
+
+						if(rname){staNce.splice(rname[1],1,rname[0]); mo.name = rname[0];}
+					}
+				}
+				return
+			}//ST[0] == modularize
+			/////////////////////////////
+					return 'end' //if we are here, then operation failed... but.. eh. ok lets leave now
+
+				}//lft undefined
+
+
 				if(lft=='last'){
 	// signal>>orb/text/last
 					if(oft.txtLi.length==0){return 'end'}//nothing here
@@ -4609,7 +4690,7 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 			}
 	////////
 			if(RST){
-//signal>>targetformtext
+//signal>>targetfromtext
 				var res = comRiTarget(sig,RST,S);		
 				if(res=='end'){return 'end'} return
 			}
@@ -4629,7 +4710,6 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 	}//'>>'
 
 //if length is 1 , its a solo command
-
 //if we still here, its an entity command with no '>>' nor '=='. It might also be a retrieve with or without '/' to be
 //printed into the current stance orb if text aspect activated
 	var com = getCom(C);
@@ -6731,9 +6811,49 @@ var o = {
 "#@AspKH<>unseal/script>>AspKH>>AspRectConf/script/new",
 "##name,KH,key,KeyH,com1,#once>>AspKH/script/run>>~/skeys/new>>AspRectConf/script/new",
 "##-1/rectangle/current/h>>%>>AspKH/script/1>>AspRectConf/script/new",
-"###end>>AspKH/script/run>>AspKH/script/2>>AspRectConf/script/new"
+"###end>>AspKH/script/run>>AspKH/script/2>>AspRectConf/script/new",
 
+//back n and forth counters tests. working perfectly
+"@bnfCnumbers<>unseal/text>>bnfCnumbers",
+"#0>>bnfCnumbers/text/1",
+"#100>>bnfCnumbers/text/2",
+"#-100>>bnfCnumbers/text/3",
+"#1>>bnfCnumbers/text/4",
+"#2>>bnfCnumbers/text/5",
 
+"@bnfCcond<>unseal/script>>bnfCcond",
+"#bnfCnumbers/text/1==bnfCnumbers/text/2<>#once>>bnfCswitchT4/script/run>>bnfCcond/script/1",
+"#bnfCnumbers/text/1==bnfCnumbers/text/3<>#once>>bnfCswitchT5/script/run>>bnfCcond/script/2",
+"#repeat>>bnfCcond/script/run",
+
+"@bnfCbeats<>unseal/script>>bnfCbeats",
+"#+1>>bnfCnumbers/text/1>>bnfCbeats/script/1",
+"#-1>>bnfCnumbers/text/1>>bnfCbeats/script/2",
+"#repeat>>bnfCbeats/script/run",
+
+"@bnfCswitchT4<>unseal/script>>bnfCswitchT4",
+"#bnfCnumbers/text/5>>bnfCbeats/script/cn>>bnfCswitchT4/script/new",
+"#bnfCnumbers/text/5>>bnfCcond/script/cn>>bnfCswitchT4/script/new",
+
+"@bnfCswitchT5<>unseal/script>>bnfCswitchT5",
+"#bnfCnumbers/text/4>>bnfCbeats/script/cn>>bnfCswitchT5/script/new",
+"#bnfCnumbers/text/4>>bnfCcond/script/cn>>bnfCswitchT5/script/new",
+
+//clone and modularize
+"clone/numbers>>bnfCnumbers",
+"clone/cond>>bnfCcond",
+"clone/beats>>bnfCbeats",
+"clone/switchT4>>bnfCswitchT4",
+"clone/switchT5>>bnfCswitchT5",
+
+"@mods<>unseal/text/script>>mods",
+"#numbers/script>>mods/text/new",
+"#cond/script>>mods/text/new",
+"#beats/script>>mods/text/new",
+"#switchT4/script>>mods/text/new",
+"#switchT5/script>>mods/text/new",
+
+"modularize/bnfCnumbers/numbers/bnfCcond/cond/bnfCbeats/beats/bnfCswitchT4/switchT4/bnfCswitchT5/switchT5>>mods/text"
 
 
 	]
