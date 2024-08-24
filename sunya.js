@@ -245,6 +245,22 @@ const OrbSoul = function(){
 const SoulSeal = function(o,asp){
 	if(o[asp]){return}
 	switch(asp){
+/*
+var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
+//an aspect with keys and tools to process data to be used by other aspects
+		case 'logi':
+			if(o.logi==false){o.logi=true; return}
+			o.logi=true;
+			o.screenx = {i:0, o:0}; o.screeny = {i:0, o:0};
+			o.random = {min:0 max:0};
+			o.offsx=0; o.offsy=0; o.tradx=0; o.trady=0; o.cx=0; o.cy=0; o.posx=0; o.posy=0;
+			break
+//and now am thining... random could perfectly be a text aspect key... screenx and screeny would make sense to be keys form the
+//rectangle aspect actually... and the funky track thing probably goes to circle aspect.. yup. this makes more sense to me than
+//creating a whole new aspect.... maybe the track funky stuff can go to script aspect.. 
+//so orb/script/random/in  , out . in takes a special format line with 2 numerical values and out returns the random current number obtained
+//so maybe we can just make all these script keys actually
+*/
 
 //maybe text and script could produce a default text to be momentarily visible and then self remove... would be a neat detail
 		case 'script':
@@ -252,6 +268,7 @@ const SoulSeal = function(o,asp){
 			o.script=true;
 			o.o=undefined;   //o for command out.. the current command running ?
 			o.cast = false; //boolean for after loop cast
+			o.screenx = []; o.screeny = []; o.random = [];
 			o.scR='off'; o.scB=1; o.scC=[];
 			break
 
@@ -260,6 +277,8 @@ const SoulSeal = function(o,asp){
 //everytime the textorb produces a line. and we can also customize this signature of course. 
 			if(o.text==false){o.text=true; return}
 			o.text=true;
+			var firstf = dsignat.slice(0);
+			o.signat = [firstf];
 			o.txtX=eX; o.txtY=eY;
 		//..i think we need control on spacer as well.. and size
 			o.spacer=15; //o.insertop='newline';
@@ -676,9 +695,8 @@ const DataLine = function(){
 		tB:1, //layer:2,
 		//use Esignature to build default beats
 //so Esignature should be a list of beats to be used on default beats
-		beats:[
-			//['a',1]
-		],
+		
+		beats:[],
 		state : {
 			is:'txt',
 			txt:'',
@@ -2384,6 +2402,7 @@ const getLeValue = function(LS,St){
 					'/text/x: '+o.txtX,
 					'/text/y: '+o.txtY,
 					'/text/cn: '+o.txtB,
+					'/text/signat: '+o.signat.toString(),
 				//.. need to implement something here to not print anything if current line dont exist..
 					//'/text/current: '+o.txtLi[o.txtB-1].txt,
 					'/in: '+o.i
@@ -2395,6 +2414,9 @@ const getLeValue = function(LS,St){
 				res.push(
 					'/script/run: '+o.scR,
 					'/script/cn: '+o.scB,
+					//'/script/random/out'
+					//'/script/screeny/out'
+					//'/script/screenx/out'
 					//'/script/current:'+o.scC[o.scB-1],
 					'/out: '+o.o
 				);
@@ -2481,10 +2503,8 @@ const getLeValue = function(LS,St){
 	if(SS.length==2){ //SS[1] is a cont
 		if(ent){
 			var k = SS[1];
-//...!!! ok we need screenx0 .. 100 .. 300 to specify how far we want to position ourselves from the corner here.
-//same with screeny. we need this because otherwise we would waste so much time building a script to do this.
-//ok. grab the word "screen", process the next symbol, x y w h , and then check for a number... so maybe switch is not apropiated for
-//this. so we test for these before the switch statement. and its working perfectly
+	/*
+	//deprecat
 			var screen = k.substr(0,6); // 'screen'
 			if(screen=='screen'){
 				var p = k.substr(6,1); //should have the next symbol
@@ -2495,7 +2515,7 @@ const getLeValue = function(LS,St){
 				if(p=='w'){return [window.innerWidth+a]}
 				if(p=='h'){return [window.innerHeight+a]}
 			}//screen
-
+	*/
 				
 			switch (k){
 
@@ -2535,12 +2555,6 @@ const getLeValue = function(LS,St){
 				//broken...
 				case 'dsignat':
 //~/dsignat>>
-					//var dsi = [];
-					//for (var i = 0; i <= dsignat.length-1; i++) {
-					//	var dsib = dsignat[i].toString();
-					//	dsi.push(dsib);
-					//}
-					//return dsi;
 					return [dsignat.slice(0).toString()]
 				case 'skeys':
 //~/skeys>>
@@ -2671,7 +2685,7 @@ const getLeValue = function(LS,St){
 //these can also probably merged into one single function!!!!!!!!!!!!!!!!!!!!!!!!!
 					//
 				case 'text':
-//orb/text>>
+// orb/text>>
 					if(o.txtLi){
 						var dla = [];
 						for (var i = 0; i <= o.txtLi.length-1; i++) {
@@ -2683,8 +2697,10 @@ const getLeValue = function(LS,St){
 					}
 					return 'end'
 
+
+
 				case 'script':
-//orb/script>>
+// orb/script>>
 					if(o.scC){
 						var scla = [];
 						for (var i = 0; i <= o.scC.length-1; i++) {
@@ -2739,6 +2755,7 @@ const getLeValue = function(LS,St){
 						return tla;
 					}
 					return 'end'
+//probly we gonna deprecat soon
 //orb/track>>
 				case 'track':
 					if(o.trackF){
@@ -2778,13 +2795,15 @@ const getLeValue = function(LS,St){
 		}
 
 		if(o){
+
 			if(cont=='text'){
 				if(o.txtLi){
 // orb/text/x>>
 					if(ckey=='x'){return [o.txtX];}
 // orb/text/y>>
 					if(ckey=='y'){return [o.txtY];}
-
+// orb/text/signat>>
+					if(ckey=='signat'){return [o.signat.slice(0).toString()]}
 // orb/text/last>>
 					if(ckey=='last'){
 						if(o.txtLi.length==0){return 'end'}//nothing here
@@ -2820,28 +2839,20 @@ const getLeValue = function(LS,St){
 
 			if(cont=='script'){
 				if(o.scC){
-					//.. hmm polarity on run seems unnecesary.. but this is an interesting aproach
-					if(ckey=='run'){
 // orb/script/run
-						return [o.scR]	
-					}
-
+					if(ckey=='run'){return [o.scR]}
+// orb/script/last
 					if(ckey=='last'){
 //... why would we want to retrieve last like script line like this tho...?
-// orb/script/last
 						var lastl = o.scC[o.scC.length-1];
 						return [lastl];
 					}
-
-					if(ckey=='current'){
 // orb/script/current
-						var currentl = o.scC[o.scB-1];
-						return [currentl];
+					if(ckey=='current'){
+						var currentl = o.scC[o.scB-1]; return [currentl];
 					}
-					if(ckey=='cn'){
 // orb/script/cn
-						return [o.scB]
-					}
+					if(ckey=='cn'){ return [o.scB]}
 // orb/script/number
 					//we need to turn ckey into a number
 					var rln = parseFloat(ckey);
@@ -3185,6 +3196,47 @@ const getLeValue = function(LS,St){
 				} 
 				return 'end'
 			}//text
+
+
+			if(cont=='script'){
+				if(o.scC){
+//i think these are working just fine...
+					if(ckey=='screenx'){
+// orb/script/screenx/in>>
+						if(sub=='in'){return [o.screenx[0]]}
+// orb/script/screenx/out>>
+						if(sub=='out'){
+							var scxs = (o.screenx[0]*window.innerWidth)/100;
+							var scx = Math.round(eX-(window.innerWidth/2)+scxs);
+							return [scx]
+						}
+					}
+
+					if(ckey=='screeny'){
+// orb/script/screeny/in>>
+						if(sub=='in'){return [o.screeny[0]]}
+// orb/script/screeny/out>>
+						if(sub=='out'){
+							var scys = (o.screeny[0]*window.innerHeight)/100;
+							var scy = Math.round(eY-(window.innerHeight/2)+scys);
+							return [scy]
+						}
+					}
+
+//..maybe we can improve on this random sinthax a bit.. we should be able to provide min and max from text lines separatedly..
+					if(ckey=='random'){
+// orb/script/random/min>>
+						if(sub=='min'){return [o.random[0]]}
+// orb/script/random/max>>
+						if(sub=='max'){ return [o.random[1]]}
+// orb/script/random/out>>
+						if(sub=='out'){ return [o.random[2]]}
+					}
+
+					return 'end'
+				}
+			}
+
 //i think we need to be able to request and also modify specific parameters on specific beats as well...? this is going to be extenuating..
 //maybe there is a different way? changing a specific element on the beat might be too complicated..? except its not necesarily so
 //we write a function similiar to beatUp but it works with a single beat line. 
@@ -3499,14 +3551,16 @@ const putRiValue = function(op,RS,St){//,pol){
 //so before clearing up o.txtLi, we check if there are as many datalines as op.length. yup this is good
 						for (var i = 0; i < op.length; i++) {
 							var text = op[i];
-//we simply want to change the text it the dataline already exist, if not, then we create a new Dataline
+//we simply want to change the text it the dataline already exist, if not, then we create a new Dataline... 
 							if(o.txtLi[i]){o.txtLi[i].txt=text;}else{
 								var Line = DataLine();
 								//Line.beats=dsignat;
 //.. but we want to be able to use a previously configured signature on the orb to create the new beats. so each orb may have
 //a diferent font, size, etc. this signature is used to create all lines on the orb and can also be customized
 //orb/text/signat !!!!!!!!!!!!!!
-								var firstf = dsignat.slice(0);
+								//if(o.)
+								//var firstf = dsignat.slice(0);
+								var firstf = o.signat.slice(0);
 								Line.beats = [firstf];
 								Line.x=o.txtX; Line.y=o.txtY;
 								Line.txt=text;
@@ -3598,7 +3652,9 @@ const putRiValue = function(op,RS,St){//,pol){
 //text/signat could hold a beats to determine how all new lines created by this orb will look by default.!!!!! unimplemented
 // >>orb/text/signat
 					if(ckey=='signat'){
-						o.tsignat = op;
+						var nb = txtToB(op[0]);
+						o.signat = nb;
+						//o.signat = op;
 					}
 
 
@@ -3622,7 +3678,8 @@ const putRiValue = function(op,RS,St){//,pol){
 					//maybe we could use all lines txtX like params to create unique lines using orb params
 							var dli = DataLine();
 							//dli.beats=dsignat; 
-							var firstf = dsignat.slice(0);
+							//var firstf = dsignat.slice(0);
+							var firstf = o.signat.slice(0);
 							dli.beats = [firstf];
 							dli.txt=op[i2];
 							dli.x=o.txtX; dli.y=o.txtY;
@@ -3639,7 +3696,8 @@ const putRiValue = function(op,RS,St){//,pol){
 						if(o.txtLi.length==0){
 							var dli = DataLine();
 							//dli.beats=dsignat;
-							var firstf = dsignat.slice(0);
+							//var firstf = dsignat.slice(0);
+							var firstf = o.signat.slice(0);
 							dli.beats = [firstf];
 							dli.txt=op[0];
 							dli.x=o.txtX; dli.y=o.txtY;
@@ -3664,7 +3722,8 @@ const putRiValue = function(op,RS,St){//,pol){
 							for (var i2 = 0; i2 < subs; i2++) {
 								var dli = DataLine();
 								//dli.beats=dsignat; 
-								var firstf = dsignat.slice(0);
+								//var firstf = dsignat.slice(0);
+								var firstf = o.signat.slice(0);
 								dli.beats = [firstf];
 								dli.txt='';
 								dli.x=o.txtX; dli.y=o.txtY;
@@ -3698,7 +3757,8 @@ const putRiValue = function(op,RS,St){//,pol){
 						for (var i2 = 0; i2 < subs; i2++) {
 							var dli = DataLine();
 							//dli.beats=dsignat; 
-							var firstf = dsignat.slice(0);
+							//var firstf = dsignat.slice(0);
+							var firstf = o.signat.slice(0);
 							dli.beats = [firstf];
 							dli.txt='';
 							dli.x=o.txtX; dli.y=o.txtY;
@@ -4327,6 +4387,36 @@ const putRiValue = function(op,RS,St){//,pol){
 				return 'end'
 			}//text
 
+			
+			if(cont=='script'){
+				if(o.scC){
+					if(ckey=='screenx'){
+// >>orb/script/screenx/in
+						if(sub=='in'){o.screenx[0] = op[0]; return}
+// >>orb/script/screenx/out
+						//if(sub=='out'){o.screenx[1] = op[0]; return}
+					}
+
+					if(ckey=='screeny'){
+// >>orb/script/screeny/in
+						if(sub=='in'){o.screeny[0] = op[0]; return}
+// >>orb/script/screeny/out
+						//if(sub=='out'){o.screeny[1] = op[0]; return}
+					}
+
+					if(ckey=='random'){
+// >>orb/script/random/min
+						if(sub=='min'){o.random[0]=op[0]; return}
+// >>orb/script/random/max
+						if(sub=='max'){o.random[1]=op[0]; return}
+// >>orb/script/random/out
+						//if(sub=='out'){o.random[2]=op[0]; return}
+					}
+
+					return 'end'
+				}
+			}
+
 			if(cont=='circle'){
 				if(o.cirF){
 // ?>>orb/circle/beat/param
@@ -4583,7 +4673,7 @@ const comA = function(S,C){
 		var LSout = getLeValue(MS[0],S); var RSout = getLeValue(MS[1],S);
 //condition >=		
 //check for left side as retrieve value.  check right side also as retrieve value. check if its numbers we can work with.compare
-		if(isNaN(LSout)){return 'end'} if(isNaN(RSout)){return 'end'}
+		if(isNaN(LSout[0])){return 'end'} if(isNaN(RSout[0])){return 'end'}
 //return and let second ins run if any, return end if condition wasnt met.
 		if(LSout[0]>=RSout[0]){ return }else{ return 'end' }
 	}// '>='
@@ -4595,7 +4685,7 @@ const comA = function(S,C){
 		var LSout = getLeValue(MS[0],S); var RSout = getLeValue(MS[1],S);
 //condition <=		
 //check for left side as retrieve value.  check right side also as retrieve value. check if its numbers we can work with.compare
-		if(isNaN(LSout)){return 'end'} if(isNaN(RSout)){return 'end'}
+		if(isNaN(LSout[0])){return 'end'} if(isNaN(RSout[0])){return 'end'}
 //return and let second ins run if any, return end if condition wasnt met.
 		if(LSout[0]<=RSout[0]){ return }else{ return 'end' }
 	}// '<='
@@ -4782,7 +4872,8 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 					if(o.txtLi[i]){o.txtLi[i].txt=text;}else{
 						var Line = DataLine();
 						//Line.beats=dsignat;
-						var firstf = dsignat.slice(0);
+						//var firstf = dsignat.slice(0);
+						var firstf = o.signat.slice(0);
 						Line.beats = [firstf];
 						Line.x=o.txtX; Line.y=o.txtY;
 						Line.txt=text;
@@ -6233,6 +6324,9 @@ function update(){ //PEAK
 			if(o.oz==o.o){ o.o=undefined; o.oz=Date.now();} 
 			if(o.o!=undefined){ o.oz = o.o;}
 
+//this is probably the best place to generate the random value using o.random array
+			if(o.random.length>=2){o.random[2] = getRandom(o.random[0],o.random[1]);}
+
 			if(o.scR=='off'){}
 			if(o.scR=='once'){ 
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
@@ -6450,7 +6544,8 @@ function update(){ //PEAK
 					//add DataLines difference 
 					for (var i2 = 0; i2 < subs; i2++) {
 						var dli = DataLine();
-						var firstf = dsignat.slice(0);
+						//var firstf = dsignat.slice(0);
+						var firstf = o.signat.slice(0);
 						dli.beats = [firstf];
 						dli.txt='';
 						dli.x=o.txtX; dli.y=o.txtY;
@@ -6462,7 +6557,8 @@ function update(){ //PEAK
 				}else{
 
 					var dli = DataLine();
-					var firstf = dsignat.slice(0);
+					//var firstf = dsignat.slice(0);
+					var firstf = o.signat.slice(0);
 					dli.beats = [firstf];
 					dli.txt=o.i;//Ein;
 					dli.x=o.txtX; dli.y=o.txtY;
@@ -6646,6 +6742,7 @@ var SunyaInit = function(device, tutorial){//tutorial no need to go here
 //FIrst sequence. will change later. for now we just want to create useful scripts to keep working
 var o = {
 	name: "FirstSequence", script: true, cast: false,
+	screenx:[], screeny:[], random:[],
 	scR: "once", scB: 1,
 	scC: [
 
@@ -6688,16 +6785,23 @@ var o = {
 //We need an orb to keep track of what configuration is active. just a text line. Other orbs can now check for this value to
 //do things that should only be dont while the specified configuration is active.
 //maybe we could use a rectangle or circle to change color to indicate what conf is active
-"@ConfTrack<>unseal/text/rectangle/script>>ConfTrack",
+"@Confeed<>unseal/text/rectangle/script>>Confeed",
+//"#~/screeny40>>Confeed/text/y<>~/screenx10>>Confeed/text/x>>Confeed/script/1",
+"#10>>Confeed/script/screenx/in",
+"#10>>Confeed/script/screeny/in",
+"#Confeed/script/screeny/out>>Confeed/text/y<>Confeed/script/screenx/out>>Confeed/text/x>>Confeed/script/1",
+"#repeat>>Confeed/script/run",
+
 		//
 //General Purpuse Main Short Keys . Digit0
 "#name,GPSkeys,key,Digit0,com1,#once>>GPSkeysConf/script/run>>~/skeys/new",
 "@GPSkeysConf<>unseal/script/text>>GPSkeysConf",
-"~/screeny100>>GPSkeysConf/text/y",
+//"~/screeny60>>GPSkeysConf/text/y",
+//maybe we can print General Purpuse buttons explenation here
+
+"##Preparing General Purpuse Main Shortcut keys...>>Confeed/text/1>>GPSkeysConf/script/new",
 
 "#@Main<>unseal/text/script>>Main>>GPSkeysConf/script/new",
-
-"##Preparing General Purpuse Main Shortcut keys...>>GPSkeysConf/text>>GPSkeysConf/script/new",
 
 "##Main>>~/stance>>GPSkeysConf/script/new",
 "#@THL<>unseal/script>>THL>>GPSkeysConf/script/new",
@@ -6714,7 +6818,7 @@ var o = {
 "##name,OrbsList,key,Space,com1,~/orbs>>%/text>>~/skeys/new>>GPSkeysConf/script/new",
 "##name,SkeysList,key,ControlRight,com1,~/skeys>>%/text>>~/skeys/new>>GPSkeysConf/script/new",
 
-"##Preparing General Purpuse Main Shortcut keys......>>GPSkeysConf/text>>GPSkeysConf/script/new",
+"##Preparing General Purpuse Main Shortcut keys......>>Confeed/text/1>>GPSkeysConf/script/new",
 
 "#@ArrowRight<>unseal/script>>ArrowRight>>GPSkeysConf/script/new",
 "##+50/x>>~>>ArrowRight/script/1>>GPSkeysConf/script/new",
@@ -6736,7 +6840,7 @@ var o = {
 "###end>>ArrowDown/script/run>>ArrowDown/script/2>>GPSkeysConf/script/new",
 "##name,Down,key,ArrowDown,com1,#once>>ArrowDown/script/run>>~/skeys/new>>GPSkeysConf/script/new",
 
-"##GPMS configuration is ready. Press Space to list all Orbs.>>GPSkeysConf/text>>GPSkeysConf/script/new",
+"##GPMS configuration is ready. Press Space to list all Orbs.>>Confeed/text/1>>GPSkeysConf/script/new",
 
 //text displace config Digit1
 //WASD
@@ -6744,7 +6848,7 @@ var o = {
 "@TextConf<>unseal/text/script>>TextConf",
 "~/screeny140>>TextConf/text/y",
 
-"##Preparing Text Aspect configuration...>>TextConf/text>>TextConf/script/new",
+"##Preparing Text Aspect configuration...>>Confeed/text/1>>TextConf/script/new",
 
 "#@AspRight<>unseal/script>>AspRight>>TextConf/script/new",
 "##name,AspRight,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new>>TextConf/script/new",
@@ -6766,14 +6870,14 @@ var o = {
 "##+50/text/y>>%>>AspDown/script/1>>TextConf/script/new",
 "###end>>AspDown/script/run>>AspDown/script/2>>TextConf/script/new",
 
-"##Text Aspect configuration is set. Use WASD to displace text lines.>>TextConf/text>>TextConf/script/new",
+"##Text Aspect configuration is set. Use WASD to displace text lines.>>Confeed/text/1>>TextConf/script/new",
 
 //Circle edit config Digit2, WASD, and others
 "#name,AspCircleConfOn,key,Digit2,com1,#once>>AspCircleConf/script/run>>~/skeys/new",
 "@AspCircleConf<>unseal/script/text>>AspCircleConf",
 "~/screeny180>>AspCircleConf/text/y",
 
-"##Preparing Circle Edit configuration...>>AspCircleConf/text>>AspCircleConf/script/new",
+"##Preparing Circle Edit configuration...>>Confeed/text/1>>AspCircleConf/script/new",
 
 "#@AspRight<>unseal/script>>AspRight>>AspCircleConf/script/new",
 "##name,AspRight,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new>>AspCircleConf/script/new",
@@ -6817,14 +6921,14 @@ var o = {
 "##-1/circle/current/radius>>%>>AspKG/script/1>>AspCircleConf/script/new",
 "###end>>AspKG/script/run>>AspKG/script/2>>AspCircleConf/script/new",
 
-"##Circle Edit configuration is set.>>AspCircleConf/text>>AspCircleConf/script/new",	
+"##Circle Edit configuration is set.>>Confeed/text/1>>AspCircleConf/script/new",	
 
 //Rect edit config . Digit3 , WASD and others
 "#name,AspRectConfOn,key,Digit3,com1,#once>>AspRectConf/script/run>>~/skeys/new",
 "@AspRectConf<>unseal/script/text>>AspRectConf",
 "~/screeny220>>AspRectConf/text/y",
 
-"##Preparing Rectangle Aspect configuration...>>AspRectConf/text>>AspRectConf/script/new",
+"##Preparing Rectangle Aspect configuration...>>Confeed/text/1>>AspRectConf/script/new",
 
 "#@AspRight<>unseal/script>>AspRight>>AspRectConf/script/new",
 "##name,AspRight,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new>>AspRectConf/script/new",
@@ -6879,7 +6983,7 @@ var o = {
 "##-1/rectangle/current/h>>%>>AspKH/script/1>>AspRectConf/script/new",
 "###end>>AspKH/script/run>>AspKH/script/2>>AspRectConf/script/new",
 
-"##Rectangle edit configuration is set.>>AspRectConf/text>>AspRectConf/script/new",
+"##Rectangle edit configuration is set.>>Confeed/text/1>>AspRectConf/script/new",
 
 
 
@@ -6887,12 +6991,22 @@ var o = {
 //Image editor config. Digit 4 Its a bit different. We could use AspImgConf to print general editor flow feedbacks 
 "#name,AspImgConfOn,key,Digit4,com1,#once>>AspImgConf/script/run>>~/skeys/new",
 "@AspImgConf<>unseal/script/text/image>>AspImgConf",
-"~/screeny260>>AspImgConf/text/y",
 //how to ask if an orb has a file on image/file... we ask if its undefined. but lets asume for now we have a file.
 //"#undefined>>AspImgConf/text>>AspImgConf/script/new",
 //"#%/image/file==AspImgConf/text<>#off>>AspImgConf/script/run>>AspImgConf/script/new",
 
-"##Preparing Image edit configuration....>>AspImgConf/text>>AspImgConf/script/new",	
+"##Preparing Image edit configuration....>>Confeed/text/1>>AspImgConf/script/new",	
+
+//so a listener is created . this listener can clean up all orbs created on edit config settings once it sees Confeed doesnt hold
+//image value on text second line.. meanwhile, it can also print image beats on the corner right up of the screen in proper
+//beats to be visible
+"#@ImgConfAssis<>unseal/text/script>>ImgConfAssis>>AspImgConf/script/new",
+//"~/screenw",
+"#repeat>>ImgConfAssis/script/run",
+		
+//create a help message with all buttons explained. we call with ControlLeft and close with ControlLeft again
+//maybe obscure the screen a bit and drop the help bomb
+"@ImgConfHelp<>unseal/text/script",
 
 //create an orb to print the whole image as bg
 "#@ImgBg<>unseal/rectangle/image/script/text>>ImgBg>>AspImgConf/script/new",
@@ -6908,7 +7022,6 @@ var o = {
 "###r,50,g,..-3?-15,b,..-10?-20,x,..-1?2,y,0,layer,1,txt,_+_+_+_+_+_+_+_+_,a,-0.1>>ImgBg/text/current/mirror>>ImgHL/script/1>>AspImgConf/script/new",
 "##loop>>ImgHL/script/run>>AspImgConf/script/new",
 		
-//create a help message with all buttons explained on Main
 
 //PageUp and PageDown to move between frames and create new ones to work with. we are skiping an instruction when we dont find
 //the current beat. its an interesting pattern
@@ -6951,6 +7064,8 @@ var o = {
 //ok how about we use a couple of keys to change between selection control and frame position control Z and X. We could just use
 //one script. We write the instructions to create both WASD controls in a single script, but we use Z and X to only run the parts
 //we are insterested in running. i like that. lets try that... maybe later
+
+//we need a fast movement mechanism...		
 		
 //Z Makes WASD move px py
 "#@ImgSelControl<>unseal/script/text>>ImgSelControl>>AspImgConf/script/new",
@@ -7010,7 +7125,10 @@ var o = {
 "##name,Off,key,KeyF,com1,#once>>AspKF/script/run>>~/skeys/new>>AspImgConf/script/new",
 
 
-"##Image edit configuration is set.>>AspImgConf/text>>AspImgConf/script/new",
+"##Image edit configuration is set.>>Confeed/text/1>>AspImgConf/script/new",
+
+
+
 
 //fast image orb
 "@gato<>unseal/image/text>>gato",
@@ -7019,6 +7137,7 @@ var o = {
 "@History<>unseal/text/script>>History",
 //"seal/text>>History", // in doesnt work when text is sealed... do we want this?
 "#~/out>>History/in>>History/script",
+"#a,0>>History/text/signat", //we cant see history now. but its there
 "#repeat>>History/script/run"
 
 /*
