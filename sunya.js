@@ -242,6 +242,7 @@ const OrbSoul = function(){
 	var id = Date.now(); var idn = id.toFixed(0);
 	o = {
 		x:eX , y:eY,
+		screenx:1, screeny:1, random:[],
 		name:idn //?
 	}
 	return o
@@ -283,7 +284,7 @@ var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
 			o.script=true;
 			o.o=undefined;   //o for command out.. the current command running ?
 			o.cast = false; //boolean for after loop cast
-			o.screenx = []; o.screeny = []; o.random = [];
+			//o.screenx = []; o.screeny = []; o.random = [];
 			//o.offsx=0; o.offsy=0; o.tradx=0; o.trady=0; o.cx=0; o.cy=0; o.posx=0; o.posy=0;
 			o.scR='off'; o.scB=1; o.scC=[];
 			o.Asp='script';
@@ -2106,7 +2107,11 @@ const comRiTarget = function(signal,target,St){
 		//look if the name already has been asigned to an orb. what if it has
 		let l1 = staNce.length;
 		while(l1--){if(tg==staNce[l1]){return 'end'} }
-		var o = OrbSoul();  SoulSeal(o,sig.substr(1)); o.name=tg; staNce.push(o.name); window[o.arr].push(o);
+		var o = OrbSoul();  SoulSeal(o,sig.substr(1)); o.name=tg; 
+		staNce.push(o.name); window[o.arr].push(o);
+		//lets inmediately store the orb index on itself maybe? maybe later its a god idea idk
+		//sw2i = scriptOrbs.indexOf(sw2);
+		//
 		//Eout = '@'+o.name;
 		return
 	}// @
@@ -2458,55 +2463,35 @@ const getLeValue = function(LS,St){
 				'/aspect: '+o.Asp,
 				'/x: '+o.x,
 				'/y: '+o.y
-				//deprecated..
-				//'/gspeed: '+o.gspeed,
-				//'/cursor: '+o.cursor,
-				//'angle: '+o.angle, 'focus: '+o.focus,
-				//o.name+'/name', o.name+'/gspeed', o.name+'/wspeed', o.name+'/in', 
-				//o.name+'/x', o.name+'/y', o.name+'/angle'
-				//o.name+'/elis' , what about focus , 
-//we probably want to be able to learn from here, what aspects does the orb has active
 			);
 			
 			if(o.txtLi){
 				if(o.txtLi[o.txtB-1]){res.push('/text/current: '+o.txtLi[o.txtB-1].txt);}
 				res.push(
-
-					//'/text/x: '+o.txtX,
-					//'/text/y: '+o.txtY,
 					'/text/cn: '+o.txtB,
 			//.. maybe we could have orb/signat .. so it aplies to all aspects.. that can apply it
 					'/text/signat: '+o.signat.toString(),
-				//.. need to implement something here to not print anything if current line dont exist..
-					//'/text/current: '+o.txtLi[o.txtB-1].txt,
 					'/in: '+o.i
-					//o.name+'/text'
 				);
 			}
 			if(o.scC){
 				if(o.scC[o.scB-1]){res.push('/script/current: '+o.scC[o.scB-1]);}
-				//asp.push('script');
 				res.push(
 					'/script/run: '+o.scR,
 					'/script/cn: '+o.scB,
-					//'/script/current:'+o.scC[o.scB-1],
 					//'/script/random/min'
 					//'/script/random/max'
 					//'/script/random/out'
-					'/script/screenx/in: '+o.screenx[0],
-					'/script/screenx/out: '+o.screenx[1],
-					'/script/screeny/in: '+o.screeny[0],
-					'/script/screeny/out: '+o.screeny[1],
+					//'/script/screenx/in: '+o.screenx[0],
+					//'/script/screenx/out: '+o.screenx[1],
+					//'/script/screeny/in: '+o.screeny[0],
+					//'/script/screeny/out: '+o.screeny[1],
 					'/out: '+o.o
 				);
 			}
 			if(o.cirF){
 				if(o.cirF[o.cirB-1]){res.push('/circle/current: '+o.cirF[o.cirB-1].toString());}
 				res.push(
-					//'/circle/x: '+o.cirS.x,
-					//'/circle/y: '+o.cirS.y,
-					//'/circle/radius: '+o.cirS.radius,
-					//'/circle/current: '+o.cirF[o.cirB-1].toString(),//o.cirR,
 					'/circle/run: '+o.cirR,
 					'/circle/cn: '+o.cirB
 				);
@@ -2514,11 +2499,6 @@ const getLeValue = function(LS,St){
 			if(o.rectF){
 				if(o.rectF[o.rectB-1]){res.push('/rectangle/current: '+o.rectF[o.rectB-1].toString());}
 				res.push(
-					//'/rectangle/x: '+o.rectS.x,
-					//'/rectangle/y: '+o.rectS.y,
-					//'/rectangle/w: '+o.rectS.w,
-					//'/rectangle/h: '+o.rectS.h,
-					//'/rectangle/current: '+o.rectF[o.rectB-1].toString(),//o.cirR,
 					'/rectangle/run: '+o.rectR,
 					'/rectangle/cn: '+o.rectB
 
@@ -2545,10 +2525,8 @@ const getLeValue = function(LS,St){
 			}
 		*/
 			if(o.oscTL){
-				//asp.push('oscillator');
 				res.push(
 					'/oscillator/run: '+o.oscR
-					//'/oscillator'
 				);
 			}
 			if(o.imgF){
@@ -2572,8 +2550,6 @@ const getLeValue = function(LS,St){
 				);
 			}
 
-			//var aspects = asp.join(',');
-			//res.push('aspects: '+aspects);
 			return res
 
 		}
@@ -2610,6 +2586,7 @@ const getLeValue = function(LS,St){
 				//case 'now': return [(Date.now()-VoidID)] 
 // ~/timer>>
 				//case 'now': return Math.round((Date.now()-VoidID)/1000)
+
 // ~/x>>
 				case 'x': return [eX] 
 // ~/y>>
@@ -2631,6 +2608,9 @@ const getLeValue = function(LS,St){
 // ~/orbs>>
 				case 'orbs':
 					//read only . return a list of all orbs in the domain of the entity
+//this is good but we want to actually see the orbs index too. and it should match the line in which they are being printed
+//staNce is good to determine if the name of the orb exist, but nothing more. ok we cant print the index of the orbs anyway
+//because now we have an array for each aspect, so lets leave this one as is
 					var aorbs = [];
 					for (var i = 1; i <= staNce.length-1; i++) { //start from 1 because 1 is '~'
 						var on = staNce[i]; aorbs.push(on);
@@ -2861,8 +2841,29 @@ const getLeValue = function(LS,St){
 			
 //we could have ~/orbs/pattern to only print orbs whose names partially match the pattern. or something like that.
 //it would be interesting to be able to only print orbs that fullfil a criteria. working fine. we could go further.. but this is
-//fine for now
-//prints all orbs whose name has the pattern matched at any place in it
+//fine for now.. ok now is no more. here is a new now
+// ~/orbsasp/aspect   Should print all orbs of the specified aspect array by index order by design. Because work flow
+			if(cont=='orbsasp'){
+				switch(ckey){
+					case 'script': aarr = scriptOrbs; break
+					case 'text': aarr = textOrbs; break
+					case 'circle': aarr = circleOrbs; break
+					case 'rectangle': aarr = rectOrbs; break
+					case 'image': aarr = imageOrbs; break
+					case 'oscillator': aarr = oscOrbs; break
+					case 'audio': aarr = audioOrbs; break
+				}
+				var aorbs = [];
+				for (var i = 1; i < aarr.length; i++) {
+					aorbs.push(aarr[i].name);
+				}
+				return aorbs
+			}
+
+//we can also use another key to match by pattern on the orbs name, but that would mess up the line index matching.. no matter,
+//we can still swap using names
+//prints all orbs whose name has the pattern matched at any place in it... and maybe here we can now say
+// ~/orbs/pattern/aspect    .. if we need to be more specific
 // ~/orbs/pattern>>
 			if(cont=='orbs'){
 				var aorbs = [];
@@ -2876,6 +2877,47 @@ const getLeValue = function(LS,St){
 
 
 		if(o){
+//basic functions all orbs should have. screenx/in and screeny/in take a number an use it to calculate a position on the screen by percentage
+//1% to 100% . the coordinate is returned on screenx/out and screeny/out
+			if(cont=='screenx'){
+// orb/screenx/in>>
+				if(ckey=='in'){ return [o.screenx]}
+// orb/screenx/out>>
+				if(ckey=='out'){
+					var scxs = (o.screenx*window.innerWidth)/100;
+					var scx = Math.round(eX-(window.innerWidth/2)+scxs);
+					//o.screenx[1] = scx;
+					return [scx]
+				}	
+			}
+			if(cont=='screeny'){
+// orb/screeny/in>>
+				if(ckey=='in'){ return [o.screeny]}
+// orb/screeny/out>>
+				if(ckey=='out'){
+					var scys = (o.screeny*window.innerHeight)/100;
+					var scy = Math.round(eY-(window.innerHeight/2)+scys);
+					//o.screeny[1] = scy;	
+					return [scy]
+				}	
+			}
+
+			if(cont=='random'){
+// orb/random/min>>
+				if(ckey=='min'){ return [o.random[0]]}
+// orb/random/max>>
+				if(ckey=='max'){ return [o.random[1]]}
+// orb/random/out>>
+				if(ckey=='out'){
+					if(o.random.length>1){
+						//o.random[2] = getRandom(o.random[0],o.random[1]);
+						let R = getRandom(o.random[0],o.random[1]);
+						return [R]
+					}
+				}
+			}
+
+
 			if(cont=='text'){
 				if(o.Asp=='text'){
 // orb/text/signat>>
@@ -3269,7 +3311,7 @@ const getLeValue = function(LS,St){
 
 			if(cont=='script'){
 				if(o.Asp=='script'){
-
+/*
 					if(ckey=='screenx'){
 // orb/script/screenx/in>>
 						if(sub=='in'){return [o.screenx[0]]}
@@ -3297,6 +3339,7 @@ const getLeValue = function(LS,St){
 					}
 
 					return 'end'
+*/
 				}
 			}
 
@@ -3308,69 +3351,6 @@ const getLeValue = function(LS,St){
 				o.o = ret;//.toString();
 				return [ret[2]]			
 			}
-/*
-			if(cont=='circle'){
-				if(o.cirF){
-// orb/circle/beat/param>>
-					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
-					if(ret==undefined){return 'end'}
-					o.o = ret;//.toString();
-					return [ret[2]]
-				}
-			}
-			if(cont=='rectangle'){
-				if(o.rectF){
-// orb/rectangle/beat/param>>
-					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
-					if(ret==undefined){return 'end'}
-					o.o = ret;//.toString();
-					return [ret[2]]
-				}
-			}
-			if(cont=='image'){
-				if(o.imgF){
-// orb/image/beat/param>>
-					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
-					if(ret==undefined){return 'end'}
-					o.o = ret;//.toString();
-					return [ret[2]]
-				}
-			}
-
-
-			if(cont=='track'){
-				if(o.trackF){
-// orb/track/beat/param>>
-					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
-					if(ret==undefined){return 'end'}
-					o.o = ret;//.toString();
-					return [ret[2]]
-				}
-			}
-
-//audios are a bit different because commands changing params act on existing audio objects.. anyway
-//we ant here something like: 
-			if(cont=='oscillator'){
-//orb/oscillator/toneline/param>>
-				if(o.oscTL){
-//ok we need to find the tone line thats playing... and change the parameters of the tone state directly.
-					var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
-					if(ret==undefined){return 'end'}
-					o.o = ret;//.toString();
-					return [ret[2]]
-				}
-			
-			}
-			if(cont=='audio'){
-//orb/audio/audioline/param>>
-				//if(o.audio){
-					//var ret = beatParam(o,cont,ckey,sub,undefined,undefined);
-					//if(ret==undefined){return 'end'}
-					//o.o = ret;//.toString();
-					//return [ret[2]]
-				//}		
-			}
-*/
 
 		}// o
 
@@ -3534,6 +3514,9 @@ const putRiValue = function(op,RS,St){//,pol){
 // >>orb/y
 				case 'y':
 					o.y=op[0]; if(o.Asp=='text'){dESpacer(o);} return
+
+	
+
 // >>orb/script
 				case 'script':
 					if(o.Asp=='script'){
@@ -3689,6 +3672,24 @@ const putRiValue = function(op,RS,St){//,pol){
 		}
 
 		if(o){
+
+//basic functions all orbs should have.
+// >>orb/screenx/in
+			if(cont=='screenx'){
+				if(ckey=='in'){ o.screenx=op[0]; return }	
+			}
+// >>orb/screeny/in
+			if(cont=='screeny'){
+				if(ckey=='in'){ o.screeny=op[0]; return }	
+			}
+			if(cont=='random'){
+// >>orb/random/min
+				if(ckey=='min'){ o.random[0] = op[0]; return }
+// >>orb/random/max
+				if(ckey=='max'){ o.random[1] = op[0]; return }
+			}
+
+
 			if(cont=='text'){
 				if(o.Asp=='text'){
 // >>orb/text/align
@@ -4202,13 +4203,14 @@ const putRiValue = function(op,RS,St){//,pol){
 // ?>>orb/text/last/mirror
 //sowhen we mirror last night, even tho we selected a different line, it didnt mirror the line selected , but kept blinking,
 //mirror line kept blinking on text/1. we need to clarify what is cn and current
+							var font = o.tstyle+' '+o.tsize+'px '+o.tfont;
 							var mirror = {
 								is:'txt',
 								txt:lastl.txt,
-								font:o.tfont,//'18px Courier New', //do we need font here.. ?
-								align:o.talign,//'left', //by default could be left
-								x:lastl.state.x,//+window.innerWidth/2,
-								y:lastl.state.y,//+window.innerHeight/2,
+								font:font,
+								align:o.talign,
+								x:lastl.state.x,
+								y:lastl.state.y,
 								r:lastl.state.r, g:lastl.state.g,
 								b:lastl.state.b, a:lastl.state.a,
 								layer:lastl.state.layer
@@ -4251,11 +4253,12 @@ const putRiValue = function(op,RS,St){//,pol){
 						}
 						if(sub=='mirror'){
 // ?>>orb/text/current/mirror
+							var font = o.tstyle+' '+o.tsize+'px '+o.tfont;
 							var mirror = {
 								is:'txt',
 					//when we select current line with no text it throws error
 								txt:currl.txt,
-								font:o.tfont,//'18px Courier New', //do we need font here.. ?
+								font:font,//'18px Courier New', //do we need font here.. ?
 								align:o.talign,//'left', //by default could be left
 								x:currl.state.x,//+window.innerWidth/2,
 								y:currl.state.y,//+window.innerHeight/2,
@@ -4312,10 +4315,11 @@ const putRiValue = function(op,RS,St){//,pol){
 					}
 					if(sub=='mirror'){
 // ?>>orb/text/1..2..3../mirror
+						var font = o.tstyle+' '+o.tsize+'px '+o.tfont;
 						var mirror = {
 							is:'txt',
 							txt:irl.txt,
-							font: o.tfont, //do we need font here.. ?
+							font: font, //do we need font here.. ?
 							align: o.talign, //by default could be left
 							x:irl.state.x,//+window.innerWidth/2,
 							y:irl.state.y,//+window.innerHeight/2,
@@ -4346,6 +4350,7 @@ const putRiValue = function(op,RS,St){//,pol){
 			
 			if(cont=='script'){
 				if(o.Asp=='script'){
+/*
 					if(ckey=='screenx'){
 // >>orb/script/screenx/in
 						if(sub=='in'){o.screenx[0] = op[0]; return}
@@ -4370,6 +4375,7 @@ const putRiValue = function(op,RS,St){//,pol){
 					}
 
 					return 'end'
+*/
 				}
 			}
 
@@ -4380,63 +4386,6 @@ const putRiValue = function(op,RS,St){//,pol){
 				//o.o = ret;//.toString();
 				return //[ret[2]]
 			}
-/*
-			if(cont=='circle'){
-				if(o.cirF){
-// ?>>orb/circle/beat/param
-					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
-					if(ret==undefined){return 'end'}
-					//o.o = ret;//.toString();
-					return //[ret[2]]
-				}
-			}
-			if(cont=='rectangle'){
-				if(o.rectF){
-// ?>>orb/rectangle/beat/param
-					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
-					if(ret==undefined){return 'end'}
-					//o.o = ret;
-					return //[ret]
-				}
-			}
-			if(cont=='image'){
-				if(o.imgF){
-// ?>>orb/image/beat/param
-					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
-					if(ret==undefined){return 'end'}
-					//o.o = ret;
-					return //[ret]
-				}
-			}
-
-//deprecat track....
-			if(cont=='track'){
-				if(o.trackF){
-// ?>>orb/track/beat/param
-					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
-					if(ret==undefined){return 'end'}
-					//o.o = ret;
-					return //[ret]
-				}
-			}
-
-
-//audios are a bit different because commands changing params act on existing audio objects. 
-			if(cont=='oscillator'){
-//orb/oscillator/toneline/param
-				if(o.oscTL){
-//ok we need to find the tone line thats playing... and change the parameters of the tone state directly.
-					var ret = beatParam(o,cont,ckey,sub,op[0],undefined);
-					if(ret==undefined){return 'end'}
-					//o.o = ret;//.toString();
-					return //[ret[2]]
-				}
-			
-			}
-			if(cont=='audio'){
-			
-			}
-*/
 		}// o
 	
 	}// length 4
@@ -4755,7 +4704,7 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 //so in here... if lft is undefined, its just orb/text.. exactly what we need for modularize signal.. and probaly all signals
 //that target multiple orbs at once .
 				if(lft==undefined){
-
+			////////
 //needs revision
 // modularize/pattern1/replacement1/pattern2/replacement2>>orb/text
 			if(ST[0]=='modularize'){
@@ -4774,7 +4723,7 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 										var scrl = mo.scC[i2];
 	//and replace values using ST parameters. form ST[1] forward on we find pattern/replacement pairs .
 	//we begin the loop at 1 and increase by 2 . text.replaceAll(pattern,replacement);
-										for (var i3 = 1; i3 < ST.length; i3+=2){
+										for (var i3 = 1; i3 <= ST.length; i3+=2){
 											var nl = mo.scC[i2].replaceAll(ST[i3],ST[i3+1]);
 											mo.scC[i2]=nl;
 								//lets just also replace name here for now..
@@ -4796,36 +4745,29 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 				return
 			}//ST[0] == modularize
 
-// @aspect>>orb/text  ...   ... we could just say @aspect>>orb/text. its more elegant
+// @aspect>>orb/text 
 			if(ST[0][0]=='@'){
+		//... some while loop in here is pushing in reverse we cant have that.. !!!!!!!
 				if(oft){ //.... wecould ancapsule many of these with this condition
 					var norbs = [];
 					for (var i = 0; i < oft.txtLi.length; i++) {
 						//create multiple orbs at once using lines as names
-						var op = oft.txtLi[i].txt;
+						var onam = oft.txtLi[i].txt;
 						var pass = true; var l1 = staNce.length;
-						while(l1--){if(op==staNce[l1]){var pass = false; break} }
-						if(pass){
-							var o = OrbSoul(); o.name=op; SoulSeal(o,ST[0].substr(1));
-							norbs.push(o); var success = true;
-						}
+						while(l1--){if(onam==staNce[l1]){var pass = false; break} }
+						if(pass){norbs.push(onam);}
 					}
-					var l2 = norbs.length;
-					while(l2--){
-						var newo = norbs.pop(); 
-						window[newo.arr].push(newo);
-						staNce.push(newo.name);
-						//Orbs.push(newo); 
-						//staNce.push(newo.name);
+					for (var i = 0; i < norbs.length; i++) {
+						var o = OrbSoul(); o.name=norbs[i]; SoulSeal(o,ST[0].substr(1));
+						window[o.arr].push(o); staNce.push(o.name);
 					}
-					//Eout = '@'+op[0]; //lets do Eout later.. should return a list of the orbs names created probly
-					if(success){return}else{return 'end'}
+
+					if(norbs.length>0){return}
+					return 'end'
 				}
-			}
+			} //@
 
-//.... .. we could simply say seal>>orb/text  ..same with unseal
 //seal>>orb/text
-
 			if(ST[0]=='seal'){
 				//console.log('ascsfvef'); am here..
 				for (var i = 0; i < oft.txtLi.length; i++) {
@@ -4842,11 +4784,27 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 				}
 				return
 			}
-					return 'end' //if we are here, then operation failed... but.. eh. ok lets leave now
+					
+//swap works with pair of lines containing script orbs names only. we use it to change the order of execution in order to get
+//the result we desire when multiple signals are targeting the same orb and parameter
+// swap>>orb/text
+			if(ST[0]=='swap'){
+				for (var i = 0; i <= oft.txtLi.length-2; i+=2) {
+					var sw1 = Fting(scriptOrbs,'name',oft.txtLi[i].txt);
+					if(sw1){}else{return 'end'}
+					var sw2 = Fting(scriptOrbs,'name',oft.txtLi[i+1].txt);
+					if(sw2){}else{return 'end'}
+					sw1i = scriptOrbs.indexOf(sw1); sw2i = scriptOrbs.indexOf(sw2);
+					scriptOrbs[sw2i] = sw1; scriptOrbs[sw1i] = sw2;
+				}
+				return		
+			}
 
+					return 'end' //if we are here, then operation failed... but.. eh. ok lets leave now
+			////////
 				}//lft undefined
 
-
+//.. signal goes to a target writen on specific line 
 				if(lft=='last'){
 	// signal>>orb/text/last
 					if(oft.txtLi.length==0){return 'end'}//nothing here
@@ -4894,14 +4852,15 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 
 	}//'>>'
 
-//if length is 1 , its a solo command
+//if length is 1 , its a solo command . 
 //if we still here, its an entity command with no '>>' nor '=='. It might also be a retrieve with or without '/' to be
 //printed into the current stance orb if text aspect activated
 	var com = getCom(C);
-	if(com=='end'){return 'end'} //return true if it was a solo command
+	if(com=='end'){return 'end'} 
 	if(com){return} //return true if it was a solo command
 
-	//if com is undefined, is a retrieve into stance text
+
+//if com is undefined, is a retrieve into stance text
 	var ret = getLeValue(C,S);
 	if(ret=='end'){return 'end'}
 	if(ret=='sig'){return 'end'} //fine.. if getLeVal doesnt find a target it return sig here..
@@ -4916,14 +4875,11 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 					var text = ret[i];
 					if(o.txtLi[i]){o.txtLi[i].txt=text;}else{
 						var Line = DataLine();
-						//Line.beats=dsignat;
-						//var firstf = dsignat.slice(0);
 						var firstf = o.signat.slice(0);
 						Line.beats = [firstf];
 						var font = o.tstyle+' '+o.tsize+'px '+o.tfont;
 						Line.state.font = font;
 						Line.state.align = o.talign;
-						//Line.x=o.txtX; Line.y=o.txtY;
 						Line.x=o.x; Line.y=o.y;
 						Line.txt=text;
 						o.txtLi.push(Line);
@@ -6394,6 +6350,7 @@ function update(){ //PEAK
 			if(o.random.length>1){o.random[2] = getRandom(o.random[0],o.random[1]);}
 			
 //we probably want other script unique like operations to run exactly here like.. the track thin and screenx , y calculations..!!!!!!!
+//no. This doesnt make sense. we dont want to calculate this everytime, only when we use it... probably
 			if(o.screenx.length>0){
 				var scxs = (o.screenx[0]*window.innerWidth)/100;
 				var scx = Math.round(eX-(window.innerWidth/2)+scxs);
@@ -6876,13 +6833,37 @@ var o = {
 //maybe we could use a rectangle or circle to change color to indicate what conf is active
 
 //config feedback text, Confeed
-"@text>>Confeed",
+//"@text>>Confeed",
 //locate Confeed text script, ConfeedPos
-"@script>>ConfeedPos",
-"#10>>ConfeedPos/script/screenx/in",
-"#10>>ConfeedPos/script/screeny/in",
-"#ConfeedPos/script/screeny/out>>Confeed/y<>ConfeedPos/script/screenx/out>>Confeed/x>>ConfeedPos/script/1",
-"#repeat>>ConfeedPos/script/run",
+//"@script>>ConfeedPos",
+//"#10>>ConfeedPos/script/screenx/in",
+//"#10>>ConfeedPos/script/screeny/in",
+//"#ConfeedPos/script/screeny/out>>Confeed/y<>ConfeedPos/script/screenx/out>>Confeed/x>>ConfeedPos/script/1",
+//"#repeat>>ConfeedPos/script/run",
+
+//!!!!!!!!!!!!PEAK
+//Main0 . Prints history with tab, prints orbs with space. clears with backspace. appears positioned on the top right corner when
+//printing, also is selected. vibes with colors so its always visible
+"@text>>Main0",
+"#right>>Main0/text/align",
+"#r,..3?230,g,..4?240,b,..5?250,a,1,layer,1>>Main0/text/signat",
+"#100>>Main0/screenx/in",
+"#8>>Main0/screeny/in",
+
+//a Main1 text orb for general purpuses. selected on start
+"@text>>Main",
+"#r,30,g,..100?240,b,200,a,1,layer,1>>Main/text/signat",
+"#2>>Main/screenx/in",
+"#8>>Main/screeny/in",
+"#Main>>~/stance",
+//and then we could do this to position itself. each orb holds a key place holder to store a possible screen percentage value position
+//.. yeah this feels absoultely right. not anymore. 
+//Main0/screenx>>Main0/x<>Main0/screeny>>Main0/y
+
+//maybe backspace could clear Main texts..
+
+//so maybe period could print a number of options on the screen for use to select one like, a new speed... a new set of parameters
+//to asign to WASD... hmm.. how about creating a loop. YES. PREBUILT SCRIPTS. GENIUS
 
 //give me a history text orb
 "@text>>History",
@@ -6891,59 +6872,58 @@ var o = {
 "@script>>HistoryRegister",
 "#~/out>>History/in>>HistoryRegister/script",
 "#repeat>>HistoryRegister/script/run",
+
+//we want to press Tab , and print history content to Main0, and select line 1. useful
+"@script>>HistoryRecall",
+"##Main0>>~/stance>>HistoryRecall/script/1",
+"#History/text>>Main0/text>>HistoryRecall/script/2",
+"##1>>Main0/text/cn>>HistoryRecall/script/3",
+"#Main0/screenx/out>>Main0/x<>Main0/screeny/out>>Main0/y>>HistoryRecall/script/4",
+
+//a script to print Orbs lists on Main0.. maybe it can use a mechanism to adjust what to print but for now just print all orbs
+"@script>>OrbsLister",
+"##Main0>>~/stance>>OrbsLister/script/1",
+"#~/orbs>>Main0/text>>OrbsLister/script/2",
+"#Main0/screenx/out>>Main0/x<>Main0/screeny/out>>Main0/y>>OrbsLister/script/3",
+
+//a script to get status from the orb by name matching the currently selected text line and print it on Main. Also recalls Main to the top
+//left corner
+"@script>>GetStatus",
+"#%/text/current>>~/stance<>%>>Main/text>>GetStatus/script/1",
+"#Main/screenx/out>>Main/x<>Main/screeny/out>>Main/y>>GetStatus/script/2",
+
 //Text Highlight
 "@script>>THL",
 "##r,..4?25,g,-130,b,..20?50,x,..-1?2,y,0,layer,1,txt,-+-+-+-+-+-+-+,a,-0.1>>%/text/current/mirror>>THL/script",
 "#loop>>THL/script/run",
 
-//GPSkeys text container. a list of skeys to add at once ... what is going on why am i creating this ghost button at the end?
-		//look press control
+//GPSkeys text container. a list of skeys to add at once 
 "@text>>GPskeys",
-":name,MainToStance,key,Home,com1,#Main>>~/stance name,NoOrbStance,key,End,com1,#~>>~/stance name,RmLine,key,Delete,com1,rmline/text/current>>% name,ComLineGrab,key,KeyO,com1,%/text/current>>~/comline name,InLineGrab,key,KeyI,com1,%/text/current>>~/inline name,PrevLine,key,KeyB,com1,-/text/cn>>% name,NextLine,key,KeyN,com1,+/text/cn>>% name,SelStance,key,KeyM,com1,$/text/current>>~/stance name,OrbsList,key,Space,com1,~/orbs>>%/text name,SkeysList,key,ControlRight,com1,~/skeys>>%/text name,EntRight,key,ArrowRight,com1,#once>>EntRight/script/run name,EntLeft,key,ArrowLeft,com1,#once>>EntLeft/script/run name,EntUp,key,ArrowUp,com1,#once>>EntUp/script/run name,EntDown,key,ArrowDown,com1,#once>>EntDown/script/run name,AspRight,key,KeyD,com1,#once>>AspRight/script/run name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run name,AspUp,key,KeyW,com1,#once>>AspUp/script/run name,AspDown,key,KeyS,com1,#once>>AspDown/script/run name,Repeat,key,KeyE,com1,#once>>KeyE/script/run name,Loop,key,KeyR,com1,#once>>KeyR/script/run name,Off,key,KeyF,com1,#once>>KeyF/script/run name,KT,key,KeyT,com1,#once>>KeyT/script/run name,KG,key,KeyG,com1,#once>>KeyG/script/run name,KY,key,KeyY,com1,#once>>KeyY/script/run name,KH,key,KeyH,com1,#once>>KeyH/script/run name,KU,key,KeyU,com1,#once>>KeyU/script/run name,KJ,key,KeyJ,com1,#once>>KeyJ/script/run name,KZ,key,KeyZ,com1,#once>>KeyZ/script/run name,KX,key,KeyX,com1,#once>>KeyX/script/run name,KTab,key,Tab,com1,History/text>>%/text >>GPskeys/text",
+":name,MainToStance,key,Home,com1,#Main>>~/stance name,NoOrbStance,key,End,com1,#~>>~/stance name,RmLine,key,Delete,com1,rmline/text/current>>% name,ComLineGrab,key,KeyO,com1,%/text/current>>~/comline name,InLineGrab,key,KeyI,com1,%/text/current>>~/inline name,PrevLine,key,KeyB,com1,-/text/cn>>% name,NextLine,key,KeyN,com1,+/text/cn>>% name,SelStance,key,KeyM,com1,$/text/current>>~/stance name,OrbsList,key,Space,com1,#once>>OrbsLister/script/run name,SkeysList,key,ControlRight,com1,~/skeys>>%/text name,GetStatus,key,Comma,com1,#once>>GetStatus/script/run name,EntRight,key,ArrowRight,com1,#once>>EntRight/script/run name,EntLeft,key,ArrowLeft,com1,#once>>EntLeft/script/run name,EntUp,key,ArrowUp,com1,#once>>EntUp/script/run name,EntDown,key,ArrowDown,com1,#once>>EntDown/script/run name,AspRight,key,KeyD,com1,#once>>AspRight/script/run name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run name,AspUp,key,KeyW,com1,#once>>AspUp/script/run name,AspDown,key,KeyS,com1,#once>>AspDown/script/run name,Repeat,key,KeyE,com1,#once>>KeyE/script/run name,Loop,key,KeyR,com1,#once>>KeyR/script/run name,Off,key,KeyF,com1,#once>>KeyF/script/run name,KT,key,KeyT,com1,#once>>KeyT/script/run name,KG,key,KeyG,com1,#once>>KeyG/script/run name,KY,key,KeyY,com1,#once>>KeyY/script/run name,KH,key,KeyH,com1,#once>>KeyH/script/run name,KU,key,KeyU,com1,#once>>KeyU/script/run name,KJ,key,KeyJ,com1,#once>>KeyJ/script/run name,KZ,key,KeyZ,com1,#once>>KeyZ/script/run name,KX,key,KeyX,com1,#once>>KeyX/script/run name,KTab,key,Tab,com1,#once>>HistoryRecall/script/run >>GPskeys/text",
 //no need to see this no more
 "seal>>GPskeys",
-
-//create a list of names for button scripts
-"@text>>GPsorbs",
-":KeyE KeyR KeyF KeyT KeyG KeyY KeyH KeyU KeyJ KeyZ KeyX EntRight EntLeft EntUp EntDown AspRight AspLeft AspUp AspDown >>GPsorbs/text",
-//no need to see this no more
-"seal>>GPsorbs",
-
-
 //use container to create buttons at once
 "GPskeys/text>>~/skeys",
 
+
+//create a list of names for button to create scripts
+"@text>>GPsorbs",
+":KeyE KeyR KeyF KeyT KeyG KeyY KeyH KeyU KeyJ KeyZ KeyX EntRight EntLeft EntUp EntDown AspRight AspLeft AspUp AspDown >>GPsorbs/text",
+//no need to see this either
+"seal>>GPsorbs",
 //use list to build scripts at once
 "@script>>GPsorbs/text",
 
-
 //make a text list for each config. and just run the lines to update the buttons when a configuration is requested
+//...so yeah we could just use ":" sinthax to create all the lines at once for every script as well like
+//:ins1 ins2 ins3 >>target/script
+//:ins1 ins2 >>target/script
+"@script>>GPconfSet",
+":#+50/x>>~>>EntRight/script/1 ##end>>EntRight/script/run>>EntRight/script/2 #-50/x>>~>>EntLeft/script/1 ##end>>EntLeft/script/run>>EntLeft/script/2 #-50/y>>~>>EntUp/script/1 ##end>>EntUp/script/run>>EntUp/script/2 #+50/y>>~>>EntDown/script/1 ##end>>EntDown/script/run>>EntDown/script/2 #+50/x>>%>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-50/x>>%>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-50/y>>%>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+50/y>>%>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 >>GPconfSet/script",
+//autorun for now. but yeah this should be Conf0
+"#once>>GPconfSet/script/run"
 
-//ent displacement scripts
-"#+50/x>>~>>EntRight/script/1",
-"##end>>EntRight/script/run>>EntRight/script/2",
 
-"#-50/x>>~>>EntLeft/script/1",
-"##end>>EntLeft/script/run>>EntLeft/script/2",
-
-"#-50/y>>~>>EntUp/script/1",
-"##end>>EntUp/script/run>>EntUp/script/2",
-
-"#+50/y>>~>>EntDown/script/1",
-"##end>>EntDown/script/run>>EntDown/script/2",
-
-//aspect displacement scripts. 
-"#+50/x>>%>>AspRight/script/1",
-"##end>>AspRight/script/run>>AspRight/script/2",
-
-"#-50/x>>%>>AspLeft/script/1",
-"##end>>AspLeft/script/run>>AspLeft/script/2",
-
-"#-50/y>>%>>AspUp/script/1",
-"##end>>AspUp/script/run>>AspUp/script/2",
-
-"#+50/y>>%>>AspDown/script/1",
-"##end>>AspDown/script/run>>AspDown/script/2",	
 
 //other buttons
 //"##repeat>>%/circle/run>>KeyE/script/1",
@@ -6957,11 +6937,6 @@ var o = {
 
 //"##-1/circle/current/radius>>%>>KeyG/script/1>>AspCircleConf/script/new",
 //"##end>>KeyG/script/run>>KeyG/script/2",
-
-//a Main text orb for general purpuses
-"@text>>Main",
-"#Main>>~/stance"
-
 
 
 /*
@@ -7519,3 +7494,12 @@ that the previous interval has completed before recursing.
 		ctx0.stroke();
 	}
 */
+
+
+/*
+script loop, script orb annalize current instruction, ... yeah we can just ask again every orb for their stack changes...
+text loop, ask each orb for change stacks, perform changes
+
+*/
+
+
