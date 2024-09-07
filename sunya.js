@@ -13,6 +13,7 @@ var kaoz = false;//false;//undefined; //where is zai? :(
 //var zai = 0.5;//false;//undefined; //deprecat..
 var keyboardEnabled = undefined;
 var jsonIn=false;
+var ALL = undefined; //container for tests
 //time update tracker
 //var tut = undefined;
 var regxt = new RegExp('text'); //just define regex once on globals ///////////testing
@@ -265,13 +266,12 @@ var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
 			if(o.script==false){o.script=true; return}
 			o.script=true;
 			o.o=undefined;   //o for command out.. the current command running ?
-			o.cast = false; //boolean for after loop cast
+			//o.cast = false; //boolean for after loop cast
 			//o.screenx = []; o.screeny = []; o.random = [];
 			//o.offsx=0; o.offsy=0; o.tradx=0; o.trady=0; o.cx=0; o.cy=0; o.posx=0; o.posy=0;
 			o.scR='off'; o.scB=1; o.scC=[];
 			o.Asp='script';
 			o.arr='scriptOrbs';
-			//var arr = 'scriptOrbs';
 			return true//arr
 			//break
 
@@ -377,7 +377,7 @@ var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
 			];
 			o.imgB=1; o.imgR='repeat'; //o.imgL=0;
 			o.imgS={
-				img:undefined,  is:'img',
+				img:undefined,  is:'img', wait:0, waitc:0,
 				x:0, y:0, w:0, h:0, px:0, py:0, cx:eX, cy:eY, pw:0, ph:0, a:1,
 				layer:0
 			};
@@ -547,7 +547,9 @@ all.media_s = function(url_audio, destination){
 				//'start,0,duration,2,freq,439,gain,0.07,fadein,0.3,fadeout,0.3'
 				//[]
 			];
-			//o.oscB=1; 
+	//.. we want oscB to manage the tonelines, even tho osc are different, we dont beatUp, we can still use beat mechanic to
+	//select tonelines
+			o.oscB=1; 
 			o.oscR='off'; 
 			o.oscPA=false;
 			o.Asp='oscillator';
@@ -1798,7 +1800,18 @@ const kdown = function(ev){
 				jsonIn=false; chat_in.blur(); chat_in.style.display="none";
 				return
 			}
-			Orbs = JSON.parse(chat_in.value);
+//ok so we want to restart from the new data or we want to ADD these orbs into the existing ones.. kinda tricky.. we should be able to
+//recall groups of orbs specifically but this option prbably is ok if it replaces all arrays with input data, we want to restore a state
+//of the run completely. for now. needs better names than jsonin jsonout i think
+//var all = [textOrbs,scriptOrbs,imageOrbs,circleOrbs,rectOrbs,oscOrbs,audioOrbs];
+			ALL = JSON.parse(chat_in.value); //how does this look
+			audioOrbs = ALL.pop();
+			oscOrbs = ALL.pop();
+			rectOrbs = ALL.pop();
+			circleOrbs = ALL.pop();
+			imageOrbs = ALL.pop();
+			scriptOrbs = ALL.pop();
+			textOrbs = ALL.pop();
 			jsonIn=false;
 			chat_in.value = ""; chat_in.blur(); chat_in.style.display="none";
 			return
@@ -1822,7 +1835,7 @@ const kdown = function(ev){
 					
 				}
 //what if we just run a command. '~/inline>>'+stancE+/in . So now we just check for o.i . Looks much cleaner
-				var inp = '~/inline>>'+stancE+'/in';
+				var inp = '~/inline>>'+stancE+'/in'; //!!!!! there is /in on ~/inline...
 				//console.log(inp);
 				//Entry = inp;
 				comA(undefined,inp);
@@ -2005,24 +2018,9 @@ const getCom = function(C){
 //so orbs can be unsealed multiple aspect in one line. This makes sense.. however am not sure if we want to necesarily create the
 //orb if it doesnt exist. Its interesting to set a script to wait for the existence of a specificaly named orb. we dont want to 
 //sacrifice that. But multi aspects in one line is good... we are doing unseal/aspect1/aspect2..>>targetorb now
-/*
-	var CS = C.split('/');
-	if(CS[0]=='@'){
-// @/aspect/orbname ...... should be @/aspect>>newname
-		var oname = CS[2];
-		//look if the name already has been asigned to an orb. what if it has
-		let l1 = staNce.length;
-		while(l1--){if(oname==staNce[l1]){return 'end'} }
-		var o = OrbSoul(); SoulSeal(o,CS[1]);
-		//if(oname!=''){o.name=oname;}
-		o.name=oname;
-		staNce.push(o.name);
-		window[o.arr].push(o);
-		//Orbs.push(o); 
-		//Eout = '@'+o.name;
-		return true
-	}// @
-*/
+
+
+	
 	if(C=='loadimage'){
 //loadimg . create a buffer for an image file on local machine 
 		Eout='loadimage';
@@ -2047,11 +2045,22 @@ const getCom = function(C){
 //var newo = JSON.parse(JSON.stringify(to));
 //PEAKPEAK .. now we want to go trough all orbs arrays.....!!!!!!!!
 //we could say jsonout/textorbs , etc, or maybe we could just say jsonout/targetorb ... that would be handy
+//OR even better, we could do jsonout>>orb/text , and stringify all orb on the list. but on its own, jsonout
+//could simply stringify all orbs.. and shortkeys?
 	if(C=='jsonout'){
-//so we need to stringify all 7 aspectOrbs arrays now....
-		var all = JSON.stringify(Orbs);
+//so we need to stringify all 7 aspectOrbs arrays now. maybe we can put all arrays into one before stringifying
+		var all = [textOrbs,scriptOrbs,imageOrbs,circleOrbs,rectOrbs,oscOrbs,audioOrbs];
+		var jsonall = JSON.stringify(all);
+		//var texto = JSON.stringify(textOrbs);
+		//var scripto = JSON.stringify(scriptOrbs);
+		//var imageo = JSON.stringify(imageOrbs);
+		//var circleo = JSON.stringify(circleOrbs);
+		//var recto = JSON.stringify(rectOrbs);
+		//var osco = JSON.stringify(oscOrbs);
+		//
+		//var all = JSON.stringify(Orbs);
 		//var alldata = op.join(' ');
-		chat_in.value = all;//op[0]//we want RSout here
+		chat_in.value = jsonall//all;//op[0]//we want RSout here
 		chat_in.style.display="inLine";
 		//chatOn = true; 
 		nLine = true; //inline prompt
@@ -2099,6 +2108,7 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 	if(tar[0]=='$'){var to = FFting('name',S);}
 	if(to==undefined){var to = FFting('name',tar[0]);}
 	//var to = FFting('name',tar[0]);
+//we can pobly put many of these undes a single if(to) ....
 	if(to){
 		if(tar[1]=='text'){
 			if(to.Asp=='text'){
@@ -2283,16 +2293,17 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 
 
 //uses to
+//... yeah we should be able to also remove beats from aspects.!!!!!!!!
+//EDat/text/2==#circle<>#6>>RmBeat/script/cn
+//line 6.. rmline/circle/current>>%
 //rmline can simply be written like this now:
-//rmline>>orb/text/line    , optionally, no line to just remove all text lines..... unimplemented
-//... yeah we should be able to also remove beats from aspects.
-
-//rmline/cont/line>>target   .. this sinthax... oh gosh i dont want to keep changing shit!!!!!!
+//rmline>>orb/text/line    ,  use all to remove all lines or beats
 	if(to){
 		if(sig[0]=='rmline'){
 	//this is fine. maybe later we can implement rmline to remove multiple line targets!!
 	//Do we want to be able to remove lines from entities containers?.maybe
-			switch(sig[1]){
+			//switch(sig[1]){
+			switch(tar[1]){
 				case 'text': var contstr = 'txtLi'; var bstr = 'txtB'; break
 				case 'script': var contstr = 'scC'; var bstr = 'scB'; break
 				case 'circle': var contstr = 'cirF'; var bstr = 'cirB'; break
@@ -2307,7 +2318,7 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 					var contstr = 'oscTL'; 
 					if(to.oscPA){
 			//... what about rmline/oscillator/all ... should remove all tone lines.
-						var k = parseFloat(k2);
+						var k = parseFloat(tar[2]);
 						for (var i = 0; i < oscCue.length; i++) {
 							var os = oscCue[i];
 							if(os.origin==to.name){
@@ -2322,7 +2333,7 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 				return 'end'//return if no cont match
 			}
 
-			switch(sig[2]){
+			switch(tar[2]){
 				case 'all':
 					var kstr = 'all';
 				case 'current':
@@ -2334,13 +2345,13 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 					if(isNaN(kstr)){return 'end'}
 				default:
 					//line is a number now.. not sure if parse is necesary again.. ? 
-					var k = parseFloat(sig[2]);
+					var k = parseFloat(tar[2]);
 					var kstr = k-1; 
 					if(isNaN(kstr)){return 'end'}
 					break
 			}
 
-			if(sig[2]=='all'){
+			if(tar[2]=='all'){
 				//if(k1=='oscillator'){} ////we need to remove all oscillator tones if active..
 				to[contstr].splice(0); return
 			}
@@ -2349,11 +2360,12 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 			var B = to[contstr];//[kstr];
 			if(B[kstr]){
 				to[contstr].splice(kstr,1); 
-				if(sig[1]=='text'){
+				if(tar[1]=='text'){
 					dESpacer(to);
-					Eout = 'rmline>>'+to.name//target;//we need a better output structure to annalize i think
-					return
+					//Eout = 'rmline>>'+to.name//target;//we need a better output structure to annalize i think
+					//return
 				}
+				return
 			}
 			
 			return 'end' //return end if no rmline match because the operation failed and so second ins if any cant execute
@@ -2395,10 +2407,23 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 			return 'end'
 		}
 
-	//uses to
-	//lets make delete now take a single orb name or orb reff . to . later we make it work with multi!!
-	// delete>>orb
+	// delete>>orb  ,  orb/text            ... sometimes it doesnt delete all orbs tho..ouu i get it, init orbs are not in staNce okok 
 		if(sig[0]=='delete'){
+			if(mult){
+				for (var i = 0; i < mult.length; i++) {
+					var delo = FFting('name',mult[i]);
+					if(delo){
+						var ioo = window[delo.arr].indexOf(delo);
+						if(ioo==undefined){continue}
+						var iooo = staNce.indexOf(delo.name);
+						staNce.splice(iooo,1);
+						window[delo.arr].splice(ioo,1);
+					}
+				}
+				if(delo){return}else{return 'end'}	
+			}
+
+
 			//var toarr = to.arr;
 			var ioo = window[to.arr].indexOf(to);
 			if(ioo==undefined){return 'end'}
@@ -2529,35 +2554,46 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 //pol/orb/line>>		This means we want to take a number on a text line and use it as pol value , we might want to add
 //				current, last , etc...
 
-	var psign = sig[0][0];
-	var pol = 0; var poladd = 0;
-	if(sig[1]){
-		if(psign=='+'||psign=='-'){ //this could be written better
-			var polto = Fting(textOrbs,'name',sig[1]);
-			if(polto){
-				if(polto.txtLi[sig[2]-1]){
-					var poline = polto.txtLi[sig[2]-1].txt; var pol = parseFloat(poline); if(isNaN(pol)){return 'end'}
-					if(psign=='+'){pol = pol*1;} if(psign=='-'){pol = pol*-1;}
-				}
+	var psign = sig[0][0]; var pol = 0; 
+
+	if(psign=='+'){
+		var pol = 1;
+		var polto = Fting(textOrbs,'name',sig[1]);
+		if(polto){
+			if(polto.txtLi[sig[2]-1]){
+				var poline = polto.txtLi[sig[2]-1].txt;
+				var pol = parseFloat(poline); if(isNaN(pol)){return 'end'}
+			}
+		}
+		if(sig[0].length>1){
+			var nnum = sig[0].substr(1); var num = parseFloat(nnum);
+			if(isNaN(num)){
+				return 'end'
+			}else{
+				if(poline){pol = pol+num;}else{ pol = num;}
 			}
 		}
 	}
-	
-	if(psign=='+'){
-		if(sig[0].length>1){
-			var nnum = sig[0].substr(1); var num = parseFloat(nnum);
-			if(isNaN(num)){poladd = 1;}else{poladd = num*1;}
-		}else{poladd = 1;}
-	}
 
 	if(psign=='-'){
+		var pol = -1;
+		var polto = Fting(textOrbs,'name',sig[1]);
+		if(polto){
+			if(polto.txtLi[sig[2]-1]){
+				var poline = polto.txtLi[sig[2]-1].txt;
+				var pol = parseFloat(poline)*-1; if(isNaN(pol)){return 'end'}
+			}
+		}
 		if(sig[0].length>1){
-			var nnum = sig[0].substr(1); var num = parseFloat(nnum);
-			if(isNaN(num)){poladd = -1;}else{poladd = num*-1;}
-		}else{poladd = -1;}
+			var nnum = sig[0].substr(1); var num = parseFloat(nnum)*-1;
+			if(isNaN(num)){
+				return 'end'
+			}else{
+				if(poline){pol = pol+num;}else{ pol = num;}
+			}
+		}
 	}
 
-	pol = pol+poladd;
 
 //POLARITY
 //ok i know what i want to do with polarity now. i want to send a polarity signal into a text with access keys, and yes, add to all
@@ -2874,7 +2910,7 @@ const getLeValue = function(LS,o){ //(LS,o) ... so LS needs to always be an arra
 //staNce is good to determine if the name of the orb exist, but nothing more. ok we cant print the index of the orbs anyway
 //because now we have an array for each aspect, so lets leave this one as is
 					var aorbs = [];
-					for (var i = 0; i <= staNce.length-1; i++) { //start from 1 because 1 is '~'.. but this is not bad?
+					for (var i = 1; i <= staNce.length-1; i++) { //start from 1 because 1 is '~'.. but this is not bad?
 						var on = staNce[i]; aorbs.push(on);
 					}
 					return aorbs
@@ -3037,8 +3073,8 @@ const getLeValue = function(LS,o){ //(LS,o) ... so LS needs to always be an arra
 //we could have ~/orbs/pattern to only print orbs whose names partially match the pattern. or something like that.
 //it would be interesting to be able to only print orbs that fullfil a criteria. working fine. we could go further.. but this is
 //fine for now.. ok now is no more. here is a new now
-// ~/orbsasp/aspect   Should print all orbs of the specified aspect array by index order by design. Because work flow
-			if(cont=='orbsasp'){
+// ~/orbs/aspect   Should print all orbs of the specified aspect array by index order by design. Because work flow
+			if(cont=='orbs'){
 				switch(ckey){
 					case 'script': aarr = scriptOrbs; break
 					case 'text': aarr = textOrbs; break
@@ -3054,21 +3090,9 @@ const getLeValue = function(LS,o){ //(LS,o) ... so LS needs to always be an arra
 				}
 				return aorbs
 			}
-
-//we can also use another key to match by pattern on the orbs name, but that would mess up the line index matching.. no matter,
-//we can still swap using names
-//prints all orbs whose name has the pattern matched at any place in it... and maybe here we can now say
-// ~/orbs/pattern/aspect    .. if we need to be more specific. yeah i think this one is prety. probly implement this later
-// ~/orbs/pattern>>
-			if(cont=='orbs'){
-				var aorbs = [];
-				for (var i = 1; i < staNce.length; i++) {
-					var regex = new RegExp(ckey); var on = staNce[i]; var match = regex.test(on);
-					if(match){aorbs.push(on);}
-				}
-				return aorbs
-			}
 		}
+
+
 
 		if(o){
 //basic functions all orbs should have. screenx/in and screeny/in take a number an use it to calculate a position on the screen by percentage
@@ -3409,12 +3433,37 @@ const getLeValue = function(LS,o){ //(LS,o) ... so LS needs to always be an arra
 	if(LS.length==4){ 
 		var cont = LS[1]; var ckey = LS[2]; var sub =LS[3];
 		if(ent){
-// ~/cont/ckey/sub>>
-			// reff.
-			//if(RS[0]=='~'){
-			//cant think about 3 '/' on left side for '~' yet..
-				//return
-			//}
+//we can also use another key to match by pattern on the orbs name, but that would mess up the line index matching.. no matter,
+//we can still swap using names
+//prints all orbs whose name has the pattern matched at any place in it... and maybe here we can now say
+//... i think it would make more sense like this :
+//~/orbs/aspect/pattern
+			if(cont=='orbs'){
+				switch(ckey){
+					case 'script': aarr = scriptOrbs; break
+					case 'text': aarr = textOrbs; break
+					case 'circle': aarr = circleOrbs; break
+					case 'rectangle': aarr = rectOrbs; break
+					case 'image': aarr = imageOrbs; break
+					case 'oscillator': aarr = oscOrbs; break
+					case 'audio': aarr = audioOrbs; break
+					case 'all': var all = true; break
+				}
+				var aorbs = [];
+				if(all){
+					for (var i = 1; i < staNce.length; i++) { //start from 1 because 1 is '~'.. confusing ik
+						var regex = new RegExp(sub); var on = staNce[i]; var match = regex.test(on);
+						if(match){aorbs.push(on);}
+					}
+					return aorbs				
+				}
+				for (var i = 1; i < aarr.length; i++) {
+					var regex = new RegExp(sub); var on = aarr[i].name; var match = regex.test(on);
+					if(match){aorbs.push(on);}
+					//aorbs.push(aarr[i].name);
+				}
+				return aorbs
+			}
 		}
 		
 // orb/cont/ckey/sub>>
@@ -3708,6 +3757,11 @@ const putRiValue = function(op,RS,o){
 // >>orb/y
 				case 'y':
 					o.y=op[0]; if(o.Asp=='text'){dESpacer(o);} return
+
+//a key to let know orb text if we want to see the line number .possible values  on off
+// >>orb/linenumber 
+				//case 'linenumber':
+					//
 
 // >>orb/script
 				case 'script':
@@ -4064,17 +4118,21 @@ const putRiValue = function(op,RS,o){
 							if(Img.name==op[0]){
 								o.imgfile = op[0];
 								o.imgS.img = Img.img;
-								o.imgF.push(
-									[
-								//these coordinates need clarification..
-										'x',0,'y',0,
-										'w',Img.img.width,'h',Img.img.height,
-										'px',0,'py',0,
-										'pw',Img.img.width,'ph',Img.img.height,
-										//'cx',eX,'cy',eY,
-										'a',0.9,'layer',1
-									]
-								);
+								if(o.imgF.length==0){
+									o.imgF = [];
+									o.imgF.push(
+										[
+									//these coordinates need clarification..
+											'x',0,'y',0,
+											'w',Img.img.width,'h',Img.img.height,
+											'px',0,'py',0,
+											'pw',Img.img.width,'ph',Img.img.height,
+											'wait',0,'waitc',0,
+											//'cx',eX,'cy',eY,
+											'a',0.9,'layer',1
+										]
+									);
+								}
 								return 
 							}//match
 						}
@@ -4129,7 +4187,7 @@ const putRiValue = function(op,RS,o){
 							is:'img',
 							x:ims.x, y:ims.y, w:ims.w, h:ims.h,
 							px:ims.px, py:ims.py, pw:ims.pw, ph:ims.ph,
-							cx:ims.cx, cy:ims.cy,
+							cx:ims.cx, cy:ims.cy, wait:0, waitc:0,
 							a:ims.a,
 							layer:ims.layer
 						}
@@ -4142,6 +4200,15 @@ const putRiValue = function(op,RS,o){
 						return
 
 					}//mirror
+//test this now......
+// >>orb/image/number
+					var rln = parseFloat(ckey);
+					if(isNaN(rln)){return 'end'}else{
+						var nb = txtToB(op[0]); //o.imgF.push(nb);
+						o.imgF[rln-1] = nb; 
+						return
+					}
+
 				}
 			}
 
@@ -4258,7 +4325,7 @@ const putRiValue = function(op,RS,o){
 //this command would put a new beat on the target beat line.. if exists.. but maybe we can make it exist.....
 					//we need to turn ckey into a number
 					var rln = parseFloat(ckey);
-					let nan = isNaN(rln);
+					var nan = isNaN(rln);
 					if(nan){return 'end'}
 
 					if(o.rectF[rln-1]){
@@ -4610,18 +4677,18 @@ const orbAccess = function(o){
 	}
 	if(o.Asp=='circle'){
 		res.push(
-			n+'/circle', n+'/circle/run', n+'/circle/cn'
+			n+'/circle', n+'/circle/run', n+'/circle/cn', n+'/circle/current/radius'
 		);
 	}
 	if(o.Asp=='rectangle'){
 		res.push(
-			n+'/rectangle', n+'/rectangle/run', n+'/rectangle/cn'
+			n+'/rectangle', n+'/rectangle/run', n+'/rectangle/cn', n+'/rectangle/current/w'
 
 		);
 	}
 	if(o.Asp=='oscillator'){
 		res.push(
-			n+'/oscillator', n+'/oscillator/run'
+			n+'/oscillator', n+'/oscillator/run'//, n+'/oscillator/' //we want to say osc/current..
 		);
 	}
 	if(o.Asp=='image'){
@@ -4664,7 +4731,7 @@ const beatParam = function(o,cont,key,sub,op,pol){
 			var contstr = 'trackF'; var bstr = 'trackB'; break
 //maybe we can modify both tone line and the state tone itself if playing.. both from here
 		case 'oscillator':
-			var contstr = 'oscTL'; 
+			var contstr = 'oscTL';  //var bstr = 'oscB';
 //..so instead of multiple loops, lets just asign name+audiotype+line and search for that on oscCue.. but this means we cant
 //adress all oscillators at once. No matter what i do there is always a new thing to considerate. I migth as well just focus on
 //writing everything as modular as possible. Maybe we should even have 2 arrays instead of one oscCue. This way i dont need to
@@ -4814,6 +4881,13 @@ const comA = function(S,C,kick){
 
 	}//#
 
+//a special sintax to work on a list with multiple orbs. not sure if implementing this now
+//	var MS = C.split('>>>'); 
+//	if(MS.length==2){ // just 2 sides to compare
+//we want to perform 
+//	}
+
+
 //this need revision......... == <= >= all need revision
 //conditions need to be evaluated first
 //we shouldnt have >> if we are here.. we use conditions to compare LS with RS 
@@ -4829,9 +4903,7 @@ const comA = function(S,C,kick){
 				}	
 			}
 		}
-//conditions dont use # no more. literals will now used exlusively to create values to be used later. conditions check from text
-//or other containers
-//getLeValue changed, we need to look for orb object using MS[0] and MS[1] before feeding into the getLeValue
+//conditions may take literals after '=='
 		var LS = MS[0].split('/');
 		var l0 = LS[0];
 		if(l0=='~'){var lo = '~';}
@@ -4843,12 +4915,20 @@ const comA = function(S,C,kick){
 
 		var RS = MS[1].split('/');
 		var r0 = RS[0];
-		if(r0=='~'){var ro = '~';}
-		if(r0=='%'){var ro = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
-		if(r0=='$'){var ro = FFting('name',S);}
-		if(ro==undefined){var ro = FFting('name',r0);}
-		var RSout = getLeValue(RS,ro);//!!!!
-		if(RSout=='end'){return 'end'}
+		//we can now have literals after '=='
+		if(r0[0]=='#'){
+			var rmhash = r0.substr(1); //we need to remove the #
+			var RSout = []; 
+//new and definitive way to check if value is a number we can work with or a combination of letters and number or just letters!!!!!!!!
+			if(isNaN(rmhash)){RSout.push(rmhash); }else{ var num = parseFloat(rmhash); RSout.push(num);}
+		}else{
+			if(r0=='~'){var ro = '~';}
+			if(r0=='%'){var ro = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
+			if(r0=='$'){var ro = FFting('name',S);}
+			if(ro==undefined){var ro = FFting('name',r0);}
+			var RSout = getLeValue(RS,ro);//!!!!
+			if(RSout=='end'){return 'end'}
+		}
 
 //condition ==		
 //check for left side as retrieve value.  check right side also as retrieve value. compare
@@ -4857,6 +4937,7 @@ const comA = function(S,C,kick){
 		if(lsout==rsout){ return }else{ return 'end' }//lol this works just fine
 	}// '=='
 
+/*
 //so conditions using '==' are perfectly fine when dealing with text lines.. but dealing with number counters is not ideal because
 //sometimes numbers will skip the condition because we might use counters adding by values higher than 1. So we can
 //just implement <= >= right here to prevent this.
@@ -4897,6 +4978,7 @@ const comA = function(S,C,kick){
 //return and let second ins run if any, return end if condition wasnt met.
 		if(LSout[0]<=RSout[0]){ return }else{ return 'end' }
 	}// '<='
+*/
 
 
 /*
@@ -4923,15 +5005,17 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 	//we can inmediately stop here if we know.. 
 	if(MS.length==1){
 		//its a solo retrieve. we ask now if stance is a text orb, if so we print data here
+//but we might want to print a target key.. we havent considered that here!!!!!!!!!!
 		var so = Fting(textOrbs,'name',S);
 		if(so){
 			if(so.text){
-				var l0 = MS[0];
+				var LS = MS[0].split('/');
+				var l0 = LS[0];
 				if(l0=='~'){var lo = '~';}
 				if(l0=='%'){var lo = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
 				if(l0=='$'){var lo = FFting('name',S);}
 				if(lo==undefined){var lo = FFting('name',l0);}
-				var ret = getLeValue(MS,lo); //we dont need to pass S now
+				var ret = getLeValue(LS,lo); //we dont need to pass S now
 				if(ret=='end'){return 'end'}
 				for (var i = 0; i <= ret.length-1; i++) {
 					var text = ret[i];
@@ -5306,6 +5390,9 @@ const handleAudioFile = function(){
 		//all.stream_a.push('Audio file successfully loaded.');
 		//all.screen_log();
 		//var orb = Fting(all.up_objs, "u_in_contrl", true);
+
+		//i think we use actx now..
+		//actx.decodeAudioData(ev.target.result).then(function(buffer) {
 		all.au.decodeAudioData(ev.target.result).then(function(buffer) {
 	//then pattern i havent studied that, good 4 promises i think. but i can call
 	//this later
@@ -5425,6 +5512,19 @@ const CreateBt = function(ctx, name, com1, com2, X, Y, text, persist){
 }//create_bt
 
 
+
+//PEAK PHONESCEEN 2024
+/*
+Most of the logc is recyclable , we just need to change containers and actually redesign how touches will work in sunya...ok
+So we need a circular area on the screen, adjustable of course. once we touch and hold any part inside this area, it becomes a new
+circle layered with the touch at the center. when we swipe just a bit further away from the center and we touch a first layer, the screen
+moves slowly at first, then faster if we swipe further away. This is probably going to be a screen displacement exclusive mechanic
+because i ve already tested it, its just feels nice to move around like this on a phone.
+we will also have buttons to be called when we touch specific things on the screen.
+
+*/
+
+
 //touch HANDLERS EVENT
 const tstart = function(e){
 //so far so good.
@@ -5449,7 +5549,7 @@ const tstart = function(e){
 		
 			var clX = Math.floor(touch.clientX);
 			var clY = Math.floor(touch.clientY);
-		
+	/*	
 			var l = all.anim_a.length;
 			while(l--){
 				var s = all.anim_a[l]; 
@@ -5487,7 +5587,6 @@ const tstart = function(e){
 					if(s.tch=='k'){
 						var dist = getDist(clX,s.tx,clY,s.ty);
 						if(dist<22){
-///*
 ////////////
 //lets make this faster... eh.. well .. i l think about something later..
 //maybe touch hardware cant go faster? just a hunch
@@ -5510,12 +5609,10 @@ const tstart = function(e){
 							a_s.tid=touch.identifier;
 							all.anim_a.push(a_s);
 /////
-//*/
-						/*
-							s.gesID=touch.identifier; s.gesEND=false;
-							s.ges=[{X:clX, Y:clY}]; s.gesPRESS=0;
-							s.tchev = true;
-						*/
+							//s.gesID=touch.identifier; s.gesEND=false;
+							//s.ges=[{X:clX, Y:clY}]; s.gesPRESS=0;
+							//s.tchev = true;
+			
 							var nvt=true;
 							//no break for k  
 						}//dist match
@@ -5523,6 +5620,7 @@ const tstart = function(e){
 
 				}// no bt already else
 			}//anim_a loop
+*/
 			
 		//touches data and push the thing into touches_a
 			if(nvt==undefined){
@@ -6431,8 +6529,14 @@ function update(){ //PEAK
 //they are still geting executed one at a time and this produces a yank displacement of the screen.. a solution would be
 //to go trough all changes, add up the numbers and call ctx.translate only once.!!!!!!!
 
-	var ti = transLate.length; 
-	while(ti--){var tr = transLate[ti]; ctx0.translate(tr[0],tr[1]);}
+	var ti = transLate.length; var tx = 0; var ty = 0;
+	while(ti--){
+		var tr = transLate[ti]; 
+		//ctx0.translate(tr[0],tr[1]);
+//so what if we simply add all tanslates ... this seem to not do anything
+		tx += tr[0]; ty += tr[1];
+	}
+	ctx0.translate(tx,ty);
 	transLate = [];
 
 ///////////////translates are a ting
@@ -6484,16 +6588,20 @@ function update(){ //PEAK
 				var RL = o.scC[o.scB-1];//item 0 is line 1. we want to use B to understand we are accessing line 1
 	//so if RL is undefined, the script stops dead.... interesting.
 				if(RL){
+
 					if(RL[0]==':'||RL[0]=='#'){comA(o.name,RL);}else{
 						var csplit = RL.split('<>'); //comands split .. diamond symbol
+			//... an idea to halt the execution of the script until a condition fullfills? / needs to go on a second ins tho
+						if(csplit.length==1){
+							if(RL[0]=='/'){o.scB--;}else{comA(o.name,RL);}
+						}
 						if(csplit.length>1){ 
 							var secins = csplit.pop(); var firstins = csplit.join('<>');
 							var end = comA(o.name,firstins,true); if(end=='end'){}else{comA(o.name,secins);}
-						}else{
+						}//else{
 							//before
-							comA(o.name,RL);
-						}
-
+						//	comA(o.name,RL);
+						//}
 					}
 					o.scB++;
 				}
@@ -6505,10 +6613,13 @@ function update(){ //PEAK
 				if(RL){
 					if(RL[0]==':'||RL[0]=='#'){comA(o.name,RL);}else{
 						var csplit = RL.split('<>'); //comands split .. diamond symbol
+						if(csplit.length==1){
+							if(RL[0]=='/'){o.scB--;}else{comA(o.name,RL);}
+						}
 						if(csplit.length>1){ 
 							var secins = csplit.pop(); var firstins = csplit.join('<>');
 							var end = comA(o.name,firstins,true); if(end=='end'){}else{comA(o.name,secins);}
-						}else{comA(o.name,RL);}
+						}//else{comA(o.name,RL);}
 					}
 					o.scB++;
 					//if(o.scB>o.scC.length){o.scB = 1;} 
@@ -6522,10 +6633,13 @@ function update(){ //PEAK
 				if(RL){
 					if(RL[0]==':'||RL[0]=='#'){comA(o.name,RL);}else{
 						var csplit = RL.split('<>'); //comands split .. diamond symbol
+						if(csplit.length==1){
+							if(RL[0]=='/'){o.scB--;}else{comA(o.name,RL);}
+						}
 						if(csplit.length>1){ 
 							var secins = csplit.pop(); var firstins = csplit.join('<>');
 							var end = comA(o.name,firstins,true); if(end=='end'){}else{comA(o.name,secins);}
-						}else{comA(o.name,RL);}
+						}//else{comA(o.name,RL);}
 					}
 			//but maybe repeat dont need to go back to 1
 				}
@@ -6732,12 +6846,23 @@ function update(){ //PEAK
 //all these visual Aspects probably need to set run to off when there are no beats to beat... or we could simply not run beatUp
 //... and just leave run value as is. we dont want to just run off because users l have to set run on again thats not nice
 //
+			//if(Object.keys(o.imgS.img).length==0){o.imgR='off'; continue}
+			//if(o.imgS.img==undefined){o.imgR='off'; continue}
+		//this check works... but also when it has content is true so...
+			//if(JSON.stringify(o.imgS.img)==='{}'){o.imgR='off'; continue}
+			//.. ok this i think it works... jeez
+			if(o.imgS.img){
+				if(o.imgS.img.tagName==undefined){o.imgR='off'; continue}
+			}
+			//if(o.imgS.img.tagName==undefined){o.imgR='off'; continue}
 			if(o.imgR=='off'){} 
 			if(o.imgR=='once'){ 
 				if(o.imgF.length>0){
 					beatUp(o.imgF,o.imgB,o.imgS); // o,o
 					o.imgS.cx = o.x; o.imgS.cy = o.y; 
-					o.imgB++;
+					o.imgS.waitc--;//
+					if(o.imgS.waitc<=0){o.imgB++; o.imgS.waitc = o.imgS.wait;}//
+					//o.imgB++;
 					if(o.imgB>o.imgF.length){o.imgB=1; o.imgR='off';}
 					if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
 					if(o.imgS.layer==1){visual_q1.push(o.imgS);}
@@ -6748,7 +6873,9 @@ function update(){ //PEAK
 				if(o.imgF.length>0){
 					beatUp(o.imgF,o.imgB,o.imgS); // o,o
 					o.imgS.cx = o.x; o.imgS.cy = o.y; 
-					o.imgB++;
+					o.imgS.waitc--;//
+					if(o.imgS.waitc<=0){o.imgB++; o.imgS.waitc = o.imgS.wait;}//
+					//o.imgB++;
 					if(o.imgB>o.imgF.length){o.imgB=1;}
 					if(o.imgS.layer==0){visual_q0.push(o.imgS);} //[B]?
 					if(o.imgS.layer==1){visual_q1.push(o.imgS);}
@@ -6801,7 +6928,6 @@ function update(){ //PEAK
 							timeUp(os,TL);
 							var osc = COsc(os);
 				//we need an id to reffer to this tone state. orb/oscillator/1 should point us to the tone state generated
-				//by the first line. so  osc.origin=o.name+i2
 //but we should be able to make changes on the tone states timers more precisely.. maybe we can create changes from reading kdown
 //or touch events directly and not in synch with heartbeat..!!!!!!!!
 							osc.origin=o.name; osc.toneline=i2+1;
@@ -6903,6 +7029,7 @@ var SunyaInit = function(device, tutorial){//tutorial no need to go here
 //how to prevent it
 	//all.au = new (AudioContext || webkitAudioContext)();
 	actx = audioser();
+
 	ctx0.translate(-eX+window.innerWidth/2, -eY+window.innerHeight/2);
 
 //if tutorial..
@@ -6936,7 +7063,8 @@ var SunyaInit = function(device, tutorial){//tutorial no need to go here
 
 //FIrst sequence. will change later. for now we just want to create useful scripts to keep working
 var o = {
-	name: "FirstSequence", script: true, cast: false, Asp:'script', arr:'scriptOrbs',
+	name: "FirstSequence", script: true, //cast: false,
+	Asp:'script', arr:'scriptOrbs',
 	screenx:[], screeny:[], random:[],
 	scR: "once", scB: 1,
 	scC: [
@@ -7009,7 +7137,7 @@ var o = {
 "@text>>GPsorbs",
 //no need to see this either
 "seal>>GPsorbs",
-":KeyE KeyR KeyF KeyT KeyG KeyY KeyH KeyU KeyJ CursorX CursorC CursorV CursorZ CursorEnt EntRight EntLeft EntUp EntDown AspRight AspLeft AspUp AspDown PrevF NextF >>GPsorbs/text",
+":KeyE KeyR KeyF KeyT KeyG KeyY KeyH KeyU KeyJ CursorX CursorC CursorV CursorZ CursorEnt EntRight EntLeft EntUp EntDown AspRight AspLeft AspUp AspDown PrevF NextF RmBeat >>GPsorbs/text",
 //use list to build scripts at once
 "@script>>GPsorbs/text",
 "delete>>GPsorbs", //self removes
@@ -7023,12 +7151,45 @@ var o = {
 "#~/out>>History/in>>HistoryRegister/script",
 "#repeat>>HistoryRegister/script/run",
 
+//Nums a text with useful numbers to have around. numbers match line. 1 to 9 so far. 
+"@text>>Nums",
+":1 2 3 4 5 6 7 8 9 0 >>Nums/text",
+"seal>>Nums",
+
+//Maybe create a script so when we stanciate
+//speeds, we can read Entry to change the number in the current line. This script only should run when we stanciate speeds.
+//this is nice. we select a line, we press enter, we type in a new number, then the number is replaced. lovely
+//Speeds
+//line1 synched with entity displacement speed, line2 synched with aspect in control speed, line3 in synch with current stance name
+//on line4 we could actually have the aspect of the stance, so we can always check it out
+//ok so Speeds could ALSO handle how much polarity intensity... wait.. its more convenient to have speeds and polarity intensities
+//seperated. Because now we can just run a command and change the intensity. so its the 4 directions, polarity intensity, a filter for..
+"@text>>Speeds",
+"#r,90,g,..200?250,b,200,a,0.6,layer,2>>Speeds/text/signat",
+"#15>>Speeds/screenx/in",
+"#70>>Speeds/screeny/in",
+//entcursor zcursor xcursor ccursor polarity w h radius?
+//aspcursor entcursor polarity w h radius ... i think these are ok
+//we want to configure Speeds to be used with buttons when we are on a specific
+//orb with a specific aspect. So maybe when we call a Specific Cursor, we also configure all buttons using the Speeds text...
+//.. i think cursoren and cursorasp is fine.
+":20 50 1 1 1 >>Speeds/text", //.. radius not implemented
+"Speeds/screenx/out>>Speeds/x<>Speeds/screeny/out>>Speeds/y",
+
+//Holds data regarding editors. Used to contol configuration loads and active listeners
+"@text>>EDat",
+":orbname orbaspect ... cursor >>EDat/text",
+"#25>>EDat/screenx/in",
+"#70>>EDat/screeny/in",
+"EDat/screenx/out>>EDat/x<>EDat/screeny/out>>EDat/y",
+
+
 //Main0 . Prints history with Tab,  appears positioned on the top right corner when
 //printing, also is selected. vibes with colors so its always visible.. maybe vibing too much..
 "@text>>Main0",
 "#right>>Main0/text/align",
 "#r,..3?230,g,..4?240,b,..5?250,a,1,layer,2>>Main0/text/signat",
-"#100>>Main0/screenx/in",
+"#99>>Main0/screenx/in",
 "#8>>Main0/screeny/in",
 
 //Main1 text orb to start access chain. . .Now Main1 will be created if non existant. it will repond to Space printing orb names,
@@ -7038,6 +7199,8 @@ var o = {
 "#1>>Main1/screenx/in",
 "#8>>Main1/screeny/in",
 
+//okokokok how about this: Just let parameters we are interested in on Main2 and we just change them using polarity AND Entry value. Genius
+//so a listener on main2... go there. ok its a good idea but 
 //Main2 text orb to follow access chain. . .Main2 will be created if non existant. it will respond to KeyM executing orb access keys
 //printed on Main1 and will self locate next to Main1
 "@text>>Main2",
@@ -7058,21 +7221,15 @@ var o = {
 "#45>>Main4/screenx/in",
 "#8>>Main4/screeny/in",
 
-//Stats
-//line1 synched with entity displacement speed, line2 synched with aspect in control speed, line3 in synch with current stance name
-//on line4 we could actually have the aspect of the stance, so we can always check it out
-"@text>>Stats",
-"#r,30,g,..100?240,b,200,a,0.4,layer,2>>Stats/text/signat",
-"#75>>Stats/screeny/in",
-"#15>>Stats/screenx/in",
-":20 50 ... ... >>Stats/text",
-"Stats/screenx/out>>Stats/x<>Stats/screeny/out>>Stats/y",
+//so a listener on Main2. When user has a parameter in line selected we can call a script that will read Entry value and use it
+//to modify the parameter written in the line
+//~/in
 
 //Text Highlight
 //this is great for general purpuse working with text lines
 "@script>>THL",
 "##x,..-3?2,y,..-1?2,txt, + - + - + - + - + - +,a,-0.1>>%/text/current/mirror>>THL/script",
-"#loop>>THL/script/run",
+"#repeat>>THL/script/run",
 
 //we want to press Tab , and print history content to Main0, and select line 1. useful
 "@script>>HistoryRecall",
@@ -7105,32 +7262,52 @@ var o = {
 //to create an ouput on the chain access Main4, next to Main3
 //we also now want to see highlights for beats only in the case were we are actually printing a beat container and not a key.
 //.. yes this would kinda be like the piece of my soul that is missing. we really want this.
+//would be neat to just add constructions into a command..... interface inteface
+//we need to delete beats from Main4 directly. use End to delete a selected line beat
+//
 "@script>>GetIRTparam",
-"#Main3/screenx/out>>Main3/x<>Main3/screeny/out>>Main3/y>>GetIRTparam/script/1",
-"#Main4/screenx/out>>Main4/x<>Main4/screeny/out>>Main4/y>>GetIRTparam/script/2",
-//... maybe we could pass the name of the orb we are printing data on.. but there is a problem with mirror sinthax...
-//yeah Mirror sinthax is not scalable . should be a signal on the left side,and the beat formated line should be on the right side.
-//... however... the requisite being knowing the exact orb we want to mirror might actually be ok
-"#%/text/current>>Main3/text>>GetIRTparam/script/3",
-"##repeat>>IRTparam/script/run>>GetIRTparam/script/4",
-"#unseal>>Main3<>unseal>>Main4>>GetIRTparam/script/5",
+"#Main3/screenx/out>>Main3/x<>Main3/screeny/out>>Main3/y>>GetIRTparam/script/new",
+"#Main4/screenx/out>>Main4/x<>Main4/screeny/out>>Main4/y>>GetIRTparam/script/new",
+"#%/text/current>>Main3/text>>GetIRTparam/script/new",
+"##repeat>>IRTparam/script/run>>GetIRTparam/script/new",
+"#unseal>>Main3<>unseal>>Main4>>GetIRTparam/script/new",
 
 //IRTparam , a script to print access instruction result from Main3 , running on repeat to be seen on Main4 in real time
 "@script>>IRTparam",
 "#print/Main4>>Main3/text>>IRTparam/script/1",
 
-//a script to print the current stance on Stats line 3 at everyheartbeat, but stops when Stats is selected. interesting
-"@script>>StatsSTracker",
-"#~/stance==Stats/name<>#5>>StatsSTracker/script/cn>>StatsSTracker/script/new", //anynumber above total script lines will skip&restart
-"#~/stance>>Stats/text/3>>StatsSTracker/script/new",
-"#%/aspect>>Stats/text/4>>StatsSTracker/script/new",
-"#loop>>StatsSTracker/script/run",
 
-//a script to stanciate and position Stats on recall with Backquotes
-"@script>>StatsRecall",
-"#Stats/name>>~/stance>>StatsRecall/script/1",
-"#Stats/screenx/out>>Stats/x<>Stats/screeny/out>>Stats/y>>StatsRecall/script/2",
-"#unseal>>Stats>>StatsRecall/script/3",
+//a script to stanciate and position Speeds on recall with Backquotes. yeah this is ok but we want to change scipt name
+"@script>>SpeedsRecall",
+"#Speeds/name>>~/stance>>SpeedsRecall/script/new",
+"#Speeds/screenx/out>>Speeds/x<>Speeds/screeny/out>>Speeds/y>>SpeedsRecall/script/new",
+"#unseal>>Speeds>>SpeedsRecall/script/new",
+
+//a script to remove a line called with Delete
+"@script>>RmLine",
+"#rmline>>%/text/current>>RmLine/script/new",
+"##end>>RmLine/script/run>>RmLine/script/new",
+
+//Polarity script. We call line 1 with +, and line 3 with -
+"@script>>Polarity",
+":+/Speeds/3>>%/text/current Nums/text/1>>Polarity/script/cn<>#end>>Polarity/script/run -/Speeds/3>>%/text/current #end>>Polarity/script/run >>Polarity/script",
+
+//SpDash1 and SpDash2 are temorarily used as long as a button is pressed. We are using ShiftLeft now
+"@text>>SpDash1",
+":1 50 1 1 1 >>SpDash1/text",
+"seal>>SpDash1",
+
+"@text>>SpDash2",
+":50 100 0.01 10 10 >>SpDash2/text",
+"seal>>SpDash2",
+
+//ShiftLeft temporarily modify Speeds values so we get a dash on all cursors and levers.. how would we write this..
+//ok so when we set cn to 2, we dump SpDash2/text>>Speeds/text, as long as cn is 2, we do that. the moment we release, script
+//runs its course and next line normalizes Speeds. SpDash1 is normal, SpDash2 is different. we just set on loop and set the
+//first line to '/' , this will halt the execution of the script
+"@script>>ShiftLDash",
+":/ SpDash2/text>>Speeds/text SpDash1/text>>Speeds/text >>ShiftLDash/script",
+"#loop>>ShiftLDash/script/run",
 
 
 //And we should be able to select Main1 to Main4 and more if any using Digits.. but these are simple buttons i think,
@@ -7144,9 +7321,6 @@ var o = {
 //or create a help message with all buttons explained. we call with ControlLeft and close with ControlLeft again
 //maybe obscure the screen a bit and drop the help bomb
 
-//ok we need BracketRight and Slash here to work as polarity buttons(we have to consider each machine keyboard keys being different!!!!)
-//done
-		
 //Maybe a nice feedback would be to have a specific color as default signature for textlines that match an orb with a specific aspect
 //so maybe script orb names when recalled using Space are White, text orbs are Blue, circles are Yellow etc... but yeah maybe this
 //is a script thing, not the default behavior
@@ -7155,18 +7329,18 @@ var o = {
 "@text>>GPskeys",
 //no need to see this no more
 "seal>>GPskeys",
-":name,LineNameToStance,key,Period,com1,%/text/current>>~/stance name,StatusToStance,key,Backquote,com1,#once>>StatsRecall/script/run name,Polarity+,key,BracketRight,com1,+>>%/text/current name,Polarity-,key,Slash,com1,->>%/text/current name,Main1ToStance,key,Digit1,com1,#Main1>>~/stance name,Main2ToStance,key,Digit2,com1,#Main2>>~/stance name,Main3ToStance,key,Digit3,com1,#Main3>>~/stance name,Main4ToStance,key,Digit4,com1,#Main4>>~/stance name,Main0ToStance,key,Digit0,com1,#Main0>>~/stance name,SealAsp,key,Backspace,com1,seal>>% name,RmLine,key,Delete,com1,rmline/text/current>>% name,ComLineGrab,key,KeyO,com1,%/text/current>>~/comline name,InLineGrab,key,KeyI,com1,%/text/current>>~/inline name,PrevLine,key,KeyB,com1,->>%/text/cn name,NextLine,key,KeyN,com1,+>>%/text/cn name,SelStance,key,KeyM,com1,$/text/current>>~/stance name,OrbsList,key,Space,com1,#once>>OrbsLister/script/run name,SkeysList,key,ControlRight,com1,~/skeys>>Main0/text name,GetAccess,key,KeyM,com1,#once>>GetAccess/script/run name,GetIRTparam,key,Comma,com1,#once>>GetIRTparam/script/run name,KTab,key,Tab,com1,#once>>HistoryRecall/script/run name,PrevFrame,key,PageUp,com1,#once>>PrevF/script/run name,NextFrame,key,PageDown,com1,#once>>NextF/script/run name,EntRight,key,ArrowRight,com1,#once>>EntRight/script/run name,EntLeft,key,ArrowLeft,com1,#once>>EntLeft/script/run name,EntUp,key,ArrowUp,com1,#once>>EntUp/script/run name,EntDown,key,ArrowDown,com1,#once>>EntDown/script/run name,AspRight,key,KeyD,com1,#once>>AspRight/script/run name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run name,AspUp,key,KeyW,com1,#once>>AspUp/script/run name,AspDown,key,KeyS,com1,#once>>AspDown/script/run name,Repeat,key,KeyE,com1,#once>>KeyE/script/run name,Loop,key,KeyR,com1,#once>>KeyR/script/run name,Off,key,KeyF,com1,#once>>KeyF/script/run name,KT,key,KeyT,com1,#once>>KeyT/script/run name,KG,key,KeyG,com1,#once>>KeyG/script/run name,KY,key,KeyY,com1,#once>>KeyY/script/run name,KH,key,KeyH,com1,#once>>KeyH/script/run name,KU,key,KeyU,com1,#once>>KeyU/script/run name,KJ,key,KeyJ,com1,#once>>KeyJ/script/run name,KZ,key,KeyZ,com1,#once>>CursorZ/script/run name,KX,key,KeyX,com1,#once>>CursorX/script/run name,KC,key,KeyC,com1,#once>>CursorC/script/run name,KV,key,KeyV,com1,#once>>CursorV/script/run >>GPskeys/text",
+":name,RmBeat,key,End,com1,#once>>RmBeat/script/run name,LDash,key,ShiftLeft,com1,#2>>ShiftLDash/script/cn name,LineNameToStance,key,Period,com1,%/text/current>>~/stance name,StatusToStance,key,Backquote,com1,#once>>SpeedsRecall/script/run name,Polarity+,key,BracketRight,com1,Nums/text/1>>Polarity/script/cn<>#once>>Polarity/script/run name,Polarity-,key,Slash,com1,Nums/text/3>>Polarity/script/cn<>#once>>Polarity/script/run name,Main1ToStance,key,Digit1,com1,#Main1>>~/stance name,Main2ToStance,key,Digit2,com1,#Main2>>~/stance name,Main3ToStance,key,Digit3,com1,#Main3>>~/stance name,Main4ToStance,key,Digit4,com1,#Main4>>~/stance name,Main0ToStance,key,Digit0,com1,#Main0>>~/stance name,SealAsp,key,Backspace,com1,seal>>% name,RmLine,key,Delete,com1,#once>>RmLine/script/run name,ComLineGrab,key,KeyO,com1,%/text/current>>~/comline name,InLineGrab,key,KeyI,com1,%/text/current>>~/inline name,PrevLine,key,KeyB,com1,->>%/text/cn name,NextLine,key,KeyN,com1,+>>%/text/cn name,SelStance,key,KeyM,com1,$/text/current>>~/stance name,OrbsList,key,Space,com1,#once>>OrbsLister/script/run name,SkeysList,key,ControlRight,com1,~/skeys>>Main0/text name,GetAccess,key,KeyM,com1,#once>>GetAccess/script/run name,GetIRTparam,key,Comma,com1,#once>>GetIRTparam/script/run name,KTab,key,Tab,com1,#once>>HistoryRecall/script/run name,PrevFrame,key,PageUp,com1,#once>>PrevF/script/run name,NextFrame,key,PageDown,com1,#once>>NextF/script/run name,EntRight,key,ArrowRight,com1,#once>>EntRight/script/run name,EntLeft,key,ArrowLeft,com1,#once>>EntLeft/script/run name,EntUp,key,ArrowUp,com1,#once>>EntUp/script/run name,EntDown,key,ArrowDown,com1,#once>>EntDown/script/run name,AspRight,key,KeyD,com1,#once>>AspRight/script/run name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run name,AspUp,key,KeyW,com1,#once>>AspUp/script/run name,AspDown,key,KeyS,com1,#once>>AspDown/script/run name,Repeat,key,KeyE,com1,#once>>KeyE/script/run name,Loop,key,KeyR,com1,#once>>KeyR/script/run name,Off,key,KeyF,com1,#once>>KeyF/script/run name,KT,key,KeyT,com1,#once>>KeyT/script/run name,KG,key,KeyG,com1,#once>>KeyG/script/run name,KY,key,KeyY,com1,#once>>KeyY/script/run name,KH,key,KeyH,com1,#once>>KeyH/script/run name,KU,key,KeyU,com1,#once>>KeyU/script/run name,KJ,key,KeyJ,com1,#once>>KeyJ/script/run name,KZ,key,KeyZ,com1,#once>>CursorZ/script/run name,KX,key,KeyX,com1,#once>>CursorX/script/run name,KC,key,KeyC,com1,#once>>CursorC/script/run name,KV,key,KeyV,com1,#once>>CursorV/script/run >>GPskeys/text",
 //use container to create buttons at once. so maybe we do this, create buttons when we stance on orbs with different aspects
 "GPskeys/text>>~/skeys",
 "delete>>GPskeys", //but for now just remove this. creating skeys is quick
 
-//configure default CursorZ displacements . we use this cursor to move the orb aspect position as a whole. we move the enter from which
+//configure default CursorZ displacements . we use this cursor to move the orb aspect position as a whole. we move the center from which
 //the animation unfolds
-":#+/Stats/1>>%/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Stats/1>>%/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Stats/1>>%/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Stats/1>>%/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 >>CursorZ/script",
+":#+/Speeds/1>>%/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Speeds/1>>%/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Speeds/1>>%/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Speeds/1>>%/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #CursorZ>>EDat/text/4 >>CursorZ/script",
 "#once>>CursorZ/script/run", //default asp cursor init
 
-//configure arrows displacement for entity using Stats line 2 as speed
-":#+/Stats/2>>~/x>>EntRight/script/1 ##end>>EntRight/script/run>>EntRight/script/2 #-/Stats/2>>~/x>>EntLeft/script/1 ##end>>EntLeft/script/run>>EntLeft/script/2 #-/Stats/2>>~/y>>EntUp/script/1 ##end>>EntUp/script/run>>EntUp/script/2 #+/Stats/2>>~/y>>EntDown/script/1 ##end>>EntDown/script/run>>EntDown/script/2 >>CursorEnt/script",
+//configure arrows displacement for entity using Speeds line 2 as speed
+":#+/Speeds/2>>~/x>>EntRight/script/1 ##end>>EntRight/script/run>>EntRight/script/2 #-/Speeds/2>>~/x>>EntLeft/script/1 ##end>>EntLeft/script/run>>EntLeft/script/2 #-/Speeds/2>>~/y>>EntUp/script/1 ##end>>EntUp/script/run>>EntUp/script/2 #+/Speeds/2>>~/y>>EntDown/script/1 ##end>>EntDown/script/run>>EntDown/script/2 >>CursorEnt/script",
 "#once>>CursorEnt/script/run", //default ent cursor init
 
 
@@ -7174,131 +7348,179 @@ var o = {
 //wont bother if its there when printing a key tho. done
 //an instruction to synch and create a proper highlight mirror. just use repeat and cn. a line for each aspect
 "@script>>BTHL",
-//"Stats/text/4==EditData/text7<>",
+"#%/script/cn>>Main4/text/cn<>#x,..-3?2,y,..-1?2,txt,| | | | | | | | |,a,-0.1>>Main4/text/current/mirror>>BTHL/script/new",
+"#%/text/cn>>Main4/text/cn<>#x,..-3?2,y,..-1?2,txt,| | | | | | | | |,a,-0.1>>Main4/text/current/mirror>>BTHL/script/new",
 "#%/circle/cn>>Main4/text/cn<>#x,..-3?2,y,..-1?2,txt,| | | | | | | | |,a,-0.1>>Main4/text/current/mirror>>BTHL/script/new",
 "#%/rectangle/cn>>Main4/text/cn<>#x,..-3?2,y,..-1?2,txt,| | | | | | | | |,a,-0.1>>Main4/text/current/mirror>>BTHL/script/new",
 "#%/image/cn>>Main4/text/cn<>#x,..-3?2,y,..-1?2,txt,| | | | | | | | |,a,-0.1>>Main4/text/current/mirror>>BTHL/script/new",
 
 
-//ok perfect.. work as expected.
-//So the idea of controling scripts flow using data lines makes sense to me. Me.. why do i feel weird every time i talk about me. Dady Issues.
-//we need an EditData text to hold values to manage the flow of the Conf scripts.
-//We can have a single EditData text to control the flow of multiple scripts. Lets do that. ok. ...wait.. 
-//we dont want to manually mess around with this.  not the same as this Stats text, this one controls scripts flow.
-//should not even be visible
-"@text>>EditData",
-":once repeat 1 circle rectangle image text ... 1 2 3 4 ... >>EditData/text",
-//"seal>>EditData", //also, we dont need to see this one but since we are testing lets see it
+//Monitor Aspect Configuration checks forr stance changing and ask what aspect does the stance have to run the proper configuration
+"@script>>MonitorAC",
+"#%/name==EDat/text/1<>#10>>MonitorAC/script/cn>>MonitorAC/script/new",
+"#%/aspect==#script<>#once>>ScriptConf/script/run>>MonitorAC/script/new",
+"#%/aspect==#circle<>#once>>CirConf/script/run>>MonitorAC/script/new",
+"#%/aspect==#rectangle<>#once>>RectConf/script/run>>MonitorAC/script/new",
+"#%/aspect==#image<>#once>>ImageConf/script/run>>MonitorAC/script/new",
+"#%/name>>EDat/text/1<>%/aspect>>EDat/text/2>>MonitorAC/script/new",
+//init Monitor
+"#loop>>MonitorAC/script/run",
 
-//ok so what we could do.. just let a script ask what aspect our current stance is to make specific butons available.
-//when to ask. .. maybe a script could ask when it detects a change in stance... or just ... make a script be concerned only with
-//its stance. working fine already
-//AspectConf , a script to configure edit buttons when it detects the entity stance matches the aspect. this works perfectly
+
+
+		
 //CIRCLE
 "@script>>CirConf",
-"#%/aspect==EditData/text/4<>EditData/text/1>>CirConf/script/run>>CirConf/script/new",
 "###repeat>>%/circle/run>>KeyE/script/1>>CirConf/script/new", 
 "###loop>>%/circle/run>>KeyR/script/1>>CirConf/script/new",
 "###off>>%/circle/run>>KeyF/script/1>>CirConf/script/new",
 //prevf
-"##%/circle/current>>EditData/text/13<>->>%/circle/cn>>PrevF/script/1>>CirConf/script/new", //grabs a copy of the current beat..
+"##%/circle/current>>EDat/text/3<>->>%/circle/cn>>PrevF/script/1>>CirConf/script/new", //grabs a copy of the current beat..
 "##%/circle/current>>%/circle/current<>+>>PrevF/script/cn>>PrevF/script/2>>CirConf/script/new", //we skip the next ins
-"##EditData/text/13>>%/circle/current>>PrevF/script/3>>CirConf/script/new",
+"##EDat/text/3>>%/circle/current>>PrevF/script/3>>CirConf/script/new",
 //nextf
-"##%/circle/current>>EditData/text/13<>+>>%/circle/cn>>NextF/script/1>>CirConf/script/new", //grabs a copy of the current beat..
+"##%/circle/current>>EDat/text/3<>+>>%/circle/cn>>NextF/script/1>>CirConf/script/new", //grabs a copy of the current beat..
 "##%/circle/current>>%/circle/current<>+>>NextF/script/cn>>NextF/script/2>>CirConf/script/new", //we skip the next ins
-"##EditData/text/13>>%/circle/current>>NextF/script/3>>CirConf/script/new",
+"##EDat/text/3>>%/circle/current>>NextF/script/3>>CirConf/script/new",
+//End key to remove circle current beat
+"##rmline>>%/circle/current<>->>%/circle/cn>>RmBeat/script/new>>CirConf/script/new",
+"###end>>RmBeat/script/run>>RmBeat/script/new>>CirConf/script/new",
+//T
+"##+>>%/circle/current/radius>>KeyT/script/new>>CirConf/script/new",
+"##end>>KeyT/script/run>>KeyT/script/new>>CirConf/script/new",
+//G
+"##->>%/circle/current/radius>>KeyG/script/new>>CirConf/script/new",
+"###end>>KeyG/script/run>>KeyG/script/new>>CirConf/script/new",
 //Cursor X for circle beats
-"#:#+/Stats/1>>%/circle/current/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Stats/1>>%/circle/current/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Stats/1>>%/circle/current/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Stats/1>>%/circle/current/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 >>CursorX/script>>CirConf/script/new",
+"#:#+/Speeds/1>>%/circle/current/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Speeds/1>>%/circle/current/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Speeds/1>>%/circle/current/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Speeds/1>>%/circle/current/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #CursorX>>EDat/text/4 >>CursorX/script>>CirConf/script/new",
 
-"#EditData/text/9>>BTHL/script/cn<>#repeat>>BTHL/script/run>>CirConf/script/new", //configure beat highlight
-"#:confalready rectangle image text circle >>EditData/text/4>>CirConf/script/new",//normalize others
-"#EditData/text/2>>CirConf/script/run<>EditData/text/3>>CirConf/script/cn>>CirConf/script/new", //set to auto repeat on cn 1
-"#repeat>>CirConf/script/run", //init once
+//configure beat highlight
+"#Nums/text/3>>BTHL/script/cn<>#repeat>>BTHL/script/run>>CirConf/script/new",
+
+
 
 //RECT
 "@script>>RectConf",
-"#%/aspect==EditData/text/5<>EditData/text/1>>RectConf/script/run>>RectConf/script/new",
 "###repeat>>%/rectangle/run>>KeyE/script/1>>RectConf/script/new", 
 "###loop>>%/rectangle/run>>KeyR/script/1>>RectConf/script/new",
 "###off>>%/rectangle/run>>KeyF/script/1>>RectConf/script/new",
 //prevf
-"##%/rectangle/current>>EditData/text/13<>->>%/rectangle/cn>>PrevF/script/1>>RectConf/script/new", //grabs a copy of the current beat..
+"##%/rectangle/current>>EDat/text/3<>->>%/rectangle/cn>>PrevF/script/1>>RectConf/script/new", //grabs a copy of the current beat..
 "##%/rectangle/current>>%/rectangle/current<>+>>PrevF/script/cn>>PrevF/script/2>>RectConf/script/new", //we skip the next ins
-"##EditData/text/13>>%/rectangle/current>>PrevF/script/3>>RectConf/script/new",
+"##EDat/text/3>>%/rectangle/current>>PrevF/script/3>>RectConf/script/new",
 //nextf
-"##%/rectangle/current>>EditData/text/13<>+>>%/rectangle/cn>>NextF/script/1>>RectConf/script/new", //grabs a copy of the current beat..
+"##%/rectangle/current>>EDat/text/3<>+>>%/rectangle/cn>>NextF/script/1>>RectConf/script/new", //grabs a copy of the current beat..
 "##%/rectangle/current>>%/rectangle/current<>+>>NextF/script/cn>>NextF/script/2>>RectConf/script/new", //we skip the next ins
-"##EditData/text/13>>%/rectangle/current>>NextF/script/3>>RectConf/script/new",
+"##EDat/text/3>>%/rectangle/current>>NextF/script/3>>RectConf/script/new",
+//End key to remove rectangle current beat
+"##rmline>>%/rectangle/current<>->>%/rectangle/cn>>RmBeat/script/new>>RectConf/script/new",
+"###end>>RmBeat/script/run>>RmBeat/script/new>>RectConf/script/new",
+//T
+"##+>>%/rectangle/current/h>>KeyT/script/new>>RectConf/script/new",
+"##end>>KeyT/script/run>>KeyT/script/new>>RectConf/script/new",	
+//G
+"##->>%/rectangle/current/h>>KeyG/script/new>>RectConf/script/new",
+"##end>>KeyG/script/run>>KeyG/script/new>>RectConf/script/new",	
+//Y
+"##+>>%/rectangle/current/w>>KeyY/script/new>>RectConf/script/new",
+"##end>>KeyY/script/run>>KeyY/script/new>>RectConf/script/new",	
+//H
+"##->>%/rectangle/current/w>>KeyH/script/new>>RectConf/script/new",
+"##end>>KeyH/script/run>>KeyH/script/new>>RectConf/script/new",	
 //Cursor X for rectangle beats
-"#:#+/Stats/1>>%/rectangle/current/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Stats/1>>%/rectangle/current/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Stats/1>>%/rectangle/current/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Stats/1>>%/rectangle/current/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 >>CursorX/script>>RectConf/script/new",
-//circle is, but rectangle beats are not highlighting... check it out
-"#EditData/text/10>>BTHL/script/cn<>#repeat>>BTHL/script/run>>RectConf/script/new", //configure beat highlight
-"#:circle confalready image text rectangle >>EditData/text/4>>RectConf/script/new",//normalize others
-"#EditData/text/2>>RectConf/script/run<>EditData/text/3>>RectConf/script/cn>>RectConf/script/new",
-"#repeat>>RectConf/script/run", //init
+"#:#+/Speeds/1>>%/rectangle/current/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Speeds/1>>%/rectangle/current/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Speeds/1>>%/rectangle/current/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Speeds/1>>%/rectangle/current/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #CursorX>>EDat/text/4 >>CursorX/script>>RectConf/script/new",
+
+//configure beat highlight
+"#Nums/text/4>>BTHL/script/cn<>#repeat>>BTHL/script/run>>RectConf/script/new", 
+
+
+
 
 //IMAGE
 "@script>>ImageConf",
-"#%/aspect==EditData/text/6<>EditData/text/1>>ImageConf/script/run>>ImageConf/script/new",
 "###repeat>>%/image/run>>KeyE/script/1>>ImageConf/script/new", 
 "###loop>>%/image/run>>KeyR/script/1>>ImageConf/script/new",
 "###off>>%/image/run>>KeyF/script/1>>ImageConf/script/new",
 //create an orb to print the whole image as bg
 "#@image>>ImageBg>>ImageConf/script/new",
 "#%/image/file>>ImageBg/image/file>>ImageConf/script/new",
-
-////////these frame displacements work somewhat but the first time wont move.. needs revision
 //PageUp and PageDown to move between frames and create new ones to work with. we are skiping an instruction when we dont find
 //the current beat. its an interesting pattern
 //prevf
-"##%/image/current>>EditData/text/13<>->>%/image/cn>>PrevF/script/1>>ImageConf/script/new", //grabs a copy of the current beat..
+"##%/image/current>>EDat/text/3<>->>%/image/cn>>PrevF/script/1>>ImageConf/script/new", //grabs a copy of the current beat..
 "##%/image/current>>%/image/current<>+>>PrevF/script/cn>>PrevF/script/2>>ImageConf/script/new", //we skip the next ins
-"##EditData/text/13>>%/image/current>>PrevF/script/3>>ImageConf/script/new",
+"##EDat/text/3>>%/image/current>>PrevF/script/3>>ImageConf/script/new",
 //nextf
-"##%/image/current>>EditData/text/13<>+>>%/image/cn>>NextF/script/1>>ImageConf/script/new", //grabs a copy of the current beat..
+"##%/image/current>>EDat/text/3<>+>>%/image/cn>>NextF/script/1>>ImageConf/script/new", //grabs a copy of the current beat..
 "##%/image/current>>%/image/current<>+>>NextF/script/cn>>NextF/script/2>>ImageConf/script/new", //we skip the next ins
-"##EditData/text/13>>%/image/current>>NextF/script/3>>ImageConf/script/new",
-//ok.. so we need to configure all buttons here. This is the correct instance.
-//ok we want to comunicate what cursor we currently are in to Stats so we stop synching ImgBg with %/x ,y ... or.. CursorZ sets
-//ImgBg to repeat, CursorX sets off and so is CursorC. 
+"##EDat/text/3>>%/image/current>>NextF/script/3>>ImageConf/script/new",
+//End key to remove image current beat
+"##rmline>>%/image/current>><>->>%/image/cn>>RmBeat/script/new>>ImageConf/script/new",
+"###end>>RmBeat/script/run>>RmBeat/script/new>>ImageConf/script/new",
+
+//in image editor , cursor X and C are used to work on position and extraction. These are "modes" . Maybe we can also modify
+//other buttons when selecting a cursor here. X could also modify TGYH to work with pw ph , and C could modify TGYH to work with
+//w h ... ok its doable. WOrks. We want a few things to help with image inteface. a list by priority
+//1 we need to have the json thing where we extract orbs as text working already so we can save progress on an edit. kinda done
+//2 we want a rectangle to highlight the image selected both for when we use cursor X and cursor C as well.
+//3 i think it might we nice to make bg and selection brighter or dimmer acording to which one we are working on
+//4 figure out and implement a fast and easy way to modify cursors speed. done
+//5 we need a Help script to print all available skeys with an explanation at any moment
+//6 we definitely need delete>>orb/text . done
+
+//maybe Backlash halts and wait a direction for a second to use a fast value for once, like the old L we had. rememebr?
+//nevermind. we came up with a very nice system usinf ShiftLeft. so its done
+
+
 //CursorX script for image aspect 
-"#:#+/Stats/1>>%/image/current/px>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Stats/1>>%/image/current/px>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Stats/1>>%/image/current/py>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Stats/1>>%/image/current/py>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #off>>ImageBgSynch/script/run >>CursorX/script>>ImageConf/script/new",
-
+"#:#+/Speeds/1>>%/image/current/px>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Speeds/1>>%/image/current/px>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Speeds/1>>%/image/current/py>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Speeds/1>>%/image/current/py>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #+/Speeds/4>>%/image/current/pw>>KeyT/script/1 ##end>>KeyT/script/run>>KeyT/script/2 #-/Speeds/4>>%/image/current/pw>>KeyG/script/1 ##end>>KeyG/script/run>>KeyG/script/2 #+/Speeds/5>>%/image/current/ph>>KeyY/script/1 ##end>>KeyY/script/run>>KeyY/script/2 #-/Speeds/5>>%/image/current/ph>>KeyH/script/1 ##end>>KeyH/script/run>>KeyH/script/2 #off>>ImageBgSynch/script/run #CursorX>>EDat/text/4 >>CursorX/script>>ImageConf/script/new",
 //CursorC script for image asp 
-"#:#+/Stats/1>>%/image/current/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Stats/1>>%/image/current/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Stats/1>>%/image/current/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Stats/1>>%/image/current/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #off>>ImageBgSynch/script/run >>CursorC/script>>ImageConf/script/new",
-
+"#:#+/Speeds/1>>%/image/current/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Speeds/1>>%/image/current/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Speeds/1>>%/image/current/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Speeds/1>>%/image/current/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #+/Speeds/4>>%/image/current/w>>KeyT/script/1 #+/Speeds/5>>%/image/current/pw>>KeyT/script/2 ##end>>KeyT/script/run>>KeyT/script/3 #-/Speeds/4>>%/image/current/w>>KeyG/script/1 #-/Speeds/4>>%/image/current/pw>>KeyG/script/2 ##end>>KeyG/script/run>>KeyG/script/3 #+/Speeds/5>>%/image/current/h>>KeyY/script/1 #+/Speeds/5>>%/image/current/ph>>KeyY/script/2 ##end>>KeyY/script/run>>KeyY/script/3 #-/Speeds/5>>%/image/current/h>>KeyH/script/1 #-/Speeds/5>>%/image/current/ph>>KeyH/script/2 ##end>>KeyH/script/run>>KeyH/script/3 #off>>ImageBgSynch/script/run #CursorC>>EDat/text/4 >>CursorC/script>>ImageConf/script/new",
 //CursorZ displacements . we use this cursor to move the orb aspect position as a whole. we move the enter from which
 //the animation unfolds. but image editor also needs to move 
-"#:#+/Stats/1>>%/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Stats/1>>%/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Stats/1>>%/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Stats/1>>%/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #loop>>ImageBgSynch/script/run >>CursorZ/script>>ImageConf/script/new",
+"#:#+/Speeds/1>>%/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Speeds/1>>%/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Speeds/1>>%/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Speeds/1>>%/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 #repeat>>ImageBgSynch/script/run #CursorZ>>EDat/text/4 >>CursorZ/script>>ImageConf/script/new",
 "##once>>CursorZ/script/run>>ImageConf/script/new", //initialize CursorZ by default
 
-/*
-//so a listener is created, a cleaner . this listener can clean up all orbs created on edit config settings once it sees EditData doesnt hold
-//image value on proper line, then remove all orbs unique to Image Config
-"#@script>>ImageConfCleaner>>ImageConf/script/new",
-"##%/aspect==EditData/text/8<>#8>>ImageConfCleaner/script/cn>>ImageConfCleaner/script/new>>ImageConf/script/new",
-"##delete>>ImageBgSynch>>ImageConfCleaner/script/new>>ImageConf/script/new",
-"##delete>>ImageBg>>ImageConfCleaner/script/new>>ImageConf/script/new",
-"##delete>>ImageConfCleaner>>ImageConfCleaner/script/new>>ImageConf/script/new",
-"##loop>>ImageConfCleaner/script/run>>ImageConf/script/new",
-*/
 
-//////
-"#EditData/text/11>>BTHL/script/cn<>#repeat>>BTHL/script/run>>ImageConf/script/new", //configure beat highlight
-"#:circle rectangle confalready text image >>EditData/text/4>>ImageConf/script/new",//normalize others
+//so the rectangle like selection need to only be visible when we are on image aspect orb. CursorX 
+//a rectangle to illustrate image extraction
+"#@rectangle>>ImgRect>>ImageConf/script/new",
+//so a monitor for image asp. as long as img asp is stanciated, we draw a rectangle on selection or extraction acorfing to cursor
+//2 scripts.. ok so this works, but moving aound cursorZ messes the rectangle position so we need to account for that
+
+"#@script>>XYtoRect>>ImageConf/script/new",
+"##%/image/current/x>>ImgRect/rectangle/current/x<>%/image/current/y>>ImgRect/rectangle/current/y>>XYtoRect/script>>ImageConf/script/new",
+"##repeat>>XYtoRect/script/run>>ImageConf/script/new",
+
+"#@script>>WHtoRect>>ImageConf/script/new",
+"##%/image/current/w>>ImgRect/rectangle/current/w<>%/image/current/h>>ImgRect/rectangle/current/h>>WHtoRect/script>>ImageConf/script/new",
+"##repeat>>WHtoRect/script/run>>ImageConf/script/new",
+
+"#@script>>ZXYtoRect>>ImageConf/script/new",
+"##%/aspect==#image<>#2>>ZXYtoRect/script/cn>>ZXYtoRect/script/1>>ImageConf/script/new",
+"###5>>ZXYtoRect/script/cn>>ZXYtoRect/script/2>>ImageConf/script/new",
+"##%/x>>ImgRect/x<>%/y>>ImgRect/y>>ZXYtoRect/script/3>>ImageConf/script/new",
+"##loop>>ZXYtoRect/script/run>>ImageConf/script/new",
+
+"#Nums/text/5>>BTHL/script/cn<>#repeat>>BTHL/script/run>>ImageConf/script/new", //configure beat highlight
 //when we use CursorZ , we also need to displace the ImageBg orb. lets make a script to synch ImageBg position. this works
 //but we want to eliminate this synch when we change aspect before ImageBg takes the position of another aspect/x ,y ..
 "#@script>>ImageBgSynch>>ImageConf/script/new",
-//yeah this instuction is all the way aound lol
-//"##%/aspect==EditData/text/8<>#8>>ImageBgSynch/script/cn>>ImageBgSynch/script/new>>ImageConf/script/new",
-"##%/x>>ImageBg/x<>%/y>>ImageBg/y>>ImageBgSynch/script/new>>ImageConf/script/new",
+"#:%/aspect==#image<>#once>>ImageBgBeat/script/run >>ImageBgSynch/script>>ImageConf/script/new",
 //initialize ImageBgSynch to synch image bg to current image orb position
-//"##repeat>>ImageBgSynch/script/run>>ImageConf/script/new", //CursorZ doing that aleady
-"#EditData/text/2>>ImageConf/script/run<>EditData/text/3>>ImageConf/script/cn>>ImageConf/script/new", //this needs to last
+"##repeat>>ImageBgSynch/script/run>>ImageConf/script/new",		
+//ImageBgBeat
+"#@script>>ImageBgBeat>>ImageConf/script/new",
+"#:%/x>>ImageBg/x<>%/y>>ImageBg/y >>ImageBgBeat/script>>ImageConf/script/new"
 
-"#repeat>>ImageConf/script/run" //init
+//ok 2 things. We want to be able to send the same command to multiple orbs at once in one line
+//#new value>>>orb/text
+//each line holds a target orb/aspect... as specific as we want. yup this is good		
 
+//we need a simple way to make frames halt a specified number of heartbeat before going to the next one. a timer. done
+//yeah we need to check for images before or after jsonify the thing.. i think this is ok now
+
+//i thinkvwe need a command to consolidate beats and just remove redundancy ... might be good for efficiency
 
 
 //all is working perfectly. ok now lets keep moving. we can send polarity signals to all the text lines at once , this is
@@ -7308,102 +7530,41 @@ var o = {
 //debugging. Hate that. 
 
 /*
-We need a monitor script. real time scripts with one instuction are %/aspect==EditData/text/5 .... by name... use orbs names more..
-if rob exist, jim repeats an instruction....
+//SO am not sure if we really need script and text conf given the nature of these aspects is more unsiversal and we can work
+//with text buttons and other aspect buttons just fine..
+//SCRIPT .... what exactly could we do with scripts.. maybe we could create lines to connect orbs that interact... and we 
+//also want to see scripts beats highlighted so we can study their behavior
+"@script>>ScriptConf",
+"###repeat>>%/script/run>>KeyE/script/1>>ScriptConf/script/new", 
+"###loop>>%/script/run>>KeyR/script/1>>ScriptConf/script/new",
+"###off>>%/script/run>>KeyF/script/1>>ScriptConf/script/new",
+"###once>>%/script/run>>KeyV/script/1>>ScriptConf/script/new",
+
+//.. in script conf, we dont really want to copy current into next beat, we just want to move trough the selected beats
+//prevf
+"##->>%/script/cn>>PrevF/script/1>>ScriptConf/script/new",
+"###end>>PrevF/script/run>>PrevF/script/2>>ScriptConf/script/new",
+//nextf
+"##+>>%/script/cn>>NextF/script/1>>ScriptConf/script/new",
+"###end>>NextF/script/run>>NextF/script/2>>ScriptConf/script/new",
+
+//... what cursor do we need for script orbs?.. The idea of scripts having position still is interesting because we could
+//use the script position as refference to work with other Aspects
+//Cursor X for circle beats
+"#:#+/Speeds/1>>%/circle/current/x>>AspRight/script/1 ##end>>AspRight/script/run>>AspRight/script/2 #-/Speeds/1>>%/circle/current/x>>AspLeft/script/1 ##end>>AspLeft/script/run>>AspLeft/script/2 #-/Speeds/1>>%/circle/current/y>>AspUp/script/1 ##end>>AspUp/script/run>>AspUp/script/2 #+/Speeds/1>>%/circle/current/y>>AspDown/script/1 ##end>>AspDown/script/run>>AspDown/script/2 >>CursorX/script>>CirConf/script/new",
+
+//.. so BTHL could use a specific text to change what beat to highlight. we use 1 2 3 4... a number for each Aspect
+//instead of EditData, SwBTHL
+"#Nums/text/3>>BTHL/script/cn<>#repeat>>BTHL/script/run>>CirConf/script/new", //configure beat highlight
+//"#:confalready rectangle image text circle >>EditData/text/4>>CirConf/script/new",//normalize others
+//"#EditData/text/2>>CirConf/script/run<>EditData/text/3>>CirConf/script/cn>>CirConf/script/new", //set to auto repeat on cn 1
+//"#repeat>>CirConf/script/run", //init once
 */
 
 
 
 
 
-
-
-/*
-"#@AspKT<>unseal/script>>AspKT>>AspCircleConf/script/new",
-"##name,KT,key,KeyT,com1,#once>>AspKT/script/run>>~/skeys/new>>AspCircleConf/script/new",
-"##+1/circle/current/radius>>%>>AspKT/script/1>>AspCircleConf/script/new",
-"###end>>AspKT/script/run>>AspKT/script/2>>AspCircleConf/script/new",
-
-"#@AspKG<>unseal/script>>AspKG>>AspCircleConf/script/new",
-"##name,KG,key,KeyG,com1,#once>>AspKG/script/run>>~/skeys/new>>AspCircleConf/script/new",
-"##-1/circle/current/radius>>%>>AspKG/script/1>>AspCircleConf/script/new",
-"###end>>AspKG/script/run>>AspKG/script/2>>AspCircleConf/script/new",
-
-
-"#@AspKT<>unseal/script>>AspKT>>AspRectConf/script/new",
-"##name,KT,key,KeyT,com1,#once>>AspKT/script/run>>~/skeys/new>>AspRectConf/script/new",
-"##+1/rectangle/current/w>>%>>AspKT/script/1>>AspRectConf/script/new",
-"###end>>AspKT/script/run>>AspKT/script/2>>AspRectConf/script/new",
-
-"#@AspKG<>unseal/script>>AspKG>>AspRectConf/script/new",
-"##name,KG,key,KeyG,com1,#once>>AspKG/script/run>>~/skeys/new>>AspRectConf/script/new",
-"##-1/rectangle/current/w>>%>>AspKG/script/1>>AspRectConf/script/new",
-"###end>>AspKG/script/run>>AspKG/script/2>>AspRectConf/script/new",
-
-"#@AspKY<>unseal/script>>AspKY>>AspRectConf/script/new",
-"##name,KY,key,KeyY,com1,#once>>AspKY/script/run>>~/skeys/new>>AspRectConf/script/new",
-"##+1/rectangle/current/h>>%>>AspKY/script/1>>AspRectConf/script/new",
-"###end>>AspKY/script/run>>AspKY/script/2>>AspRectConf/script/new",
-
-"#@AspKH<>unseal/script>>AspKH>>AspRectConf/script/new",
-"##name,KH,key,KeyH,com1,#once>>AspKH/script/run>>~/skeys/new>>AspRectConf/script/new",
-"##-1/rectangle/current/h>>%>>AspKH/script/1>>AspRectConf/script/new",
-"###end>>AspKH/script/run>>AspKH/script/2>>AspRectConf/script/new",
-
-
-//image conf reff
-//PageUp and PageDown to move between frames and create new ones to work with. we are skiping an instruction when we dont find
-//the current beat. its an interesting pattern
-"#@PrevF<>unseal/script/text>>PrevF>>AspImgConf/script/new",
-"##%/image/current>>PrevF/text/1<>-/image/cn>>%>>PrevF/script/1>>AspImgConf/script/new", //grabs a copy of the current beat..
-"##%/image/current>>%/image/current<>+/script/cn>>PrevF>>PrevF/script/2>>AspImgConf/script/new", //we skip the next ins
-"##PrevF/text/1>>%/image/current>>PrevF/script/3>>AspImgConf/script/new",
-"#seal/text>>PrevF>>AspImgConf/script/new", //we dont need to see this text
-
-"#@NextF<>unseal/script/text>>NextF>>AspImgConf/script/new",
-"##%/image/current>>NextF/text/1<>+/image/cn>>%>>NextF/script/1>>AspImgConf/script/new",
-"##%/image/current>>%/image/current<>+/script/cn>>NextF>>NextF/script/2>>AspImgConf/script/new", //we skip the next ins
-"##NextF/text/1>>%/image/current>>NextF/script/3>>AspImgConf/script/new",
-"#seal/text>>NextF>>AspImgConf/script/new", //we dont need to see this text we can seal it. but still use it to perform logic.
-
-
-
-
-//we can create the buttons but dont give funtionality yet
-"#@AspRight<>unseal/script>>AspRight>>AspImgConf/script/new",
-"##name,AspRight,key,KeyD,com1,#once>>AspRight/script/run>>~/skeys/new>>AspImgConf/script/new",
-"#@AspLeft<>unseal/script>>AspLeft>>AspImgConf/script/new",
-"##name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run>>~/skeys/new>>AspImgConf/script/new",
-"#@AspUp<>unseal/script>>AspUp>>AspImgConf/script/new",
-"##name,AspUp,key,KeyW,com1,#once>>AspUp/script/run>>~/skeys/new>>AspImgConf/script/new",
-"#@AspDown<>unseal/script>>AspDown>>AspImgConf/script/new",
-"##name,AspDown,key,KeyS,com1,#once>>AspDown/script/run>>~/skeys/new>>AspImgConf/script/new",
-
-"#@AspKT<>unseal/script>>AspKT>>AspImgConf/script/new",
-"##name,KT,key,KeyT,com1,#once>>AspKT/script/run>>~/skeys/new>>AspImgConf/script/new",
-"#@AspKG<>unseal/script>>AspKG>>AspImgConf/script/new",
-"##name,KG,key,KeyG,com1,#once>>AspKG/script/run>>~/skeys/new>>AspImgConf/script/new",
-"#@AspKY<>unseal/script>>AspKY>>AspImgConf/script/new",
-"##name,KY,key,KeyY,com1,#once>>AspKY/script/run>>~/skeys/new>>AspImgConf/script/new",
-"#@AspKH<>unseal/script>>AspKH>>AspImgConf/script/new",
-"##name,KH,key,KeyH,com1,#once>>AspKH/script/run>>~/skeys/new>>AspImgConf/script/new",
-//and lets use Q to remove a frame.
-"#@AspKQ<>unseal/script>>AspKQ>>AspImgConf/script/new",
-"##rmline/image/current>>%>>AspKQ/script/1>>AspImgConf/script/new",
-"###end>>AspKQ/script/run>>AspKQ/script/2>>AspImgConf/script/new",
-"##name,RmBeat,key,KeyQ,com1,#once>>AspKQ/script/run>>~/skeys/new>>AspImgConf/script/new",
-
-
-//ok how about we use a couple of keys to change between selection control and frame position control Z and X. We could just use
-//one script. We write the instructions to create both WASD controls in a single script, but we use Z and X to only run the parts
-//we are insterested in running. i like that. lets try that... maybe later
-
-//we need a fast movement mechanism...		
-		
-
-
-
-*/
 
 
 
@@ -7460,6 +7621,7 @@ if rob exist, jim repeats an instruction....
 	]
 
 }
+staNce.push(o.name);
 scriptOrbs.push(o);
 
 
