@@ -295,7 +295,7 @@ var pos = getTrackPos(s.offsx, s.offsy, s.tradx, s.trady, s.cx, s.cy);
 			o.tspacer=17; o.tsize=18; o.tstyle = 'normal'; 
 			o.tfont='arial';//'courier new'; 
 			o.talign = 'left';
-			o.i=undefined; 
+			o.i=undefined; o.inop = 'insert';
 			o.txtB=1;
 			o.txtLi=[];
 			o.Asp='text';
@@ -1805,13 +1805,31 @@ const kdown = function(ev){
 //of the run completely. for now. needs better names than jsonin jsonout i think
 //var all = [textOrbs,scriptOrbs,imageOrbs,circleOrbs,rectOrbs,oscOrbs,audioOrbs];
 			ALL = JSON.parse(chat_in.value); //how does this look
-			audioOrbs = ALL.pop();
-			oscOrbs = ALL.pop();
-			rectOrbs = ALL.pop();
-			circleOrbs = ALL.pop();
-			imageOrbs = ALL.pop();
-			scriptOrbs = ALL.pop();
-			textOrbs = ALL.pop();
+//here we need to identify if its a replace with new load request, or we are just recovering a group of orbs and dont want to erase
+//current run data. 
+			//if we only have an array filled with orbs, then we ask if orb names dont conflict and push them on proper arr
+
+			if(ALL[0].name){
+				for (var i = 0; i < ALL.length; i++) {
+					var o = ALL[i];
+					for (var i2 = 0; i2 < staNce.length; i2++) {
+						if(staNce[i2]==o.name){ var dont = true; break}
+					}
+					if(dont){}else{
+						window[o.arr].push(o); staNce.push(o.name);
+					}
+				}
+			}else{		
+				//for replace load do this
+				audioOrbs = ALL.pop();
+				oscOrbs = ALL.pop();
+				rectOrbs = ALL.pop();
+				circleOrbs = ALL.pop();
+				imageOrbs = ALL.pop();
+				scriptOrbs = ALL.pop();
+				textOrbs = ALL.pop();
+			}
+			chatOn = false;
 			jsonIn=false;
 			chat_in.value = ""; chat_in.blur(); chat_in.style.display="none";
 			return
@@ -1825,28 +1843,27 @@ const kdown = function(ev){
 			}else{
 				Ein=chat_in.value; 
 				//We wanto turn number strings into numbers
-//isNaN(number string) will only return false when we have a number string..
-				let isn = isNaN(chat_in.value);
-				if(isn){
+				if(isNaN(chat_in.value)){
 					Ein=chat_in.value;
 				}else{
-					Ein=parseFloat(chat_in.value);
-					chat_in.value = Ein;
-					
+					Ein=parseFloat(chat_in.value); chat_in.value = Ein;
 				}
 //what if we just run a command. '~/inline>>'+stancE+/in . So now we just check for o.i . Looks much cleaner
-				var inp = '~/inline>>'+stancE+'/in'; //!!!!! there is /in on ~/inline...
-				//console.log(inp);
-				//Entry = inp;
-				comA(undefined,inp);
+//.. ok s instead of this funky command, we use a tag to manage input behavior.
+//if normal, generate Entry, if not, generate Ein. Let orbs manage what to do with Ein data.
+//we could now design a script to set Ein tag on, and set text orb insert or replace operation to store the content of Ein
+//ein    a signal to activate nLine   entry a signal to activate command line? .. maybe not for entry
+//~/in>>%/in<>
+//
+				//var inp = '~/inline>>'+stancE+'/in'; //!!!!! there is /in on ~/inline...
+				//comA(undefined,inp);
 //ok so we need o.i to hold input messages now. Yeah we should be able to access this. Like, other orbs listenning to the input
 //changes on other orbs. thats interesting
-				//console.log(Ein);
 			}
 
 			chat_in.value = ""; //chatOn = false;
 			chat_in.blur(); chat_in.style.display="none";
-
+			chatOn = false;
 			nLine=false;
 			return
 
@@ -1857,20 +1874,20 @@ const kdown = function(ev){
 //let normal enter become a command prompt
 //to create an new input, press enter again. phones can simply use a button to enter commands prompt and another button to enter
 //a new input line... maybe we could to the same for keyboards. just call comprompt on Enter, and call inputprompt with a command
-//comprompt , inprompt
+//comprompt , inprompt ... yes double Enter is a bit confusing.... actually... we could simply use a script to.. wait 
 			///PEAK
 			//user presed enter while no value on input, so we call inprompt
 			if(chat_in.value==''){
-				Ein=undefined;
+				//Ein=undefined;
 	//... i think we dont want double enter to call nLine anymore. we should use a signal to call inprompt, nline
 	//this way users can simply asign a key to it. Enter should be exclusively for commands... leave it for now
 	//we could use Insert to call for inprompt !!!!!!!!
-				nLine=true; 
-				chatOn = false; //
-				return
-			}
+				//nLine=true; 
+				//chatOn = false; //
+				//return
+			}else{Entry=chat_in.value;}
 
-			Entry=chat_in.value;
+			//Entry=chat_in.value;
 			//
 			chat_in.value = "";
 			chatOn = false;
@@ -1878,6 +1895,7 @@ const kdown = function(ev){
 			chat_in.style.display="none";
 			
 		}else{//if chat_on is false, then activate
+
 			chat_in.style.display="inLine"; chatOn = true; chat_in.focus();
 
 		}//chat on
@@ -1893,7 +1911,7 @@ const kdown = function(ev){
 //while chat is on, Esc takes us out and doesnt print anything. Fast out
 	if(ev.code == 'Escape'){
 		ev.preventDefault();
-		if(chatOn==true||nLine==true){
+		if(chatOn==true){
 			chat_in.value = "";  chat_in.blur(); chat_in.style.display="none";
 			chatOn=false; nLine=false; jsonIn=false;//PEAK
 			return
@@ -2019,19 +2037,17 @@ const getCom = function(C){
 //orb if it doesnt exist. Its interesting to set a script to wait for the existence of a specificaly named orb. we dont want to 
 //sacrifice that. But multi aspects in one line is good... we are doing unseal/aspect1/aspect2..>>targetorb now
 
-
+//a command to call inprompt. 
+//ein
+	if(C=='ein'){ nLine=true; chat_in.style.display="inLine"; chatOn = true; chat_in.focus(); return true}
 	
 	if(C=='loadimage'){
 //loadimg . create a buffer for an image file on local machine 
-		Eout='loadimage';
-		img_in.click();
-		return true
+		Eout='loadimage'; img_in.click(); return true
 	}
 	if(C=='loadaudio'){
 //loadaudio . local audio file buffer into the browser
-		Eout='loadaudio';
-		audio_in.click();
-		return true
+		Eout='loadaudio'; audio_in.click(); return true
 	}
 
 //these are fun.....
@@ -2062,18 +2078,13 @@ const getCom = function(C){
 		//var alldata = op.join(' ');
 		chat_in.value = jsonall//all;//op[0]//we want RSout here
 		chat_in.style.display="inLine";
-		//chatOn = true; 
+		chatOn = true; 
 		nLine = true; //inline prompt
 		chat_in.focus();
 		return true
 	}
 //Accept a json string array from input box with orbs structures
-	if(C=='jsonin'){
-		chat_in.style.display="inLine";
-		jsonIn = true; 
-		chat_in.focus();
-		return true
-	}
+	if(C=='jsonin'){ chat_in.style.display="inLine"; jsonIn = true;  chat_in.focus(); return true }
 
 //ok so we need a command to stop all activity in order to be able to check when something did something that doesnt make sense...
 //would be ideal to stop the heartbeats, but that would also stop the tools of sunya to annalize what went wrong... we need a way around this
@@ -2120,7 +2131,6 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 						mult.push(tl);
 					}
 				}
-				//console.log(mult); we here
 	//if no line i guess we got nothing to do here do we... can we just skip tests? maybe a switch here instead of asking
 	//for each different case
 				//if(to.txtLi.length==0)
@@ -2247,6 +2257,7 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 							if(ro==undefined){var ro = FFting('name',r0);}
 							//console.log(mult[0]);
 							var rv = getLeValue(SM,ro); //retrieved from text
+							if(rv=='end'){rv=[];}
 						}
 					}
 					if(mult.length>1){
@@ -2363,25 +2374,17 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 				if(tar[1]=='text'){
 					dESpacer(to);
 					//Eout = 'rmline>>'+to.name//target;//we need a better output structure to annalize i think
-					//return
 				}
 				return
 			}
 			
 			return 'end' //return end if no rmline match because the operation failed and so second ins if any cant execute
-
 		}//rmline
-	}
 
 
-
-
-
-//uses to
 //seals or unseals multiple orbs. text needs to hold target orbs names
 // seal>>targetorb   , orb/text ,  orb/text/line  .  this is what we want now and here
 //seal and unseal is the same... if no aspect, we just use the word to check if the orb exist 
-	if(to){
 		if(sig[0]=='seal'){
 	//we only can seal orbs that already have been created. And we can only seal the aspect that was previously unsealed.
 			if(mult){
@@ -2433,7 +2436,61 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 			window[to.arr].splice(ioo,1); //!!!!!!!!!!!!
 			return
 		}
-	}
+
+//stringify orbs from a taget or target text list to be copied and taken from input box
+// jsonout>>orb  ,  orb/text
+		if(sig[0]=='jsonout'){
+			if(mult){
+				var orbss = [];
+				for (var i = 0; i < mult.length; i++) {
+					var jsono = FFting('name',mult[i]);
+					if(jsono){
+	//var all = [textOrbs,scriptOrbs,imageOrbs,circleOrbs,rectOrbs,oscOrbs,audioOrbs];
+	//var jsonall = JSON.stringify(all);
+	//we want to create a similar structure here but only using the orbs listed on the orb text... nevermind that
+	//just do whats more efficient
+						orbss.push(jsono);
+						//var newo = JSON.stringify(jsono); orbss.push(newo);
+					}
+				}
+				var allo = JSON.stringify(orbss);				
+				chat_in.value = allo;
+				chat_in.style.display="inLine";
+				chatOn = true; 
+				nLine = true; //inline prompt
+				chat_in.focus();
+				return
+			}
+			var nallo = [to]
+			var allo = JSON.stringify(nallo);				
+			chat_in.value = allo;
+			chat_in.style.display="inLine";
+			chatOn = true; 
+			nLine = true; //inline prompt
+			chat_in.focus();
+			return
+		}
+/*
+//takes json orbs into sunya
+// jsonin>>orb  ,  orb/text
+		if(sig[0]=='jsonin'){
+			if(mult){
+				for (var i = 0; i < mult.length; i++) {
+					var jsono = FFting('name',mult[i]);
+					if(jsono){
+						
+					}
+				}
+				if(jsono){return}else{return 'end'}	
+			}
+
+		
+		}
+*/
+
+
+
+	} //to
 
 /*
 //need revision .... maybe we should do one clone for each line on a text, each line a new name, and use s1(k1) to point to the cloned
@@ -2519,11 +2576,6 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 
 */
 
-//Ok big detail here, we actually need to get the access key from the text orb we want to work with right here..
-//another thing.. if this right here doesnt return an access key, but a number, we probably want to add polarity into that number
-//... this is kinda funky but... we want this.
-//pol/orb/line>>%/text/current
-
 //-Polarity got a massive buff.
 //+/orb/line>>~/x
 //+23>>orb/circle/1/radius
@@ -2541,13 +2593,14 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 //And one last thing , if polarity finds an orb name as target, it will try to find the next orb in the
 //cue and replace the line with its name. But this only work within the the same aspect array as the target orb. for now 
 //+>>orbname
-//ANOTHER POLARTITY FEATURE great idea not implemented yet
+	
+//ANOTHER POLARTITY/not FEATURE great idea not implemented yet !!!!!!!!!!!PHONE
 //if a sunya sinthax keyword sits in a text, we can use polarity to call for the next one? signals . 
 //once written , keywords can be rewriten to another keyword by sending polarity signals into the line that contains them
 //rmline , @ , delete , seal ... what if we could simply run trough all possible outcomes its an autocomplete function..
 //orb/   If we toggle this, we can see orb/name , orb/text , orb/x.. no,,, that wouldnt work, it would trigger orb/x and change orb
 //x parameter.. we need a function to construct commands without the commandline for phone users, this is important because phones
-//are cool too
+//are cool too.. but it must be a different command, we cant use polarity to do this.
 
 //POLARITY PEAKING RIGHT NOW
 //.. we might have this now here:
@@ -2567,11 +2620,7 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 		}
 		if(sig[0].length>1){
 			var nnum = sig[0].substr(1); var num = parseFloat(nnum);
-			if(isNaN(num)){
-				return 'end'
-			}else{
-				if(poline){pol = pol+num;}else{ pol = num;}
-			}
+			if(isNaN(num)){ return 'end' }else{ if(poline){pol = pol+num;}else{ pol = num;} }
 		}
 	}
 
@@ -2586,11 +2635,7 @@ const comRiTarget = function(sig,tar,S){//LS,RS,S .. is better .. not sure if we
 		}
 		if(sig[0].length>1){
 			var nnum = sig[0].substr(1); var num = parseFloat(nnum)*-1;
-			if(isNaN(num)){
-				return 'end'
-			}else{
-				if(poline){pol = pol+num;}else{ pol = num;}
-			}
+			if(isNaN(num)){ return 'end' }else{ if(poline){pol = pol+num;}else{ pol = num;} }
 		}
 	}
 
@@ -2842,14 +2887,8 @@ const getLeValue = function(LS,o){ //(LS,o) ... so LS needs to always be an arra
 
 	if(LS.length==1){ 
 
-		if(ent){ 
-			return entAccess();
-		}
-		//return orbAccess(o);
-
-		if(o){
-			return orbAccess(o);
-		}
+		if(ent){ return entAccess(); }
+		if(o){ return orbAccess(o); }
 
 		return 'end'
 	}
@@ -3138,6 +3177,8 @@ const getLeValue = function(LS,o){ //(LS,o) ... so LS needs to always be an arra
 
 			if(cont=='text'){
 				if(o.Asp=='text'){
+// orb/text/inop>>
+					if(ckey=='inop'){return [o.inop]}
 // orb/text/signat>>
 					if(ckey=='signat'){return [o.signat.slice(0).toString()]}
 // orb/text/align>>
@@ -3862,6 +3903,7 @@ const putRiValue = function(op,RS,o){
 
 			}//switch
 		}//orb
+		return 'end'
 	}
 
 	if(RS.length==3){
@@ -3917,6 +3959,8 @@ const putRiValue = function(op,RS,o){
 
 			if(cont=='text'){
 				if(o.Asp=='text'){
+// >>orb/text/inop
+					if(ckey=='inop'){ o.inop = op[0]; dESpacer(o); return }
 // >>orb/text/align
 					if(ckey=='align'){ o.talign = op[0]; dESpacer(o); return }
 // >>orb/text/style
@@ -4667,7 +4711,7 @@ const orbAccess = function(o){
 	
 	if(o.Asp=='text'){
 		res.push(
-			n+'/text', n+'/text/cn', n+'/text/signat', n+'/in'
+			n+'/text', n+'/text/cn', n+'/text/signat', n+'/in', n+'/text/font'
 		);
 	}
 	if(o.Asp=='script'){
@@ -4736,7 +4780,6 @@ const beatParam = function(o,cont,key,sub,op,pol){
 //adress all oscillators at once. No matter what i do there is always a new thing to considerate. I migth as well just focus on
 //writing everything as modular as possible. Maybe we should even have 2 arrays instead of one oscCue. This way i dont need to
 //add even more tags to find states i l just focus on name and line, oscCue  audioCue . 
-			//if(op!=undefined||pol!=0){
 			if(o.oscPA){
 				var k = parseFloat(key);
 				for (var i = 0; i < oscCue.length; i++) {
@@ -4763,7 +4806,6 @@ const beatParam = function(o,cont,key,sub,op,pol){
 					}//origin name match
 				}//sound cue loop
 			}//osc playing already
-			//}//op or pol
 			break
 		return //return if no cont match
 	}
@@ -4862,6 +4904,7 @@ const comA = function(S,C,kick){
 //# always needs >> .... BUT we want to do an exception with mirror. .. Because we want to be able to dump literals as beat into
 //a mirror? but can do #beatline>>mirror no problem
 		if(MS.length>1){ // ??>>??>>??>>??
+
 //we want to make LSout into everything until the last '>>'.. and RSh must be the last '>>'.. but first we check if its just a number
 			var RSh = MS.pop();
 			var LSh = MS.join('>>'); var rmhash = LSh.substr(1); //we need to remove the #
@@ -4871,26 +4914,34 @@ const comA = function(S,C,kick){
 		}else{return 'end'}
 
 		var SRSh = RSh.split('/');
-		var r0 = SRSh[0];
+// >>>   Ok so we want to check if RSh[0] == '>' , if so, then var multi = true
+		if(SRSh[0][0]=='>'){var r0 = SRSh[0].substr(1); var multi = true;}else{var r0 = SRSh[0];}
+		/////
+		//var r0 = SRSh[0];
 		if(r0=='~'){var ro = '~';}
 		if(r0=='%'){var ro = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
 		if(r0=='$'){var ro = FFting('name',S);}
 		if(ro==undefined){var ro = FFting('name',r0);}
+// >>> if multi, we want to put LSout on all orbs listed on text RS. we might as well just ask if SRSh[1] =='text'
+		if(multi){
+			//i dont even need to ask if SRSh[1] is 'text'..
+			if(ro.Asp=='text'){
+				for (var i = 0; i < ro.txtLi.length; i++) {
+					var Stor = ro.txtLi[i].txt.split('/');
+					var tor = FFting('name',Stor[0]);
+					//also, this multi target signals should not accept $ or % or ~.. maybe ~ later
+					if(tor){var res = putRiValue(LSout,Stor,tor);}
+				}
+				if(res){return}{return 'end'}
+			}
+		}
+		/////
 		var res = putRiValue(LSout,SRSh,ro);
 		return res //return end if operation wasnt succesful
 
 	}//#
 
-//a special sintax to work on a list with multiple orbs. not sure if implementing this now
-//	var MS = C.split('>>>'); 
-//	if(MS.length==2){ // just 2 sides to compare
-//we want to perform 
-//	}
-
-
-//this need revision......... == <= >= all need revision
-//conditions need to be evaluated first
-//we shouldnt have >> if we are here.. we use conditions to compare LS with RS 
+// ==
 	var MS = C.split('=='); 
 	if(MS.length==2){ // just 2 sides to compare
 		/////////////testing.. worked.. but now need testing again
@@ -4916,6 +4967,7 @@ const comA = function(S,C,kick){
 		var RS = MS[1].split('/');
 		var r0 = RS[0];
 		//we can now have literals after '=='
+// ==#
 		if(r0[0]=='#'){
 			var rmhash = r0.substr(1); //we need to remove the #
 			var RSout = []; 
@@ -4930,17 +4982,16 @@ const comA = function(S,C,kick){
 			if(RSout=='end'){return 'end'}
 		}
 
-//condition ==		
 //check for left side as retrieve value.  check right side also as retrieve value. compare
 		var lsout = LSout.toString();	var rsout = RSout.toString();
 //return and let second ins run if any, return end if condition wasnt met.
 		if(lsout==rsout){ return }else{ return 'end' }//lol this works just fine
 	}// '=='
 
-/*
 //so conditions using '==' are perfectly fine when dealing with text lines.. but dealing with number counters is not ideal because
 //sometimes numbers will skip the condition because we might use counters adding by values higher than 1. So we can
 //just implement <= >= right here to prevent this.
+// <=
  	var MS = C.split('>=');
 	if(MS.length==2){ // just 2 sides to compare
 		/////////////testing.. works
@@ -4952,14 +5003,38 @@ const comA = function(S,C,kick){
 			}
 		}
 		////////////
-		var LSout = getLeValue(MS[0],S); var RSout = getLeValue(MS[1],S);//!!!!!!!!!!!!!
-//condition >=		
+		var LS = MS[0].split('/');
+		var l0 = LS[0];
+		if(l0=='~'){var lo = '~';}
+		if(l0=='%'){var lo = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
+		if(l0=='$'){var lo = FFting('name',S);}
+		if(lo==undefined){var lo = FFting('name',l0);}
+		var LSout = getLeValue(LS,lo);//!!!
+		if(LSout=='end'){return 'end'}
+
+		var RS = MS[1].split('/');
+		var r0 = RS[0];
+// <=#
+		if(r0[0]=='#'){
+			var rmhash = r0.substr(1); //we need to remove the #
+			var RSout = []; 
+//new and definitive way to check if value is a number we can work with or a combination of letters and number or just letters!!!!!!!!
+			if(isNaN(rmhash)){RSout.push(rmhash); }else{ var num = parseFloat(rmhash); RSout.push(num);}
+		}else{
+			if(r0=='~'){var ro = '~';}
+			if(r0=='%'){var ro = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
+			if(r0=='$'){var ro = FFting('name',S);}
+			if(ro==undefined){var ro = FFting('name',r0);}
+			var RSout = getLeValue(RS,ro);//!!!!
+			if(RSout=='end'){return 'end'}
+		}
 //check for left side as retrieve value.  check right side also as retrieve value. check if its numbers we can work with.compare
 		if(isNaN(LSout[0])){return 'end'} if(isNaN(RSout[0])){return 'end'}
 //return and let second ins run if any, return end if condition wasnt met.
 		if(LSout[0]>=RSout[0]){ return }else{ return 'end' }
 	}// '>='
 
+// <=
  	var MS = C.split('<=');
 	if(MS.length==2){ // just 2 sides to compare
 		/////////////testing.. works
@@ -4971,14 +5046,36 @@ const comA = function(S,C,kick){
 			}
 		}
 		////////////
-		var LSout = getLeValue(MS[0],S); var RSout = getLeValue(MS[1],S); //!!!!!!!!!!
-//condition <=		
+		var LS = MS[0].split('/');
+		var l0 = LS[0];
+		if(l0=='~'){var lo = '~';}
+		if(l0=='%'){var lo = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
+		if(l0=='$'){var lo = FFting('name',S);}
+		if(lo==undefined){var lo = FFting('name',l0);}
+		var LSout = getLeValue(LS,lo);//!!!
+		if(LSout=='end'){return 'end'}
+
+		var RS = MS[1].split('/');
+		var r0 = RS[0];
+// <=#
+		if(r0[0]=='#'){
+			var rmhash = r0.substr(1); //we need to remove the #
+			var RSout = []; 
+//new and definitive way to check if value is a number we can work with or a combination of letters and number or just letters!!!!!!!!
+			if(isNaN(rmhash)){RSout.push(rmhash); }else{ var num = parseFloat(rmhash); RSout.push(num);}
+		}else{
+			if(r0=='~'){var ro = '~';}
+			if(r0=='%'){var ro = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
+			if(r0=='$'){var ro = FFting('name',S);}
+			if(ro==undefined){var ro = FFting('name',r0);}
+			var RSout = getLeValue(RS,ro);//!!!!
+			if(RSout=='end'){return 'end'}
+		}
 //check for left side as retrieve value.  check right side also as retrieve value. check if its numbers we can work with.compare
 		if(isNaN(LSout[0])){return 'end'} if(isNaN(RSout[0])){return 'end'}
 //return and let second ins run if any, return end if condition wasnt met.
 		if(LSout[0]<=RSout[0]){ return }else{ return 'end' }
 	}// '<='
-*/
 
 
 /*
@@ -5005,7 +5102,6 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 	//we can inmediately stop here if we know.. 
 	if(MS.length==1){
 		//its a solo retrieve. we ask now if stance is a text orb, if so we print data here
-//but we might want to print a target key.. we havent considered that here!!!!!!!!!!
 		var so = Fting(textOrbs,'name',S);
 		if(so){
 			if(so.text){
@@ -5015,6 +5111,7 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 				if(l0=='%'){var lo = FFting('name',stancE);}//this might need tunning. we could also reffer to entity!
 				if(l0=='$'){var lo = FFting('name',S);}
 				if(lo==undefined){var lo = FFting('name',l0);}
+
 				var ret = getLeValue(LS,lo); //we dont need to pass S now
 				if(ret=='end'){return 'end'}
 				for (var i = 0; i <= ret.length-1; i++) {
@@ -5060,37 +5157,40 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 		}
 		////////////
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!HERE
-//Instead  of doing this funky skip, we should just annalize both sides here first key. we can discard if its a retrieve into a target here
-//its left side and right side number. this is all we need
-		var LS = MS[0].split('/'); 
-		var l0 = LS[0]; //var l1 = LS[1]; var l2 = LS[2]; var l3 = LS[3];
-		//l0 l1 l2 l3
-
-		var RS = MS[1].split('/'); 
-		var r0 = RS[0]; //var r1 = RS[1]; var r2 = RS[2]; var r3 = RS[3];
-		//r0 r1 r2 r3 r4
+		var LS = MS[0].split('/');  var l0 = LS[0]; 
 
 		if(l0=='~'){var lo = '~';}
 		if(l0=='%'){var lo = FFting('name',stancE);}//this might need tunning. we could also reffer to entity,,!!!!!!!!!
 		if(l0=='$'){var lo = FFting('name',S);}
 		if(lo==undefined){var lo = FFting('name',l0);}
-		//if(lo==undefined){if(lt==undefined){}}//else{var lo = '~';}}
 
-	//maybe we could add literals here, so we use literals to point to access keys.... idk yet
+		var RS = MS[1].split('/');  //var r0 = RS[0]; //
+// >>>   Ok so we want to check if RSh[0] == '>' , if so, then var multi = true
+		if(RS[0][0]=='>'){var r0 = RS[0].substr(1); var multi = true;}else{var r0 = RS[0];}
+
+	//maybe we could add literals here, so we use literals to point to access keys.... would be kinda crazy but consistent
 		//same with putRiValue
 		if(r0=='~'){var ro = '~';}
 		if(r0=='%'){var ro = FFting('name',stancE);}//this might need tunning. we could also reffer to entity,,!!!!!!!!!
 		if(r0=='$'){var ro = FFting('name',S);}
 		if(ro==undefined){var ro = FFting('name',r0);}
-		//if(ro==undefined){
-		//	if(rt==undefined){
-		//		if(l0=='@'){}else{return 'end'}
-		//	}
-		//} //here is the problem..
-	//problem is.. the weird pattern of @aspect>>neworbname . because there is no orb nor ent on left nor right. its crazy
+// >>>
+		if(multi){
+			var LSout = getLeValue(LS,lo); //we dont need to pass S now
+			//i dont even need to ask if SRSh[1] is 'text'..
+			if(ro.Asp=='text'){
+				if(LSout){
+					for (var i = 0; i < ro.txtLi.length; i++) {
+						var Stor = ro.txtLi[i].txt.split('/');
+						var tor = FFting('name',Stor[0]);
+						//also, this multi target signals should not accept $ or % or ~.. maybe ~ later
+						if(tor){var res = putRiValue(LSout,Stor,tor);}
+					}
+				}
+				if(res){return}{return 'end'}
+			}
+		}
 
-//the prblem is.... ~/inline>>orb/in
 		if(lo){ //lo holds the orb(object)
 //its a retrieve from left orb into right orb... but we dont need to check again on getLeValue. we just pass LS, lo
 			var lres = getLeValue(LS,lo); //we dont need to pass S now
@@ -5101,17 +5201,11 @@ o1/text/1**o1/text/2>>o2/circle/1/x
 			return
 		}else{
 			//its a signal
-//so signals need heavy reestructuring. let me think a bit..
-			//if(ro=='~'){var ent = '~';}
 			var res = comRiTarget(LS,RS,S);
 			if(res=='end'){return 'end'}
 
 		}
-
 	}
-//////////////////////////////////////////////////THIS
-
-
 
 
 
@@ -6658,7 +6752,7 @@ function update(){ //PEAK
 // that request text>> to be used, need to have already other instructions changing >>text values performed first.
 	for (var i = 0; i < ALOrbs.length; i++) {
 		var c = ALOrbs[i];
-		if(c==undefined){break} //safe
+		//if(c==undefined){break} //safe
 		var csplit = c.com.split('<>');
 		if(csplit.length>1){ 
 			var secins = csplit.pop(); var firstins = csplit.join('<>');
@@ -6699,6 +6793,7 @@ function update(){ //PEAK
 				}
 				//and place o.i text on o.txtB
 				o.txtLi[o.txtB-1].txt = o.i;
+
 			}else{
 
 				var dli = DataLine();
@@ -6708,10 +6803,13 @@ function update(){ //PEAK
 				dli.txt=o.i;
 				//dli.x=o.txtX; dli.y=o.txtY;
 				dli.x=o.x; dli.y=o.y;
+
 				//this operation adds a line simply on selected place
-				o.txtLi.splice(o.txtB-1,0,dli);
+				if(o.inop=='insert'){o.txtLi.splice(o.txtB-1,0,dli);}
+
 				//we could also replace the line from here like this:
-				//o.txtLi.splice(o.txtB-1,1,dli);
+				if(o.inop=='replace'){o.txtLi.splice(o.txtB-1,1,dli);}
+
 //but we dont want to replace the line by default when writing into a text from input.... do we ....nah.. because we want to be able
 //to quicly insert a new line in place when we are here..not erasing the text that was previously in here.
 
@@ -7221,6 +7319,22 @@ var o = {
 "#45>>Main4/screenx/in",
 "#8>>Main4/screeny/in",
 
+//a script to always put the result of Ein into the stance /in key
+"@script>>LineIn",
+"#~/in>>%/in>>LineIn/script/new",
+"#loop>>LineIn/script/run",
+
+//a script to grab a line and insert a modified version without erasing anything
+"@script>>InsertLine",
+"##insert>>%/text/inop>>InsertLine/script/new",
+"#%/text/current>>~/inline<>ein>>InsertLine/script/new",
+
+//a script to grab the line selected so we can modify it and use it to replace the previous line. replace. grab text, put it on
+//inline, modify, then when we press enter we replace it
+"@script>>ReplaceLine",
+"##replace>>%/text/inop>>ReplaceLine/script/new",
+"#%/text/current>>~/inline<>ein>>ReplaceLine/script/new",
+
 //so a listener on Main2. When user has a parameter in line selected we can call a script that will read Entry value and use it
 //to modify the parameter written in the line
 //~/in
@@ -7328,8 +7442,9 @@ var o = {
 //GPSkeys text container. a list of skeys to add at once 
 "@text>>GPskeys",
 //no need to see this no more
+		
 "seal>>GPskeys",
-":name,RmBeat,key,End,com1,#once>>RmBeat/script/run name,LDash,key,ShiftLeft,com1,#2>>ShiftLDash/script/cn name,LineNameToStance,key,Period,com1,%/text/current>>~/stance name,StatusToStance,key,Backquote,com1,#once>>SpeedsRecall/script/run name,Polarity+,key,BracketRight,com1,Nums/text/1>>Polarity/script/cn<>#once>>Polarity/script/run name,Polarity-,key,Slash,com1,Nums/text/3>>Polarity/script/cn<>#once>>Polarity/script/run name,Main1ToStance,key,Digit1,com1,#Main1>>~/stance name,Main2ToStance,key,Digit2,com1,#Main2>>~/stance name,Main3ToStance,key,Digit3,com1,#Main3>>~/stance name,Main4ToStance,key,Digit4,com1,#Main4>>~/stance name,Main0ToStance,key,Digit0,com1,#Main0>>~/stance name,SealAsp,key,Backspace,com1,seal>>% name,RmLine,key,Delete,com1,#once>>RmLine/script/run name,ComLineGrab,key,KeyO,com1,%/text/current>>~/comline name,InLineGrab,key,KeyI,com1,%/text/current>>~/inline name,PrevLine,key,KeyB,com1,->>%/text/cn name,NextLine,key,KeyN,com1,+>>%/text/cn name,SelStance,key,KeyM,com1,$/text/current>>~/stance name,OrbsList,key,Space,com1,#once>>OrbsLister/script/run name,SkeysList,key,ControlRight,com1,~/skeys>>Main0/text name,GetAccess,key,KeyM,com1,#once>>GetAccess/script/run name,GetIRTparam,key,Comma,com1,#once>>GetIRTparam/script/run name,KTab,key,Tab,com1,#once>>HistoryRecall/script/run name,PrevFrame,key,PageUp,com1,#once>>PrevF/script/run name,NextFrame,key,PageDown,com1,#once>>NextF/script/run name,EntRight,key,ArrowRight,com1,#once>>EntRight/script/run name,EntLeft,key,ArrowLeft,com1,#once>>EntLeft/script/run name,EntUp,key,ArrowUp,com1,#once>>EntUp/script/run name,EntDown,key,ArrowDown,com1,#once>>EntDown/script/run name,AspRight,key,KeyD,com1,#once>>AspRight/script/run name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run name,AspUp,key,KeyW,com1,#once>>AspUp/script/run name,AspDown,key,KeyS,com1,#once>>AspDown/script/run name,Repeat,key,KeyE,com1,#once>>KeyE/script/run name,Loop,key,KeyR,com1,#once>>KeyR/script/run name,Off,key,KeyF,com1,#once>>KeyF/script/run name,KT,key,KeyT,com1,#once>>KeyT/script/run name,KG,key,KeyG,com1,#once>>KeyG/script/run name,KY,key,KeyY,com1,#once>>KeyY/script/run name,KH,key,KeyH,com1,#once>>KeyH/script/run name,KU,key,KeyU,com1,#once>>KeyU/script/run name,KJ,key,KeyJ,com1,#once>>KeyJ/script/run name,KZ,key,KeyZ,com1,#once>>CursorZ/script/run name,KX,key,KeyX,com1,#once>>CursorX/script/run name,KC,key,KeyC,com1,#once>>CursorC/script/run name,KV,key,KeyV,com1,#once>>CursorV/script/run >>GPskeys/text",
+":name,RmBeat,key,End,com1,#once>>RmBeat/script/run name,LDash,key,ShiftLeft,com1,#2>>ShiftLDash/script/cn name,LineNameToStance,key,Period,com1,%/text/current>>~/stance name,StatusToStance,key,Backquote,com1,#once>>SpeedsRecall/script/run name,Polarity+,key,BracketRight,com1,Nums/text/1>>Polarity/script/cn<>#once>>Polarity/script/run name,Polarity-,key,Slash,com1,Nums/text/3>>Polarity/script/cn<>#once>>Polarity/script/run name,Main1ToStance,key,Digit1,com1,#Main1>>~/stance name,Main2ToStance,key,Digit2,com1,#Main2>>~/stance name,Main3ToStance,key,Digit3,com1,#Main3>>~/stance name,Main4ToStance,key,Digit4,com1,#Main4>>~/stance name,Main0ToStance,key,Digit0,com1,#Main0>>~/stance name,SealAsp,key,Backspace,com1,seal>>% name,RmLine,key,Delete,com1,#once>>RmLine/script/run name,CommandGrab,key,KeyO,com1,%/text/current>>~/comline name,Insert,key,KeyI,com1,#once>>InsertLine/script/run name,Replace,key,KeyP,com1,#once>>ReplaceLine/script/run name,PrevLine,key,KeyB,com1,->>%/text/cn name,NextLine,key,KeyN,com1,+>>%/text/cn name,SelStance,key,KeyM,com1,$/text/current>>~/stance name,OrbsList,key,Space,com1,#once>>OrbsLister/script/run name,SkeysList,key,ControlRight,com1,~/skeys>>Main0/text name,GetAccess,key,KeyM,com1,#once>>GetAccess/script/run name,GetIRTparam,key,Comma,com1,#once>>GetIRTparam/script/run name,KTab,key,Tab,com1,#once>>HistoryRecall/script/run name,PrevFrame,key,PageUp,com1,#once>>PrevF/script/run name,NextFrame,key,PageDown,com1,#once>>NextF/script/run name,EntRight,key,ArrowRight,com1,#once>>EntRight/script/run name,EntLeft,key,ArrowLeft,com1,#once>>EntLeft/script/run name,EntUp,key,ArrowUp,com1,#once>>EntUp/script/run name,EntDown,key,ArrowDown,com1,#once>>EntDown/script/run name,AspRight,key,KeyD,com1,#once>>AspRight/script/run name,AspLeft,key,KeyA,com1,#once>>AspLeft/script/run name,AspUp,key,KeyW,com1,#once>>AspUp/script/run name,AspDown,key,KeyS,com1,#once>>AspDown/script/run name,Repeat,key,KeyE,com1,#once>>KeyE/script/run name,Loop,key,KeyR,com1,#once>>KeyR/script/run name,Off,key,KeyF,com1,#once>>KeyF/script/run name,KT,key,KeyT,com1,#once>>KeyT/script/run name,KG,key,KeyG,com1,#once>>KeyG/script/run name,KY,key,KeyY,com1,#once>>KeyY/script/run name,KH,key,KeyH,com1,#once>>KeyH/script/run name,KU,key,KeyU,com1,#once>>KeyU/script/run name,KJ,key,KeyJ,com1,#once>>KeyJ/script/run name,KZ,key,KeyZ,com1,#once>>CursorZ/script/run name,KX,key,KeyX,com1,#once>>CursorX/script/run name,KC,key,KeyC,com1,#once>>CursorC/script/run name,KV,key,KeyV,com1,#once>>CursorV/script/run >>GPskeys/text",
 //use container to create buttons at once. so maybe we do this, create buttons when we stance on orbs with different aspects
 "GPskeys/text>>~/skeys",
 "delete>>GPskeys", //but for now just remove this. creating skeys is quick
@@ -7503,8 +7618,9 @@ var o = {
 "##loop>>ZXYtoRect/script/run>>ImageConf/script/new",
 
 "#Nums/text/5>>BTHL/script/cn<>#repeat>>BTHL/script/run>>ImageConf/script/new", //configure beat highlight
+
 //when we use CursorZ , we also need to displace the ImageBg orb. lets make a script to synch ImageBg position. this works
-//but we want to eliminate this synch when we change aspect before ImageBg takes the position of another aspect/x ,y ..
+//as long as current stance aspect is image, we keep synching ImageBg position with the stance orb
 "#@script>>ImageBgSynch>>ImageConf/script/new",
 "#:%/aspect==#image<>#once>>ImageBgBeat/script/run >>ImageBgSynch/script>>ImageConf/script/new",
 //initialize ImageBgSynch to synch image bg to current image orb position
